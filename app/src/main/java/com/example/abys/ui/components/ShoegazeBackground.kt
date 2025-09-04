@@ -1,14 +1,9 @@
 package com.example.abys.ui.components
 
 import android.os.Build
-import android.graphics.RenderEffect
+import android.graphics.RenderEffect as AndroidRenderEffect
 import android.graphics.Shader
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,10 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.random.Random
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 
 @Composable
 fun ShoegazeBackground(modifier: Modifier = Modifier) {
@@ -37,11 +34,12 @@ fun ShoegazeBackground(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .graphicsLayer {
                 if (Build.VERSION.SDK_INT >= 31) {
-                    renderEffect = RenderEffect.createBlurEffect(20f, 20f, Shader.TileMode.CLAMP)
+                    renderEffect = AndroidRenderEffect
+                        .createBlurEffect(20f, 20f, Shader.TileMode.CLAMP)
+                        .asComposeRenderEffect()
                 }
             }
             .drawWithContent {
-                // фон-градиент: циан ↔ персик
                 drawRect(
                     brush = Brush.linearGradient(
                         colors = listOf(
@@ -56,16 +54,20 @@ fun ShoegazeBackground(modifier: Modifier = Modifier) {
                 drawContent()
             }
     ) {
-        // зерно/шум сверху
         Canvas(Modifier.fillMaxSize()) {
-            val step = 5
-            for (x in 0 until size.width.toInt() step step) {
-                for (y in 0 until size.height.toInt() step step) {
-                    val a = (0.02f..0.06f).random()
+            val step = 7
+            val alphaMin = 0.02f
+            val alphaMax = 0.06f
+            val aR = alphaMax - alphaMin
+            val w = size.width.toInt()
+            val h = size.height.toInt()
+            for (x in 0 until w step step) {
+                for (y in 0 until h step step) {
+                    val a = alphaMin + Random.nextFloat() * aR
                     drawRect(
                         Color.White.copy(alpha = a),
-                        topLeft = androidx.compose.ui.geometry.Offset(x.toFloat(), y.toFloat()),
-                        size = androidx.compose.ui.geometry.Size(1f, 1f),
+                        topLeft = Offset(x.toFloat(), y.toFloat()),
+                        size = Size(1f, 1f),
                         blendMode = BlendMode.Overlay
                     )
                 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- XML-тема только для системных баров; сам UI — через Compose -->
     <style name="Theme.Abys" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>

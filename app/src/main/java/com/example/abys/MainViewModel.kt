@@ -59,15 +59,12 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     fun fetchByCity(city: String) {
         viewModelScope.launch {
-            val zone = ZoneId.systemDefault()
             val std = runCatching { aladhan.timingsByCity(city = city, school = 0) }.getOrNull()
             val han = runCatching { aladhan.timingsByCity(city = city, school = 1) }.getOrNull()
-            val tomorrow = runCatching { aladhan.timingsByCity(city = city, school = 0) }.getOrNull() // берём фаджр как «завтра» в splitNight (упростим)
             if (std != null && han != null) {
                 val tz = ZoneId.of(std.data.meta.timezone)
-                val maghrib = std.data.timings.Maghrib
-                val fajrNext = std.data.timings.Fajr // используем как шаблон +1 день
-                val parts = TimeUtils.splitNight(maghrib, fajrNext, tz)
+                // ночь = от Магриб до Фаджр следующего дня
+                val parts = TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
                 _timings.value = TimingsUi(
                     fajr = std.data.timings.Fajr,
                     sunrise = std.data.timings.Sunrise,

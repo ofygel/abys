@@ -10,10 +10,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.example.abys.MainViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.abys.MainViewModel
 
 @Composable
 fun CitySearchBar(vm: MainViewModel, onSearch: (String) -> Unit, onGps: () -> Unit) {

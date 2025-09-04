@@ -1,7 +1,6 @@
 package com.example.abys
 
 import android.Manifest
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,11 +32,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun askLocPerm() {
-        requestLocation.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        )
+        requestLocation.launch(arrayOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ))
     }
 }

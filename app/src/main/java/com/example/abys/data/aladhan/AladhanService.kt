@@ -4,18 +4,15 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface AladhanService {
-
-    // По городу
     @GET("v1/timingsByCity")
     suspend fun timingsByCity(
         @Query("city") city: String,
         @Query("country") country: String = "",
-        @Query("method") method: Int = 2,   // MWL по умолчанию
-        @Query("school") school: Int = 0,   // 0 - Shafi (Стандарт), 1 - Hanafi
+        @Query("method") method: Int = 2, // MWL
+        @Query("school") school: Int = 0, // 0 - Стандарт, 1 - Ханафи
         @Query("iso8601") iso: Boolean = true
     ): AladhanResponse
 
-    // По координатам (для GPS)
     @GET("v1/timings")
     suspend fun timingsByCoords(
         @Query("latitude") lat: Double,
