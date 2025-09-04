@@ -1,0 +1,6 @@
+services:
+  abys:
+    image: abys
+    build:
+      context: .
+      dockerfile: ./Dockerfile

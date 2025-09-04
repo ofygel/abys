@@ -7,7 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.material3.Surface
+import androidx.core.view.WindowCompat
 import com.example.abys.ui.screens.HomeScreen
+import com.example.abys.ui.screens.SplashThen
 import com.example.abys.ui.theme.ShoegazeTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,17 +26,27 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // контент уходит под статус/навигацию → фото/видео на весь экран
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
             ShoegazeTheme {
-                Surface { HomeScreen(vm) { askLocPerm() } }
+                Surface {
+                    SplashThen {
+                        HomeScreen(vm) { askLocPerm() }
+                    }
+                }
             }
         }
     }
 
     private fun askLocPerm() {
-        requestLocation.launch(arrayOf(
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ))
+        requestLocation.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        )
     }
 }

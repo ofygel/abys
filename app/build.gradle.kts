@@ -77,7 +77,6 @@ dependencies {
     // Геолокация
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // ExoPlayer (Media3) для видео-фона
-    implementation("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("androidx.media3:media3-ui:1.4.1")
+    // DataStore для запоминания номера слайда
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }

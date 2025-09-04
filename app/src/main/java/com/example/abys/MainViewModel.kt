@@ -23,7 +23,8 @@ data class TimingsUi(
     val isha: String = "--:--",
     val nightParts: Triple<Pair<String,String>, Pair<String,String>, Pair<String,String>> =
         Triple("--:--" to "--:--","--:--" to "--:--","--:--" to "--:--"),
-    val cityLabel: String = "—"
+    val cityLabel: String = "—",
+    val tzId: String = ZoneId.systemDefault().id   // новое поле
 )
 
 class MainViewModel(app: Application): AndroidViewModel(app) {
@@ -63,7 +64,6 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             val han = runCatching { aladhan.timingsByCity(city = city, school = 1) }.getOrNull()
             if (std != null && han != null) {
                 val tz = ZoneId.of(std.data.meta.timezone)
-                // ночь = от Магриб до Фаджр следующего дня
                 val parts = TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
                 _timings.value = TimingsUi(
                     fajr = std.data.timings.Fajr,
@@ -78,7 +78,8 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                         TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
                         TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
                     ),
-                    cityLabel = city
+                    cityLabel = city,
+                    tzId = tz.id     // передаём таймзону
                 )
             }
         }
@@ -111,7 +112,8 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                         TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
                         TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
                     ),
-                    cityLabel = label
+                    cityLabel = label,
+                    tzId = tz.id   // передаём таймзону
                 )
             }
         }
