@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,6 +38,7 @@ fun HomeScreen(vm: MainViewModel, onRequestLocation: () -> Unit) {
 
     // времена намаза
     val state by vm.timings.collectAsStateWithLifecycle()
+    val ui by vm.uiState.collectAsStateWithLifecycle()
 
     // модалка выбора города
     var showPicker by remember { mutableStateOf(false) }
@@ -113,6 +115,27 @@ fun HomeScreen(vm: MainViewModel, onRequestLocation: () -> Unit) {
             onGps = onRequestLocation,
             onChosen = { /* выбрано — закрываем */ }
         )
+
+        when (val u = ui) {
+            MainViewModel.UiState.Loading -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    androidx.compose.material3.CircularProgressIndicator()
+                }
+            }
+            is MainViewModel.UiState.Error -> {
+                androidx.compose.material3.Snackbar(
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                    action = {
+                        androidx.compose.material3.TextButton(onClick = { vm.retry() }) {
+                            androidx.compose.material3.Text("Повторить")
+                        }
+                    }
+                ) {
+                    androidx.compose.material3.Text(u.msg)
+                }
+            }
+            MainViewModel.UiState.Success -> Unit
+        }
     }
 }
 
