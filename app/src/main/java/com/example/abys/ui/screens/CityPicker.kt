@@ -13,9 +13,9 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.example.abys.MainViewModel
 
 @Composable
@@ -43,12 +43,12 @@ fun CityPickerModal(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
         ) {
-            // Полное имя вместо импорта, чтобы исключить конфликт
-            androidx.compose.foundation.Image(
-                painter = painterResource(bgRes),
+            // фон через Coil
+            AsyncImage(
+                model = bgRes,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize().blur(14.dp)
+                modifier = Modifier.matchParentSize().blur(12.dp)
             )
             Box(Modifier.matchParentSize().background(Color(0x33FFFFFF)))
 
