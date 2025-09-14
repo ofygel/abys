@@ -46,6 +46,20 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     private val _timings = MutableStateFlow(TimingsUi())
     val timings: StateFlow<TimingsUi> = _timings
 
+    // simple UI state for loading/error handling
+    private val _uiState = MutableStateFlow<UiState>(UiState.Success)
+    val uiState: StateFlow<UiState> = _uiState
+
+    sealed interface UiState {
+        object Loading : UiState
+        object Success : UiState
+        data class Error(val msg: String) : UiState
+    }
+
+    fun retry() {
+        // no-op placeholder
+    }
+
     init {
         viewModelScope.launch {
             _query
@@ -74,6 +88,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     fun fetchByCity(city: String) {
         viewModelScope.launch {
+            _uiState.value = UiState.Loading
             val std = runCatching { aladhan.timingsByCity(city = city, school = 0) }.getOrNull()
             val han = runCatching { aladhan.timingsByCity(city = city, school = 1) }.getOrNull()
             if (std != null && han != null) {
@@ -81,23 +96,30 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                 val parts = runCatching {
                     TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
                 }.onFailure { println("splitNight error: ${'$'}{it.message}") }
-                    .getOrNull() ?: return@launch
-                _timings.value = TimingsUi(
-                    fajr = std.data.timings.Fajr,
-                    sunrise = std.data.timings.Sunrise,
-                    dhuhr = std.data.timings.Dhuhr,
-                    asrStandard = std.data.timings.Asr,
-                    asrHanafi = han.data.timings.Asr,
-                    maghrib = std.data.timings.Maghrib,
-                    isha = std.data.timings.Isha,
-                    nightParts = Triple(
-                        TimeUtils.format(parts.first.first) to TimeUtils.format(parts.first.second),
-                        TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
-                        TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
-                    ),
-                    cityLabel = city,
-                    tzId = tz.id     // передаём таймзону
-                )
+                    .getOrNull()
+                if (parts != null) {
+                    _timings.value = TimingsUi(
+                        fajr = std.data.timings.Fajr,
+                        sunrise = std.data.timings.Sunrise,
+                        dhuhr = std.data.timings.Dhuhr,
+                        asrStandard = std.data.timings.Asr,
+                        asrHanafi = han.data.timings.Asr,
+                        maghrib = std.data.timings.Maghrib,
+                        isha = std.data.timings.Isha,
+                        nightParts = Triple(
+                            TimeUtils.format(parts.first.first) to TimeUtils.format(parts.first.second),
+                            TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
+                            TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
+                        ),
+                        cityLabel = city,
+                        tzId = tz.id     // передаём таймзону
+                    )
+                    _uiState.value = UiState.Success
+                } else {
+                    _uiState.value = UiState.Error("Failed to calculate night parts")
+                }
+            } else {
+                _uiState.value = UiState.Error("Failed to load timings")
             }
         }
     }
@@ -111,6 +133,7 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
 
     private fun fetchByCoords(lat: Double, lon: Double, label: String) {
         viewModelScope.launch {
+            _uiState.value = UiState.Loading
             val std = runCatching { aladhan.timingsByCoords(lat, lon, school = 0) }.getOrNull()
             val han = runCatching { aladhan.timingsByCoords(lat, lon, school = 1) }.getOrNull()
             if (std != null && han != null) {
@@ -118,23 +141,30 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
                 val parts = runCatching {
                     TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
                 }.onFailure { println("splitNight error: ${'$'}{it.message}") }
-                    .getOrNull() ?: return@launch
-                _timings.value = TimingsUi(
-                    fajr = std.data.timings.Fajr,
-                    sunrise = std.data.timings.Sunrise,
-                    dhuhr = std.data.timings.Dhuhr,
-                    asrStandard = std.data.timings.Asr,
-                    asrHanafi = han.data.timings.Asr,
-                    maghrib = std.data.timings.Maghrib,
-                    isha = std.data.timings.Isha,
-                    nightParts = Triple(
-                        TimeUtils.format(parts.first.first) to TimeUtils.format(parts.first.second),
-                        TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
-                        TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
-                    ),
-                    cityLabel = label,
-                    tzId = tz.id   // передаём таймзону
-                )
+                    .getOrNull()
+                if (parts != null) {
+                    _timings.value = TimingsUi(
+                        fajr = std.data.timings.Fajr,
+                        sunrise = std.data.timings.Sunrise,
+                        dhuhr = std.data.timings.Dhuhr,
+                        asrStandard = std.data.timings.Asr,
+                        asrHanafi = han.data.timings.Asr,
+                        maghrib = std.data.timings.Maghrib,
+                        isha = std.data.timings.Isha,
+                        nightParts = Triple(
+                            TimeUtils.format(parts.first.first) to TimeUtils.format(parts.first.second),
+                            TimeUtils.format(parts.second.first) to TimeUtils.format(parts.second.second),
+                            TimeUtils.format(parts.third.first) to TimeUtils.format(parts.third.second)
+                        ),
+                        cityLabel = label,
+                        tzId = tz.id   // передаём таймзону
+                    )
+                    _uiState.value = UiState.Success
+                } else {
+                    _uiState.value = UiState.Error("Failed to calculate night parts")
+                }
+            } else {
+                _uiState.value = UiState.Error("Failed to load timings")
             }
         }
     }
