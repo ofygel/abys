@@ -10,6 +10,10 @@ import com.example.abys.data.location.LocationManager
 import com.example.abys.util.TimeUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 
@@ -42,14 +46,24 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
     private val _timings = MutableStateFlow(TimingsUi())
     val timings: StateFlow<TimingsUi> = _timings
 
+    init {
+        viewModelScope.launch {
+            _query
+                .debounce(300)
+                .flatMapLatest { q ->
+                    flow {
+                        val result = if (q.length < 2) emptyList() else
+                            runCatching { nominatim.search(q) }.getOrElse { emptyList() }
+                        emit(result)
+                    }
+                }
+                .collect { _suggestions.value = it }
+        }
+    }
+
     fun updateQuery(q: String) {
         _query.value = q
-        if (q.length < 2) { _suggestions.value = emptyList(); return }
-        viewModelScope.launch {
-            runCatching { nominatim.search(q) }
-                .onSuccess { _suggestions.value = it }
-                .onFailure { _suggestions.value = emptyList() }
-        }
+        if (q.length < 2) { _suggestions.value = emptyList() }
     }
 
     fun selectSuggestion(item: NominatimItem) {
