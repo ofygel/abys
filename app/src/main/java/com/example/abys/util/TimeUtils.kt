@@ -5,10 +5,18 @@ import java.time.*
 object TimeUtils {
     private val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
 
+    class InvalidTimeException(message: String) : Exception(message)
+
     fun parseLocal(time: String, zone: ZoneId): ZonedDateTime {
-        val today = LocalDate.now(zone)
-        val lt = LocalTime.parse(time.take(5), hm)
-        return ZonedDateTime.of(today, lt, zone)
+        if (time.startsWith("--")) throw InvalidTimeException("Time not available")
+        return if (time.contains('T')) {
+            val odt = OffsetDateTime.parse(time)
+            odt.atZoneSameInstant(zone)
+        } else {
+            val today = LocalDate.now(zone)
+            val lt = LocalTime.parse(time.take(5), hm)
+            ZonedDateTime.of(today, lt, zone)
+        }
     }
 
     data class NightParts(

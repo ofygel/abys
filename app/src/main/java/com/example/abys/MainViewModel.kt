@@ -78,7 +78,10 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             val han = runCatching { aladhan.timingsByCity(city = city, school = 1) }.getOrNull()
             if (std != null && han != null) {
                 val tz = ZoneId.of(std.data.meta.timezone)
-                val parts = TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
+                val parts = runCatching {
+                    TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
+                }.onFailure { println("splitNight error: ${'$'}{it.message}") }
+                    .getOrNull() ?: return@launch
                 _timings.value = TimingsUi(
                     fajr = std.data.timings.Fajr,
                     sunrise = std.data.timings.Sunrise,
@@ -112,7 +115,10 @@ class MainViewModel(app: Application): AndroidViewModel(app) {
             val han = runCatching { aladhan.timingsByCoords(lat, lon, school = 1) }.getOrNull()
             if (std != null && han != null) {
                 val tz = ZoneId.of(std.data.meta.timezone)
-                val parts = TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
+                val parts = runCatching {
+                    TimeUtils.splitNight(std.data.timings.Maghrib, std.data.timings.Fajr, tz)
+                }.onFailure { println("splitNight error: ${'$'}{it.message}") }
+                    .getOrNull() ?: return@launch
                 _timings.value = TimingsUi(
                     fajr = std.data.timings.Fajr,
                     sunrise = std.data.timings.Sunrise,
