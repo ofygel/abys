@@ -15,6 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun GlassTopBar(
@@ -31,13 +34,14 @@ fun GlassTopBar(
             .clip(shape)
             .clickable { onClick() }
     ) {
-        // псевдо-glass
-        androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(currentBgRes),
+        // фон через Coil
+        AsyncImage(
+            model = currentBgRes,
             contentDescription = null,
-            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier.matchParentSize().blur(10.dp)
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize().blur(8.dp)
         )
+
         Box(
             Modifier
                 .matchParentSize()
@@ -71,7 +75,10 @@ fun GlassTopBar(
                 modifier = Modifier.weight(1f)
             )
             Spacer(Modifier.width(8.dp))
-            androidx.compose.material3.OutlinedButton(onClick = onGps, contentPadding = PaddingValues(horizontal = 14.dp)) {
+            OutlinedButton(
+                onClick = onGps,
+                contentPadding = PaddingValues(horizontal = 14.dp)
+            ) {
                 Text("GPS")
             }
         }

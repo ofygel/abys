@@ -2,15 +2,14 @@ package com.example.abys.ui.background
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
@@ -25,7 +24,7 @@ fun SlideshowBackground(
 ) {
     if (images.isEmpty()) return
 
-    // Стартовый индекс и задержка до первой смены — считаем один раз
+    // стартовый кадр и задержка до первой смены
     val start = remember(images, anchorIndex, anchorEpoch, intervalMs) {
         val now = System.currentTimeMillis()
         val elapsed = (now - anchorEpoch).coerceAtLeast(0L)
@@ -40,10 +39,9 @@ fun SlideshowBackground(
 
     LaunchedEffect(images, anchorIndex, anchorEpoch, intervalMs) {
         onIndexChange(idx)
-        var wait: Long = start.firstDelay
+        var wait = start.firstDelay
         while (isActive) {
             if (wait > 0) delay(wait)
-            // затемнение -> смена -> проявление
             dim.animateTo(1f, tween(fadeMs))
             idx = mod(idx + 1, images.size)
             onIndexChange(idx)
@@ -53,21 +51,20 @@ fun SlideshowBackground(
         }
     }
 
-    val painter = painterResource(id = images[idx])
-    val black = ColorPainter(Color.Black)
-
-    Image(
-        painter = painter,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize(),
-        contentScale = ContentScale.Crop
-    )
-    Image(
-        painter = black,
-        contentDescription = null,
-        modifier = Modifier.fillMaxSize().alpha(dim.value),
-        contentScale = ContentScale.Crop
-    )
+    Box(Modifier.fillMaxSize()) {
+        AsyncImage(
+            model = images[idx],
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        // чёрный диммер поверх — без drawBehind
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = dim.value))
+        )
+    }
 }
 
 private data class Start(val index: Int, val firstDelay: Long)
