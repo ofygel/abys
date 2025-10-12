@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootHost"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- 1) Фон: слайдшоу (Compose) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/composeBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Новый слой партиклов (Compose) -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/composeParticles"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Новый top-layer (Compose) закреплён справа сверху -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/composeTop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"/>
+
+    <!-- Контент поверх фона и партиклов -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- 2) Герой-карточка (стекло) по центру (Compose) -->
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/composeHero"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Переключатель школы Аср -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleAsr"
+                android:layout_marginTop="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAsrStd"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Asr: Standard"
+                    android:checked="true"
+                    app:checkedIcon="@null"
+                    android:checkable="true"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAsrHan"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Asr: Hanafi"
+                    app:checkedIcon="@null"
+                    android:checkable="true"/>
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!-- Кнопки гео/ручной город -->
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRequestLocation"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Определить местоположение"/>
+
+                <Space
+                    android:layout_width="8dp"
+                    android:layout_height="wrap_content"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnManualCity"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Указать город"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvCity"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="—"/>
+
+            <TextView
+                android:id="@+id/tvDate"
+                android:textSize="14sp"
+                android:layout_marginTop="2dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="—"/>
+
+            <TextView
+                android:id="@+id/tvNextPrayer"
+                android:layout_marginTop="14dp"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Следующий намаз — — в —:—"/>
+
+            <TextView
+                android:id="@+id/tvCountdown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="До начала: —"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"/>
+
+            <LinearLayout
+                android:id="@+id/listContainer"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <!-- 3) Таймлайн ночи (Compose) -->
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/composeNight"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

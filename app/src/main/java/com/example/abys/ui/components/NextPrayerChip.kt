@@ -1,39 +1,37 @@
 package com.example.abys.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.abys.TimingsUi
-import com.example.abys.util.PrayerUtils
-import kotlinx.coroutines.delay
+import java.time.Duration
+import java.time.ZoneId
 
 @Composable
-fun NextPrayerChip(t: TimingsUi) {
-    var label by remember { mutableStateOf("--") }
-    var left by remember { mutableStateOf("--:--:--") }
-
-    LaunchedEffect(t) {
-        while (true) {
-            PrayerUtils.nextPrayer(t)?.let { n ->
-                label = n.name
-                left = PrayerUtils.formatDur(n.inDur)
-            }
-            delay(1_000L)
+fun NextPrayerChip(name: String, time: String, zone: ZoneId, remaining: Duration?) {
+    val label = buildString {
+        append(name)
+        append(" • ")
+        append(time)
+        if (remaining != null) {
+            val h = remaining.toHours()
+            val m = (remaining.toMinutes() % 60)
+            append("  (")
+            append("%02d:%02d".format(h, m))
+            append(")")
         }
     }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp)
-            .background(Color(0x33FFFFFF), RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Text("До $label:  ")
-        Text(left)
-    }
+    AssistChip(
+        onClick = {},
+        label = { Text(label) },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+            labelColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        modifier = Modifier.wrapContentWidth().height(IntrinsicSize.Min)
+    )
 }

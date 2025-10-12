@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ----------------------------------------------------------------------
+# Retrofit/Gson keep models (чтобы имена полей не обфусцировались)
+-keep class com.example.abys.net.** { *; }
+-keepattributes Signature
+-dontwarn okio.**
+# ----------------------------------------------------------------------

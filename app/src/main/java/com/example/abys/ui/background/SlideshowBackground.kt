@@ -1,76 +1,116 @@
 package com.example.abys.ui.background
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlin.math.floor
 
+/**
+ * Детерминированное слайд-шоу:
+ * - visibleMs = 15_000 по умолчанию
+ * - fadeInMs = 900, fadeOutMs = 500
+ * - индекс кадра считается от (nowMs - ANCHOR_MS) / periodMs
+ *   => при повторном запуске продолжает «с того места», где должен быть по времени.
+ */
 @Composable
 fun SlideshowBackground(
-    images: List<Int>,
-    anchorIndex: Int,
-    anchorEpoch: Long,
-    intervalMs: Long = 20_000,
-    fadeMs: Int = 800,
-    onIndexChange: (Int) -> Unit
+    visibleMs: Long = 15_000L,
+    fadeInMs: Long = 900L,
+    fadeOutMs: Long = 500L,
+    // фиксированная опорная точка (UTC). Можно поменять на «момент первого запуска», если захочешь.
+    anchorMs: Long = 0L
 ) {
-    if (images.isEmpty()) return
+    val slides = remember { Slides.all }
+    val n = slides.size.coerceAtLeast(1)
+    val period = visibleMs + fadeInMs + fadeOutMs
 
-    // стартовый кадр и задержка до первой смены
-    val start = remember(images, anchorIndex, anchorEpoch, intervalMs) {
-        val now = System.currentTimeMillis()
-        val elapsed = (now - anchorEpoch).coerceAtLeast(0L)
-        val steps = if (intervalMs > 0L) (elapsed / intervalMs).toInt() else 0
-        val startIdx = mod(anchorIndex + steps, images.size)
-        val firstDelay = if (intervalMs > 0L) intervalMs - (elapsed % intervalMs) else 0L
-        Start(index = startIdx, firstDelay = firstDelay)
+    // Тикер времени (≈30 FPS). Нет «накопления» — просто читает системное время.
+    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowMs = System.currentTimeMillis()
+            delay(33L)
+        }
     }
 
-    var idx by remember { mutableStateOf(start.index) }
-    val dim = remember { Animatable(0f) }
+    // Сколько прошло с опорной точки
+    val elapsed = (nowMs - anchorMs).mod(Long.MAX_VALUE)
+    val slideFloat = elapsed.toDouble() / period.toDouble()
+    val idx = floor(slideFloat).toLong().mod(n.toLong()).toInt()
+    val within = (elapsed % period).toDouble()
 
-    LaunchedEffect(images, anchorIndex, anchorEpoch, intervalMs) {
-        onIndexChange(idx)
-        var wait = start.firstDelay
-        while (isActive) {
-            if (wait > 0) delay(wait)
-            dim.animateTo(1f, tween(fadeMs))
-            idx = mod(idx + 1, images.size)
-            onIndexChange(idx)
-            dim.snapTo(1f)
-            dim.animateTo(0f, tween(fadeMs))
-            wait = intervalMs
+    // Алфы для cross-fade:
+    // - в начале периода: prev -> current (fade in)
+    // - в конце периода: current -> next (fade out)
+    val (prevIdx, currIdx, nextIdx) = Triple(
+        ((idx - 1 + n) % n),
+        idx,
+        ((idx + 1) % n)
+    )
+
+    var alphaPrev = 0f
+    var alphaCurr = 1f
+    var alphaNext = 0f
+
+    when {
+        within < fadeInMs -> {
+            // Входим в кадр
+            val a = (within / fadeInMs).toFloat().coerceIn(0f, 1f)
+            alphaPrev = 1f - a
+            alphaCurr = a
+        }
+        within > (fadeInMs + visibleMs) -> {
+            // Выходим из кадра
+            val out = ((within - fadeInMs - visibleMs) / fadeOutMs).toFloat().coerceIn(0f, 1f)
+            alphaCurr = 1f - out
+            alphaNext = out
+        }
+        else -> {
+            alphaPrev = 0f
+            alphaCurr = 1f
+            alphaNext = 0f
         }
     }
 
     Box(Modifier.fillMaxSize()) {
+        // Рисуем до трёх слоёв для аккуратного кросс-фейда
+        if (alphaPrev > 0f) {
+            AsyncImage(
+                model = slides[prevIdx],
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = alphaPrev
+            )
+        }
         AsyncImage(
-            model = images[idx],
+            model = slides[currIdx],
             contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+            alpha = alphaCurr
         )
-        // чёрный диммер поверх — без drawBehind
+        if (alphaNext > 0f) {
+            AsyncImage(
+                model = slides[nextIdx],
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                alpha = alphaNext
+            )
+        }
+
+        // Лёгкий тёмный слой для читаемости текста
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = dim.value))
+                .background(Color(0x80000000))
         )
     }
-}
-
-private data class Start(val index: Int, val firstDelay: Long)
-
-private fun mod(a: Int, b: Int): Int {
-    if (b == 0) return 0
-    val m = a % b
-    return if (m < 0) m + b else m
 }
