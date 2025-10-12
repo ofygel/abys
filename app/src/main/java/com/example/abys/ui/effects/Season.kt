@@ -1,21 +1,14 @@
 package com.example.abys.ui.effects
 
 import java.time.LocalDate
+import java.time.Month
 
-enum class Season { AUTUMN, WINTER, SPRING, SUMMER }
+enum class Season { Winter, Spring, Summer, Autumn }
 
-fun detectSeason(today: LocalDate = LocalDate.now(), northernHemisphere: Boolean = true): Season {
-    // Для Казахстана true
-    val m = today.monthValue
-    return if (northernHemisphere) when (m) {
-        in 3..5 -> Season.SPRING
-        in 6..8 -> Season.SUMMER
-        in 9..11 -> Season.AUTUMN
-        else -> Season.WINTER
-    } else when (m) {
-        in 3..5 -> Season.AUTUMN
-        in 6..8 -> Season.WINTER
-        in 9..11 -> Season.SPRING
-        else -> Season.SUMMER
-    }
+// Простейшее разбиение по месяцам для северного полушария
+fun currentSeason(d: LocalDate = LocalDate.now()): Season = when (d.month) {
+    Month.DECEMBER, Month.JANUARY, Month.FEBRUARY -> Season.Winter
+    Month.MARCH, Month.APRIL, Month.MAY -> Season.Spring
+    Month.JUNE, Month.JULY, Month.AUGUST -> Season.Summer
+    else -> Season.Autumn
 }
