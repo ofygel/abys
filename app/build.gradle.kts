@@ -1,10 +1,13 @@
 plugins {
     id("com.android.application")
-    kotlin("android")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
+    namespace = "com.example.abys"
     compileSdk = 34
+
     defaultConfig {
         applicationId = "com.example.abys"
         minSdk = 23
@@ -12,38 +15,43 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro")
-        }
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
-    }
+
+    buildFeatures { compose = true }
+
+    // С Kotlin 2.0 composeOptions НЕ нужны: версию компилятора задаёт сам плагин
+    // composeOptions { kotlinCompilerExtensionVersion = "1.5.12" } ← удалить
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions { jvmTarget = "17" }
-    namespace = "com.example.abys"
+    kotlin {
+        jvmToolchain(17)
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
 }
 
 dependencies {
+    // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.09.02"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
     implementation("androidx.activity:activity-compose:1.9.0")
 
-    // ExoPlayer / video greeting
+    // ExoPlayer
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
 
@@ -54,6 +62,6 @@ dependencies {
     // Image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
 
-    // Desugaring (java.time на API 23)
+    // java.time на API 23
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
