@@ -1,5 +1,7 @@
 package com.example.abys.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,44 +11,41 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.abys.R
+import com.example.abys.logic.CitySearchViewModel
 import com.example.abys.logic.MainViewModel
 import com.example.abys.logic.SettingsStore
 import com.example.abys.logic.TimeHelper
+import com.example.abys.ui.background.SlideshowBackground
+import com.example.abys.ui.city.CityPickerSheet
+import com.example.abys.ui.components.GlassCard
+import com.example.abys.ui.components.NightTimeline
+import com.example.abys.ui.components.PrayerBoard
+import com.example.abys.ui.components.TopOverlay
+import com.example.abys.ui.effects.SeasonalParticles
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import java.time.Duration
 
-// Compose импорты
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.ComposeView
-import com.example.abys.ui.background.SlideshowBackground
-import com.example.abys.ui.components.GlassCard
-import com.example.abys.ui.components.NightTimeline
-import com.example.abys.ui.city.CityPickerSheet
-import com.example.abys.ui.components.PrayerBoard
-import com.example.abys.ui.components.TopOverlay
-import com.example.abys.ui.effects.SeasonalParticles
-
-// Импорт для BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialog
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var vm: MainViewModel
+    private lateinit var cityVm: CitySearchViewModel
     private lateinit var tvCity: TextView
     private lateinit var tvDate: TextView
     private lateinit var tvNextPrayer: TextView
@@ -74,16 +73,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-class MainActivity : ComponentActivity() {
-
-    /** создаём ViewModel “по-классически”, без compose-экстеншенов */
-    private val vm: PrayerViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         vm = ViewModelProvider(this)[MainViewModel::class.java]
+        cityVm = ViewModelProvider(this)[CitySearchViewModel::class.java]
 
         tvCity = findViewById(R.id.tvCity)
         tvDate = findViewById(R.id.tvDate)
@@ -219,7 +214,7 @@ class MainActivity : ComponentActivity() {
                     }
                     vm.loadByCity(picked)
                     sheet.dismiss()
-                })
+                }, vm = cityVm)
             }
         }
         sheet.setContentView(cv)

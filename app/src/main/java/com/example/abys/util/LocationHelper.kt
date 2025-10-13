@@ -13,17 +13,21 @@ object LocationHelper {
     @SuppressLint("MissingPermission")
     suspend fun getLastBestLocation(ctx: Context): Pair<Double, Double>? =
         withContext(Dispatchers.IO) {
-            val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val providers = listOf(
-                LocationManager.GPS_PROVIDER,
-                LocationManager.NETWORK_PROVIDER,
-                LocationManager.PASSIVE_PROVIDER
-            ).filter { lm.isProviderEnabled(it) }
-
-            val loc: Location? = providers
-                .mapNotNull { lm.getLastKnownLocation(it) }
-                .maxByOrNull { it.accuracy * -1 }  // самая точная
-
-            loc?.let { it.latitude to it.longitude }
+            getLastKnownLocation(ctx)?.let { it.latitude to it.longitude }
         }
+
+    /** Совместимость со старым кодом, ожидающим Location? */
+    @SuppressLint("MissingPermission")
+    fun getLastKnownLocation(ctx: Context): Location? {
+        val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = listOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
+        ).filter { lm.isProviderEnabled(it) }
+
+        return providers
+            .mapNotNull { lm.getLastKnownLocation(it) }
+            .minByOrNull { it.accuracy }
+    }
 }
