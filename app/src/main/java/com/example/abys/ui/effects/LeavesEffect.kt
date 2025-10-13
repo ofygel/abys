@@ -29,8 +29,12 @@ private data class Leaf(
 )
 
 @Composable
-fun LeavesEffect(modifier: Modifier = Modifier, density: Float = 0.04f) {
-    // density ~ доля листьев на 10_000 px^2
+fun LeavesEffect(
+    modifier: Modifier = Modifier,
+    params: LeavesParams,
+    intensity: Float
+) {
+    val density = (params.density * intensity).coerceAtLeast(0.02f)
     var particles by remember { mutableStateOf<List<Leaf>>(emptyList()) }
     var w by remember { mutableStateOf(0f) }
     var h by remember { mutableStateOf(0f) }
@@ -50,7 +54,7 @@ fun LeavesEffect(modifier: Modifier = Modifier, density: Float = 0.04f) {
                 val rotation = p.rotation + p.spin
 
                 if (ny > h + 40f || nx < -40f || nx > w + 40f) {
-                    createLeaf(w, h, spawnFromTop = true)
+                    createLeaf(w, h, params, intensity, spawnFromTop = true)
                 } else {
                     p.copy(x = nx, y = ny, phase = phase, rotation = rotation)
                 }
@@ -66,8 +70,11 @@ fun LeavesEffect(modifier: Modifier = Modifier, density: Float = 0.04f) {
 
         if (w != size.width || h != size.height || particles.isEmpty()) {
             w = size.width; h = size.height
-            val count = ((w * h) / 10000f * density).toInt().coerceAtLeast(6)
-            particles = List(count) { createLeaf(w, h) }
+            val areaFactor = (w * h) / (1080f * 1920f)
+            val baseCount = ((w * h) / 10000f * density).toInt()
+            val capped = (baseCount * areaFactor.coerceAtMost(1.4f)).toInt()
+            val count = capped.coerceIn(8, 60)
+            particles = List(count) { createLeaf(w, h, params, intensity) }
         }
 
         particles.forEach { p ->
@@ -103,7 +110,13 @@ fun LeavesEffect(modifier: Modifier = Modifier, density: Float = 0.04f) {
 
 private const val TAU = 6.2831855f
 
-private fun createLeaf(width: Float, height: Float, spawnFromTop: Boolean = false): Leaf {
+private fun createLeaf(
+    width: Float,
+    height: Float,
+    params: LeavesParams,
+    intensity: Float,
+    spawnFromTop: Boolean = false
+): Leaf {
     val leafSize = leafRandom.nextFloat() * 9f + 6f
     val hue = 30f + leafRandom.nextFloat() * 25f
     val saturation = 0.65f + leafRandom.nextFloat() * 0.25f
@@ -114,8 +127,8 @@ private fun createLeaf(width: Float, height: Float, spawnFromTop: Boolean = fals
     return Leaf(
         x = leafRandom.nextFloat() * width,
         y = startY,
-        vx = (leafRandom.nextFloat() - 0.5f) * 1.4f,
-        vy = 0.6f + leafRandom.nextFloat() * 1.6f,
+        vx = (leafRandom.nextFloat() - 0.5f) * params.driftX * 1.2f,
+        vy = (params.speedY * intensity * 0.8f) + leafRandom.nextFloat() * params.speedY,
         size = leafSize,
         phase = leafRandom.nextFloat() * TAU,
         rotation = leafRandom.nextFloat() * 360f,

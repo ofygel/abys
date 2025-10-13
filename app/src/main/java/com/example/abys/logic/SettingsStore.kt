@@ -11,6 +11,7 @@ object SettingsStore {
     private const val KEY_SCHOOL     = "asr_school"        // 0 = Standard, 1 = Hanafi
     private const val KEY_CITY       = "last_city"
     private const val KEY_LAST_JSON  = "last_timings_json"
+    private const val KEY_THEME_ID   = "theme_id"
 
     /* -------- helpers -------- */
     private fun prefs(ctx: Context) =
@@ -38,5 +39,13 @@ object SettingsStore {
     }
     suspend fun getLastJson(ctx: Context): String? = withContext(Dispatchers.IO) {
         prefs(ctx).getString(KEY_LAST_JSON, null)
+    }
+
+    suspend fun setThemeId(ctx: Context, id: String) = withContext(Dispatchers.IO) {
+        prefs(ctx).edit { putString(KEY_THEME_ID, id) }
+    }
+
+    suspend fun getThemeId(ctx: Context): String? = withContext(Dispatchers.IO) {
+        prefs(ctx).getString(KEY_THEME_ID, null)
     }
 }
