@@ -1,6 +1,8 @@
 package com.example.abys.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -10,43 +12,44 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.colorResource
 import com.example.abys.logic.TimeHelper
 import com.example.abys.logic.UiTimings
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.ZoneId
 import java.time.ZonedDateTime
-
-/* ----------------------------------------------------------------------- */
-/*  SMALL LOCAL HELPERS                                                    */
-/* ----------------------------------------------------------------------- */
+import com.example.abys.R
 
 @Composable
-private fun LabeledRow(
-    label: String,
-    value: String,
-    accent: Boolean = false
-) = Row(
-    Modifier
-        .fillMaxWidth()
-        .padding(vertical = 8.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
-    verticalAlignment = Alignment.CenterVertically
-) {
+private fun RowItem(label: String, valueRight: @Composable () -> Unit, accent: Boolean = false) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val labelColor = if (accent) {
+            colorResource(R.color.bm_accent2)
+        } else {
+            colorResource(R.color.bm_text)
+        }
+        Text(label, color = labelColor, style = MaterialTheme.typography.titleMedium)
+        Box(Modifier.wrapContentWidth()) { valueRight() }
+    }
+}
+
+@Composable
+private fun ValueText(text: String, strong: Boolean = true, color: Color = Color.Unspecified) {
+    val resolvedColor = color.takeOrElse { colorResource(R.color.bm_text) }
     Text(
-        label,
-        color = if (accent) Color(0xFF34D399) else Color.White.copy(alpha = 0.9f),
-        style = MaterialTheme.typography.titleMedium
-    )
-    Text(
-        value,
-        color = Color.White,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold
+        text,
+        color = resolvedColor,
+        style = if (strong) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
+        fontWeight = if (strong) FontWeight.Bold else FontWeight.SemiBold
     )
 }
 
@@ -70,7 +73,7 @@ private fun NextBanner(nextName: String, remain: Duration?) {
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-            .background(Color(0xFF16A34A)),
+            .background(colorResource(R.color.bm_accent)),
         contentAlignment = Alignment.Center
     ) {
         Text(label, color = Color.White, fontWeight = FontWeight.Bold)
@@ -84,13 +87,12 @@ private fun ThirdChip(text: String, active: Boolean) {
             .padding(start = 6.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (active) Color(0xFF10B981) else Color.White.copy(alpha = 0.12f)
+                if (active) colorResource(R.color.bm_accent) else Color.White.copy(alpha = 0.12f)
             )
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Text(
-            text,
-            color = if (active) Color.White else Color.White.copy(alpha = 0.9f),
+        Text(text,
+            color = colorResource(R.color.bm_text),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
         )
@@ -102,70 +104,56 @@ private fun ThirdChip(text: String, active: Boolean) {
 /* ----------------------------------------------------------------------- */
 
 @Composable
-fun PrayerBoard(timings: UiTimings, selectedSchool: Int) {
+fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
 
     /* тик-состояние для секундного обновления */
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while (true) { delay(1_000); tick++ } }
 
     /* --- расчёты --- */
-    val tz: ZoneId = timings.tz
-    val next = timings.nextPrayer(selectedSchool)                       // Pair(name,time) или null
+    val tz: ZoneId = t.tz
+    val next = t.nextPrayer(selectedSchool)                             // Pair(name,time) или null
     val remain = next?.second?.let { TimeHelper.untilNowTo(it, tz) }    // Duration?
 
-    val thirds = TimeHelper.splitNight(timings.maghrib, timings.fajr, tz) // Triple<Pair,Pair,Pair>
-    val now: ZonedDateTime = ZonedDateTime.now(tz)
+    val thirds = TimeHelper.splitNight(t.maghrib, t.fajr, tz)           // Triple<Pair,Pair,Pair>
+    val now: ZonedDateTime = remember(t, tz, tick) { ZonedDateTime.now(tz) }
     val activeThird = when {
         now.isBefore(thirds.first.second)  -> 1
         now.isBefore(thirds.second.second) -> 2
         else                               -> 3
     }
 
-    /* --- UI --- */
+    val cardBg = colorResource(R.color.bm_card).copy(alpha = 0.8f)
+    val outline = colorResource(R.color.bm_outline)
+    val cardShape = RoundedCornerShape(24.dp)
+    val highlight = next?.first
+
     Box(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .blur(20.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(
-                Brush.verticalGradient(
-                    0f to Color(0xCC0F0F10),
-                    1f to Color(0x990C0C0D)
-                )
-            )
+            .clip(cardShape)
+            .background(cardBg)
+            .border(BorderStroke(1.dp, outline), cardShape)
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
 
-            LabeledRow("Fajr",    timings.fajr)
-            LabeledRow("Shuruq",  timings.sunrise)
-            LabeledRow("Dhuhr",   timings.dhuhr)
+            RowItem("Fajr", { ValueText(t.fajr) }, accent = highlight == "Fajr")
+            RowItem("Shuruq", { ValueText(t.sunrise) }, accent = highlight == "Shuruq")
+            RowItem("Dhuhr", { ValueText(t.dhuhr) }, accent = highlight == "Dhuhr")
 
-            /* Asr (два мазхаба) */
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Asr", color = Color.White.copy(alpha = 0.9f),
-                    style = MaterialTheme.typography.titleMedium)
-                Row {
-                    Text(timings.asrStd,
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold)
-                    Text("  |  ", color = Color.White.copy(alpha = 0.6f))
-                    Text(timings.asrHan,
-                        color = Color(0xFFB4F1C4),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold)
+            // Asr: два времени рядом
+            RowItem("Asr", {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ValueText(t.asrStd, color = Color(0xFFAAAAAA))
+                    Text("  |  ", color = colorResource(R.color.bm_text).copy(alpha = 0.6f))
+                    ValueText(t.asrHan, color = colorResource(R.color.bm_accent2))
                 }
-            }
+            }, accent = highlight == "Asr")
 
-            LabeledRow("Maghrib", timings.maghrib)
-            LabeledRow("Isha",    timings.isha)
+            RowItem("Maghrib", { ValueText(t.maghrib) }, accent = highlight == "Maghrib")
+            RowItem("Isha", { ValueText(t.isha) }, accent = highlight == "Isha")
 
             /* треть ночи */
             Spacer(Modifier.height(4.dp))
