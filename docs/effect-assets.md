@@ -1,5 +1,7 @@
 # Ассеты для погодных тем
 
+Карусель использует растровые файлы из `app/src/main/res/drawable-nodpi`. Фон сцены фиксированный,
+поэтому для каждой темы нужно подготовить только квадратные превью.
 Карусель и слайд-фон используют растровые файлы из `app/src/main/res/drawable-nodpi`. Для каждой
 темы потребуется два типа ассетов: фоновые слайды и квадратные превью.
 
@@ -26,6 +28,7 @@
 * Имена: `thumb_leaves.jpg`, `thumb_rain.jpg`, `thumb_snow.jpg`, `thumb_lightning.jpg`,
   `thumb_wind.jpg`, `thumb_storm.jpg`, `thumb_sunset_snow.jpg`, `thumb_night.jpg`
 
+Указанные ресурсы подключаются в `ThemeEffect.kt` через поле `thumbRes`.
 Указанные ресурсы подключаются в `ThemeEffect.kt` через поля `thumbRes` и `backgrounds`.
 
 ## Иконки (опционально)

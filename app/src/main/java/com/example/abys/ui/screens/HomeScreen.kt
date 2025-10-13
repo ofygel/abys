@@ -124,6 +124,9 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
 
         /* ---------- фон-слайдшоу ---------- */
+        SlideshowBackground(
+            modifier = Modifier.fillMaxSize(),
+            images = STATIC_BACKGROUNDS
         val backgrounds = appliedTheme.backgrounds.ifEmpty {
             listOf(
                 R.drawable.slide_01, R.drawable.slide_02, R.drawable.slide_03, R.drawable.slide_04,
@@ -241,3 +244,14 @@ private fun ThemeSpec.windParams(): WindParams? = when (effect) {
     EffectKind.STORM -> (params as? StormParams)?.wind
     else -> null
 }
+
+private val STATIC_BACKGROUNDS = listOf(
+    R.drawable.slide_01,
+    R.drawable.slide_02,
+    R.drawable.slide_03,
+    R.drawable.slide_04,
+    R.drawable.slide_05,
+    R.drawable.slide_06,
+    R.drawable.slide_07,
+    R.drawable.slide_08
+)
