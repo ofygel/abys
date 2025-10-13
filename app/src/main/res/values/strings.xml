@@ -1,4 +1,26 @@
 <resources>
     <string name="app_name">Abys</string>
     <string name="today_prayers">Сегодняшние намазы</string>
+
+    <!-- Темы оформления -->
+    <string name="theme_leaves">Листопад</string>
+    <string name="theme_rain">Дождь</string>
+    <string name="theme_snow">Снегопад</string>
+    <string name="theme_lightning">Гроза</string>
+    <string name="theme_wind">Ветер</string>
+    <string name="theme_storm">Шторм</string>
+    <string name="theme_sunset_snow">Закат и снег</string>
+    <string name="theme_night">Ночное небо</string>
+    <string name="theme_active_label">Тема: %1$s</string>
+    <string name="theme_preview_label">Предпросмотр: %1$s</string>
+    <string name="theme_apply_hint">Двойной тап — применить тему</string>
+
+    <!-- Намазы -->
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_shuruq">Shuruq</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="prayer_remaining">через %1$02d:%2$02d:%3$02d</string>
 </resources>
