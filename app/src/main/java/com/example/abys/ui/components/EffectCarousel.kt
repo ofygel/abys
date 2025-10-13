@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.snapshotFlow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import com.example.abys.ui.effects.EFFECTS
+import com.example.abys.ui.effects.EffectSpec
+import kotlinx.coroutines.launch
 
 @Composable
 fun EffectCarousel(
@@ -68,6 +74,7 @@ fun EffectCarousel(
     val targetHeight = if (collapsed) 72.dp else 132.dp
     val height by animateDpAsState(targetHeight, label = "carHeight")
     val updatedOnSnapped by rememberUpdatedState(onThemeSnapped)
+    val height = if (collapsed) 72.dp else 132.dp
 
     Box(
         Modifier
@@ -137,6 +144,7 @@ fun EffectCarousel(
                             )
                             .background(Color.Black.copy(alpha = 0.25f))
                             .pointerInput(showHint) {
+                            .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
                                         onDoubleTapApply(spec)
