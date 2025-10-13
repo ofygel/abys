@@ -14,6 +14,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.colorResource
@@ -26,23 +27,6 @@ import java.time.ZonedDateTime
 import com.example.abys.R
 
 @Composable
-private fun RowItem(label: String, valueRight: @Composable () -> Unit, accent: Boolean = false) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val labelColor = if (accent) {
-            colorResource(R.color.bm_accent2)
-        } else {
-            colorResource(R.color.bm_text)
-        }
-        Text(label, color = labelColor, style = MaterialTheme.typography.titleMedium)
-        Box(Modifier.wrapContentWidth()) { valueRight() }
-    }
-}
-
-@Composable
 private fun ValueText(text: String, strong: Boolean = true, color: Color = Color.Unspecified) {
     val resolvedColor = color.takeOrElse { colorResource(R.color.bm_text) }
     Text(
@@ -51,33 +35,6 @@ private fun ValueText(text: String, strong: Boolean = true, color: Color = Color
         style = if (strong) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
         fontWeight = if (strong) FontWeight.Bold else FontWeight.SemiBold
     )
-}
-
-@Composable
-private fun NextBanner(nextName: String, remain: Duration?) {
-    val label = buildString {
-        append(nextName)
-        remain?.let {
-            append("  ")
-            append(
-                "%02d:%02d:%02d".format(
-                    it.toHours(),
-                    it.toMinutesPart(),
-                    it.toSecondsPart()
-                )
-            )
-        }
-    }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
-            .background(colorResource(R.color.bm_accent)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(label, color = Color.White, fontWeight = FontWeight.Bold)
-    }
 }
 
 @Composable
@@ -123,64 +80,145 @@ fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
         else                               -> 3
     }
 
-    val cardBg = colorResource(R.color.bm_card).copy(alpha = 0.8f)
+    val cardBg = colorResource(R.color.bm_card).copy(alpha = 0.82f)
     val outline = colorResource(R.color.bm_outline)
-    val cardShape = RoundedCornerShape(24.dp)
+    val cardShape = RoundedCornerShape(28.dp)
     val highlight = next?.first
+    val accent = colorResource(R.color.bm_accent2)
 
     Box(
+        modifier = Modifier
+            .fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth(0.88f)
+                .widthIn(max = 360.dp)
+                .defaultMinSize(minHeight = 320.dp)
+                .blur(20.dp)
+                .clip(cardShape)
+                .background(cardBg)
+                .border(BorderStroke(1.dp, outline), cardShape)
+        ) {
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
+
+                PrayerRow(
+                    name = "Fajr",
+                    isNext = highlight == "Fajr",
+                    countdown = remain.takeIf { highlight == "Fajr" }
+                ) { ValueText(t.fajr) }
+
+                PrayerRow(
+                    name = "Shuruq",
+                    isNext = highlight == "Shuruq",
+                    countdown = remain.takeIf { highlight == "Shuruq" }
+                ) { ValueText(t.sunrise) }
+
+                PrayerRow(
+                    name = "Dhuhr",
+                    isNext = highlight == "Dhuhr",
+                    countdown = remain.takeIf { highlight == "Dhuhr" }
+                ) { ValueText(t.dhuhr) }
+
+                val asrPrimary = if (selectedSchool == 1) t.asrHan else t.asrStd
+                val asrAltLabel = if (selectedSchool == 1) "Стандарт: ${t.asrStd}" else "Ханафи: ${t.asrHan}"
+
+                PrayerRow(
+                    name = "Asr",
+                    isNext = highlight == "Asr",
+                    countdown = remain.takeIf { highlight == "Asr" }
+                ) {
+                    Column {
+                        ValueText(asrPrimary, color = accent)
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            asrAltLabel,
+                            color = colorResource(R.color.bm_text).copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                PrayerRow(
+                    name = "Maghrib",
+                    isNext = highlight == "Maghrib",
+                    countdown = remain.takeIf { highlight == "Maghrib" }
+                ) { ValueText(t.maghrib) }
+
+                PrayerRow(
+                    name = "Isha",
+                    isNext = highlight == "Isha",
+                    countdown = remain.takeIf { highlight == "Isha" }
+                ) { ValueText(t.isha) }
+
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    ThirdChip(
+                        "I   ${TimeHelper.formatZ(thirds.first.first)}–${TimeHelper.formatZ(thirds.first.second)}",
+                        activeThird == 1
+                    )
+                    ThirdChip(
+                        "II  ${TimeHelper.formatZ(thirds.second.first)}–${TimeHelper.formatZ(thirds.second.second)}",
+                        activeThird == 2
+                    )
+                    ThirdChip(
+                        "III ${TimeHelper.formatZ(thirds.third.first)}–${TimeHelper.formatZ(thirds.third.second)}",
+                        activeThird == 3
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrayerRow(
+    name: String,
+    isNext: Boolean,
+    countdown: Duration?,
+    timeContent: @Composable () -> Unit
+) {
+    val textColor = if (isNext) colorResource(R.color.bm_accent2) else colorResource(R.color.bm_text)
+
+    Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .blur(20.dp)
-            .clip(cardShape)
-            .background(cardBg)
-            .border(BorderStroke(1.dp, outline), cardShape)
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-
-            RowItem("Fajr", { ValueText(t.fajr) }, accent = highlight == "Fajr")
-            RowItem("Shuruq", { ValueText(t.sunrise) }, accent = highlight == "Shuruq")
-            RowItem("Dhuhr", { ValueText(t.dhuhr) }, accent = highlight == "Dhuhr")
-
-            // Asr: два времени рядом
-            RowItem("Asr", {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    ValueText(t.asrStd, color = Color(0xFFAAAAAA))
-                    Text("  |  ", color = colorResource(R.color.bm_text).copy(alpha = 0.6f))
-                    ValueText(t.asrHan, color = colorResource(R.color.bm_accent2))
-                }
-            }, accent = highlight == "Asr")
-
-            RowItem("Maghrib", { ValueText(t.maghrib) }, accent = highlight == "Maghrib")
-            RowItem("Isha", { ValueText(t.isha) }, accent = highlight == "Isha")
-
-            /* треть ночи */
-            Spacer(Modifier.height(4.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                ThirdChip(
-                    "I   ${TimeHelper.formatZ(thirds.first.first)}–${TimeHelper.formatZ(thirds.first.second)}",
-                    activeThird == 1
-                )
-                ThirdChip(
-                    "II  ${TimeHelper.formatZ(thirds.second.first)}–${TimeHelper.formatZ(thirds.second.second)}",
-                    activeThird == 2
-                )
-                ThirdChip(
-                    "III ${TimeHelper.formatZ(thirds.third.first)}–${TimeHelper.formatZ(thirds.third.second)}",
-                    activeThird == 3
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+            timeContent()
+            if (isNext && countdown != null) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "%02d:%02d:%02d".format(
+                        countdown.toHours(),
+                        countdown.toMinutesPart(),
+                        countdown.toSecondsPart()
+                    ),
+                    color = colorResource(R.color.bm_text).copy(alpha = 0.75f),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
 
-        /* баннер «следующий намаз» снизу */
-        Column {
-            Spacer(Modifier.height(IntrinsicSize.Min))
-            Spacer(Modifier.weight(1f))
-            next?.let { NextBanner(it.first, remain) }
-        }
+        Spacer(Modifier.width(16.dp))
+
+        Text(
+            name,
+            modifier = Modifier.widthIn(min = 72.dp),
+            color = textColor,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = if (isNext) FontWeight.Bold else FontWeight.SemiBold,
+            textAlign = TextAlign.End
+        )
     }
 }
