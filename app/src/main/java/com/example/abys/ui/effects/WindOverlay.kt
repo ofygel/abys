@@ -10,10 +10,13 @@ import kotlinx.coroutines.delay
 import kotlin.math.sin
 
 @Composable
-fun WindOverlay(modifier: Modifier = Modifier, strength: Float = 8f) {
+fun WindOverlay(modifier: Modifier = Modifier, params: WindParams, intensity: Float) {
     var t by remember { mutableStateOf(0f) }
     LaunchedEffect(Unit) {
-        while (true) { t += 0.05f; delay(16) }
+        while (true) {
+            t += params.speed * (0.8f + intensity * 0.6f)
+            delay(16)
+        }
     }
     // Просто прозрачная коробка: эффект смещения будет применяться к карточке (см. HomeScreen)
     Box(
@@ -25,8 +28,14 @@ fun WindOverlay(modifier: Modifier = Modifier, strength: Float = 8f) {
 }
 
 /** Модификатор лёгкого сдвига под ветер — применим к карточке */
-fun Modifier.windSway(enabled: Boolean, t: Float, strength: Float = 8f): Modifier =
-    if (!enabled) this else this.graphicsLayer {
-        translationX = sin(t) * strength
-        translationY = sin(t * 0.7f) * (strength / 3f)
+fun Modifier.windSway(enabled: Boolean, t: Float, params: WindParams?, intensity: Float): Modifier =
+    if (!enabled || params == null) {
+        this
+    } else {
+        val swayX = params.swayX * intensity
+        val swayY = params.swayY * intensity
+        this.graphicsLayer {
+            translationX = sin(t) * swayX
+            translationY = sin(t * 0.7f) * swayY
+        }
     }
