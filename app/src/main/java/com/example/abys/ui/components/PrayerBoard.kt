@@ -22,6 +22,7 @@ import com.example.abys.logic.UiTimings
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import com.example.abys.R
 
 @Composable
@@ -90,7 +91,7 @@ private fun ThirdChip(text: String, active: Boolean) {
             )
             .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
-        Text("$label  $text",
+        Text(text,
             color = colorResource(R.color.bm_text),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.SemiBold
@@ -103,19 +104,19 @@ private fun ThirdChip(text: String, active: Boolean) {
 /* ----------------------------------------------------------------------- */
 
 @Composable
-fun PrayerBoard(timings: UiTimings, selectedSchool: Int) {
+fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
 
     /* тик-состояние для секундного обновления */
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while (true) { delay(1_000); tick++ } }
 
     /* --- расчёты --- */
-    val tz: ZoneId = timings.tz
-    val next = timings.nextPrayer(selectedSchool)                       // Pair(name,time) или null
+    val tz: ZoneId = t.tz
+    val next = t.nextPrayer(selectedSchool)                             // Pair(name,time) или null
     val remain = next?.second?.let { TimeHelper.untilNowTo(it, tz) }    // Duration?
 
-    val thirds = TimeHelper.splitNight(timings.maghrib, timings.fajr, tz) // Triple<Pair,Pair,Pair>
-    val now: ZonedDateTime = ZonedDateTime.now(tz)
+    val thirds = TimeHelper.splitNight(t.maghrib, t.fajr, tz)           // Triple<Pair,Pair,Pair>
+    val now: ZonedDateTime = remember(t, tz, tick) { ZonedDateTime.now(tz) }
     val activeThird = when {
         now.isBefore(thirds.first.second)  -> 1
         now.isBefore(thirds.second.second) -> 2

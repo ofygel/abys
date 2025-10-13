@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity() {
             val sel by vm.school.observeAsState(0)
             MaterialTheme {
                 if (t != null) {
-                    PrayerBoard(t = t!!, selectedSchool = sel)
+                    PrayerBoard(timings = t!!, selectedSchool = sel)
                 } else {
                     GlassCard(
                         modifier = Modifier
