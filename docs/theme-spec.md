@@ -8,6 +8,7 @@
 | `id` | `String` | Ключ темы для сохранения в `SettingsStore`. |
 | `titleRes` | `@StringRes Int` | Локализованное название для подписи плитки и статуса. |
 | `thumbRes` | `@DrawableRes Int` | Квадратное превью темы (см. [effect-assets](effect-assets.md)). |
+| `backgrounds` | `List<@DrawableRes Int>` | Набор фоновых слайдов (1–4 шт.), для `SlideshowBackground`. |
 | `effect` | `EffectKind` | Тип погодного эффекта (LEAVES, RAIN, SNOW, LIGHTNING, WIND, STORM, SUNSET_SNOW, NIGHT). |
 | `params` | `EffectParams` | Набор параметров, зависящий от типа эффекта (см. ниже). |
 | `defaultIntensity` | `Int` (0..100) | Стандартная «сила» эффекта — влияет на плотность частиц, скорость и т.п. |
@@ -41,3 +42,5 @@
 ### Минимальные ассеты
 
 См. [effect-assets.md](effect-assets.md) для правил именования квадратных превью тем.
+См. [effect-assets.md](effect-assets.md) для правил именования фоновых изображений и превью. Если
+фоновые файлы отсутствуют, будет использован fallback `slide_01…slide_08`.

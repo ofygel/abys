@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.snapshotFlow
+import androidx.compose.ui.unit.dp
+import com.example.abys.R
+import com.example.abys.ui.effects.ThemeSpec
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.snapshotFlow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import com.example.abys.ui.effects.EFFECTS
+import com.example.abys.ui.effects.EffectSpec
+import kotlinx.coroutines.launch
 
 @Composable
 fun EffectCarousel(
@@ -68,6 +81,7 @@ fun EffectCarousel(
     val targetHeight = if (collapsed) 72.dp else 132.dp
     val height by animateDpAsState(targetHeight, label = "carHeight")
     val updatedOnSnapped by rememberUpdatedState(onThemeSnapped)
+    val height = if (collapsed) 72.dp else 132.dp
 
     Box(
         Modifier
@@ -137,6 +151,7 @@ fun EffectCarousel(
                             )
                             .background(Color.Black.copy(alpha = 0.25f))
                             .pointerInput(showHint) {
+                            .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
                                         onDoubleTapApply(spec)
@@ -183,6 +198,75 @@ fun EffectCarousel(
                             )
                         }
                     }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                snapshotFlow { state.isScrollInProgress }
+                    .collectLatest { scrolling ->
+                        if (!scrolling) {
+                            delay(450)
+                            val layoutInfo = state.layoutInfo
+                            val center = listCenter.takeIf { it > 0f } ?: return@collectLatest
+                            val visible = layoutInfo.visibleItemsInfo
+                            val closest = visible.minByOrNull { info ->
+                                val itemCenterPx = info.offset + info.size / 2f
+                                kotlin.math.abs(itemCenterPx - center)
+                            }
+                            if (closest != null && closest.index != snappedIndex) {
+                                snappedIndex = closest.index
+                                updatedOnSnapped(themes[closest.index])
+                            }
+                            closest?.let { info ->
+                                val itemCenterPx = info.offset + info.size / 2f
+                                val delta = itemCenterPx - center
+                                if (kotlin.math.abs(delta) > 4f) {
+                                    scope.launch {
+                                        state.animateScrollBy(delta)
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
+
+            LaunchedEffect(selectedThemeId, collapsed) {
+                if (!collapsed) {
+                    val index = themes.indexOfFirst { it.id == selectedThemeId }.takeIf { it >= 0 } ?: 0
+                    snappedIndex = index
+                    state.scrollToItem(index)
+                    updatedOnSnapped(themes[index])
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                updatedOnSnapped(themes.getOrNull(snappedIndex) ?: themes.first())
+            }
+
+            AnimatedVisibility(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp),
+                visible = showHint
+            ) {
+                Surface(
+                    tonalElevation = 2.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.Black.copy(alpha = 0.6f)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.theme_apply_hint),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                    )
+                }
+            }
+
+            LaunchedEffect(collapsed) {
+                if (!collapsed) {
+                    delay(3200)
+                    showHint = false
                 }
             }
 
