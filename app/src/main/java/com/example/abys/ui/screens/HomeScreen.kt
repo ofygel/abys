@@ -2,7 +2,6 @@ package com.example.abys.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
@@ -13,15 +12,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.abys.R
+import com.example.abys.logic.UiTimings
 import com.example.abys.ui.PrayerViewModel
+import com.example.abys.ui.components.EffectCarousel
+import com.example.abys.ui.components.PrayerTable
+import com.example.abys.ui.effects.EffectKind
+import com.example.abys.ui.effects.EffectLayer
+import com.example.abys.ui.effects.windSway
 import com.example.abys.ui.screens.background.SlideshowBackground
 import com.example.abys.ui.screens.components.GlassCard
 import com.example.abys.util.LocationHelper
-import java.time.LocalTime
+import java.time.ZoneId
+import kotlinx.coroutines.delay
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
+@OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("MissingPermission")
 @Composable
 fun HomeScreen(viewModel: PrayerViewModel) {
@@ -62,8 +69,22 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         }
     }
 
-    val prayer by viewModel.state.collectAsState()
-    val now = LocalTime.now().toSecondOfDay()
+    val prayer = viewModel.state.collectAsState().value
+
+    // ---- состояние темы и карусели
+    var selected by remember { mutableStateOf(EffectKind.LEAVES) }
+    var carouselCollapsed by remember { mutableStateOf(true) }
+    var windT by remember { mutableStateOf(0f) }
+    LaunchedEffect(selected) {
+        if (selected == EffectKind.WIND || selected == EffectKind.STORM) {
+            while (true) {
+                windT += 0.05f
+                delay(16)
+            }
+        } else {
+            windT = 0f
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -76,38 +97,62 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             )
         )
 
+        /* ---------- слой эффектов ---------- */
+        EffectLayer(Modifier.fillMaxSize(), kind = selected)
+
         /* ---------- карточка с намазами ---------- */
-        Column(
+        Box(
             Modifier
-                .fillMaxWidth()
-                .align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
             GlassCard(
-                modifier = Modifier.padding(horizontal = 24.dp)
+                modifier = Modifier
+                    .fillMaxWidth(0.90f)
+                    .fillMaxHeight(0.60f)
+                    .windSway(
+                        enabled = selected == EffectKind.WIND || selected == EffectKind.STORM,
+                        t = windT,
+                        strength = if (selected == EffectKind.STORM) 12f else 6f
+                    )
             ) {
                 Text(
                     text = LocalContext.current.getString(R.string.today_prayers),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(Modifier.height(12.dp))
-                prayer?.let {
-                    listOf(
-                        "Fajr" to it.fajr,
-                        "Dhuhr" to it.dhuhr,
-                        "Asr" to it.asr,
-                        "Maghrib" to it.maghrib,
-                        "Isha" to it.isha
-                    ).forEach { (name, time) -> TimeRow(name, time) }
 
-                    val (nName, nTime) = it.next(now)
-                    Spacer(Modifier.height(8.dp))
-                    AssistChip(
-                        onClick = {},
-                        label = { Text("Next: $nName at $nTime") }
+                if (prayer == null) {
+                    CircularProgressIndicator()
+                } else {
+                    PrayerTable(
+                        t = UiTimings(
+                            fajr = prayer.fajr,
+                            sunrise = "--",
+                            dhuhr = prayer.dhuhr,
+                            asrStd = prayer.asr,
+                            asrHan = prayer.asr,
+                            maghrib = prayer.maghrib,
+                            isha = prayer.isha,
+                            tz = ZoneId.systemDefault()
+                        ),
+                        selectedSchool = 0
                     )
-                } ?: CircularProgressIndicator()
+                }
             }
+        }
+
+        /* ---------- нижняя карусель ---------- */
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp)
+        ) {
+            EffectCarousel(
+                collapsed = carouselCollapsed,
+                onCollapsedChange = { carouselCollapsed = it },
+                onDoubleTapApply = { spec -> selected = spec.kind }
+            )
         }
 
         /* ---------- CityPicker, если координат нет ---------- */
@@ -119,16 +164,5 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 viewModel.load(lat, lon)
             }
         )
-    }
-}
-
-@Composable
-private fun TimeRow(label: String, time: String) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(label)
-        Text(time)
     }
 }
