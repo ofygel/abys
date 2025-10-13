@@ -1,5 +1,6 @@
 package com.example.abys.data.model
 
+import com.example.abys.util.TimeUtils          // ← правильный импорт
 import com.squareup.moshi.Json
 
 data class PrayerTimes(
@@ -22,17 +23,18 @@ data class PrayerTimes(
 
     /** Возвращает название и время ближайшего намаза */
     fun next(nowSec: Int): Pair<String, String> =
-        listOf("Fajr" to fajr, "Dhuhr" to dhuhr, "Asr" to asr, "Maghrib" to maghrib, "Isha" to isha)
-            .first { TimeUtils.hmsToSec(it.second) > nowSec }
+        listOf(
+            "Fajr" to fajr,
+            "Dhuhr" to dhuhr,
+            "Asr" to asr,
+            "Maghrib" to maghrib,
+            "Isha" to isha
+        ).first { TimeUtils.hmsToSec(it.second) > nowSec }
 }
 
-/** ========== retrofit DTO ======== **/
-data class ApiResponse(
-    val data: Data?
-) {
-    data class Data(
-        val timings: Timings
-    )
+/* ===== Retrofit DTO ===== */
+data class ApiResponse(val data: Data?) {
+    data class Data(val timings: Timings)
 }
 
 data class Timings(

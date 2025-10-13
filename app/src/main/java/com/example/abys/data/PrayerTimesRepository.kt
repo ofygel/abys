@@ -1,6 +1,7 @@
 package com.example.abys.data
 
 import com.example.abys.data.model.PrayerTimes
+import com.example.abys.data.model.ApiResponse     // ← добавили import
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
@@ -15,9 +16,11 @@ class PrayerTimesRepository {
         .create(AlAdhanApi::class.java)
 
     suspend fun fetch(lat: Double, lon: Double): PrayerTimes? =
-        api.today(lat, lon).data?.timings?.let { PrayerTimes.fromApi(it) }
+        api.today(lat, lon).data              // ← data виден
+            ?.timings
+            ?.let { PrayerTimes.fromApi(it) }
 
-    // ---- retrofit interface ----
+    /* ---- Retrofit interface ---- */
     interface AlAdhanApi {
         @GET("timings")
         suspend fun today(
