@@ -38,9 +38,10 @@ import androidx.compose.ui.platform.ComposeView
 import com.example.abys.ui.background.SlideshowBackground
 import com.example.abys.ui.components.GlassCard
 import com.example.abys.ui.components.NightTimeline
-import com.example.abys.ui.components.SeasonalParticles
+import com.example.abys.ui.city.CityPickerSheet
 import com.example.abys.ui.components.PrayerBoard
 import com.example.abys.ui.components.TopOverlay
+import com.example.abys.ui.effects.SeasonalParticles
 
 // Импорт для BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -209,13 +210,13 @@ class MainActivity : AppCompatActivity() {
         val cv = ComposeView(this)
         cv.setContent {
             MaterialTheme {
-                com.example.abys.ui.city.CityPickerSheet { picked ->
+                CityPickerSheet(onPick = { picked ->
                     lifecycleScope.launchWhenStarted {
                         SettingsStore.setCity(this@MainActivity, picked)
                     }
                     vm.loadByCity(picked)
                     sheet.dismiss()
-                }
+                })
             }
         }
         sheet.setContentView(cv)
