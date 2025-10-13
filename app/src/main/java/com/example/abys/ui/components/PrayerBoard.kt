@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.colorResource
 import com.example.abys.logic.TimeHelper
 import com.example.abys.logic.UiTimings
+import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.ZoneId
 import com.example.abys.R
@@ -51,27 +52,38 @@ private fun ValueText(text: String, strong: Boolean = true, color: Color = Color
     )
 }
 
-@Composable private fun NextBanner(name: String, remain: Duration?) {
+@Composable
+private fun NextBanner(nextName: String, remain: Duration?) {
     val label = buildString {
-        append(name)
+        append(nextName)
         remain?.let {
             append("  ")
-            val h = it.toHours(); val m = (it.toMinutes() % 60); val s = (it.seconds % 60)
-            append("%02d:%02d:%02d".format(h, m, s))
+            append(
+                "%02d:%02d:%02d".format(
+                    it.toHours(),
+                    it.toMinutesPart(),
+                    it.toSecondsPart()
+                )
+            )
         }
     }
     Box(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp)
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(colorResource(R.color.bm_accent)),
         contentAlignment = Alignment.Center
-    ) { ValueText(label) }
+    ) {
+        Text(label, color = Color.White, fontWeight = FontWeight.Bold)
+    }
 }
 
 @Composable
-private fun ThirdChip(label: String, text: String, active: Boolean) {
+private fun ThirdChip(text: String, active: Boolean) {
     Box(
-        Modifier.padding(start = 6.dp)
+        Modifier
+            .padding(start = 6.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
                 if (active) colorResource(R.color.bm_accent) else Color.White.copy(alpha = 0.12f)
@@ -86,23 +98,28 @@ private fun ThirdChip(label: String, text: String, active: Boolean) {
     }
 }
 
+/* ----------------------------------------------------------------------- */
+/*  MAIN COMPOSABLE                                                        */
+/* ----------------------------------------------------------------------- */
+
 @Composable
-fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
-    // тик раз в секунду для баннера/активной трети
+fun PrayerBoard(timings: UiTimings, selectedSchool: Int) {
+
+    /* тик-состояние для секундного обновления */
     var tick by remember { mutableStateOf(0) }
-    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); tick++ } }
+    LaunchedEffect(Unit) { while (true) { delay(1_000); tick++ } }
 
-    val tz: ZoneId = t.tz
-    val next = t.nextPrayer(selectedSchool)
-    val remainNext = next?.second?.let { TimeHelper.untilNowTo(it, tz) }
+    /* --- расчёты --- */
+    val tz: ZoneId = timings.tz
+    val next = timings.nextPrayer(selectedSchool)                       // Pair(name,time) или null
+    val remain = next?.second?.let { TimeHelper.untilNowTo(it, tz) }    // Duration?
 
-    // thirds of night
-    val parts = TimeHelper.splitNight(t.maghrib, t.fajr, tz)
-    val now = java.time.ZonedDateTime.now(tz)
-    val active = when {
-        now.isBefore(parts.first.second) -> 1
-        now.isBefore(parts.second.second) -> 2
-        else -> 3
+    val thirds = TimeHelper.splitNight(timings.maghrib, timings.fajr, tz) // Triple<Pair,Pair,Pair>
+    val now: ZonedDateTime = ZonedDateTime.now(tz)
+    val activeThird = when {
+        now.isBefore(thirds.first.second)  -> 1
+        now.isBefore(thirds.second.second) -> 2
+        else                               -> 3
     }
 
     val cardBg = colorResource(R.color.bm_card).copy(alpha = 0.8f)
@@ -111,7 +128,9 @@ fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
     val highlight = next?.first
 
     Box(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
             .blur(20.dp)
             .clip(cardShape)
             .background(cardBg)
@@ -135,21 +154,32 @@ fun PrayerBoard(t: UiTimings, selectedSchool: Int) {
             RowItem("Maghrib", { ValueText(t.maghrib) }, accent = highlight == "Maghrib")
             RowItem("Isha", { ValueText(t.isha) }, accent = highlight == "Isha")
 
-            // Под Isha — три части ночи до фаджра
+            /* треть ночи */
             Spacer(Modifier.height(4.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                ThirdChip("I",  "${TimeHelper.formatZ(parts.first.first)}–${TimeHelper.formatZ(parts.first.second)}",   active==1)
-                ThirdChip("II", "${TimeHelper.formatZ(parts.second.first)}–${TimeHelper.formatZ(parts.second.second)}", active==2)
-                ThirdChip("III","${TimeHelper.formatZ(parts.third.first)}–${TimeHelper.formatZ(parts.third.second)}",  active==3)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                ThirdChip(
+                    "I   ${TimeHelper.formatZ(thirds.first.first)}–${TimeHelper.formatZ(thirds.first.second)}",
+                    activeThird == 1
+                )
+                ThirdChip(
+                    "II  ${TimeHelper.formatZ(thirds.second.first)}–${TimeHelper.formatZ(thirds.second.second)}",
+                    activeThird == 2
+                )
+                ThirdChip(
+                    "III ${TimeHelper.formatZ(thirds.third.first)}–${TimeHelper.formatZ(thirds.third.second)}",
+                    activeThird == 3
+                )
             }
-
-            Spacer(Modifier.height(10.dp))
         }
 
+        /* баннер «следующий намаз» снизу */
         Column {
             Spacer(Modifier.height(IntrinsicSize.Min))
             Spacer(Modifier.weight(1f))
-            if (next != null) NextBanner(next.first, remainNext)
+            next?.let { NextBanner(it.first, remain) }
         }
     }
 }

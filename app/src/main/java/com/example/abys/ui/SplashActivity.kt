@@ -5,25 +5,24 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.common.Player
-import com.example.abys.databinding.ActivitySplashBinding
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import com.example.abys.R
 
 class SplashActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySplashBinding
     private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivitySplashBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_splash)          // ← подключаем XML-layout
+
+        playerView = findViewById(R.id.playerView)        // ← из разметки
 
         player = ExoPlayer.Builder(this).build().apply {
-            val mediaItem = MediaItem.fromUri(
-                Uri.parse("asset:///greeting.mp4")
-            )
-            setMediaItem(mediaItem)
+            setMediaItem(MediaItem.fromUri("asset:///greeting.mp4"))
             prepare()
             playWhenReady = true
             addListener(object : Player.Listener {
@@ -35,7 +34,7 @@ class SplashActivity : AppCompatActivity() {
                 }
             })
         }
-        binding.playerView.player = player
+        playerView.player = player
     }
 
     override fun onStop() {

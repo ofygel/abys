@@ -2,6 +2,10 @@ package com.example.abys.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,43 +13,60 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.example.abys.R
 import com.example.abys.ui.PrayerViewModel
 import com.example.abys.ui.screens.background.SlideshowBackground
 import com.example.abys.ui.screens.components.GlassCard
 import com.example.abys.util.LocationHelper
-import com.example.abys.util.TimeUtils
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberPermissionState
 import java.time.LocalTime
 
-@OptIn(ExperimentalPermissionsApi::class)
 @SuppressLint("MissingPermission")
 @Composable
 fun HomeScreen(viewModel: PrayerViewModel) {
-    /* ---------- разрешение на гео ---------- */
-    val locPerm = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    /* ---------- проверка / запрос разрешения ---------- */
+    val ctx = LocalContext.current
+    var hasGpsPerm by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                ctx, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val permLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        hasGpsPerm = granted
+    }
+
     LaunchedEffect(Unit) {
-        if (!locPerm.status.isGranted) locPerm.launchPermissionRequest()
+        if (!hasGpsPerm) {
+            permLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
 
     /* ---------- геолокация или CityPicker ---------- */
-    val ctx = LocalContext.current
     var needCityPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        val loc = LocationHelper.getLastBestLocation(ctx)
-        if (loc != null) {
-            viewModel.load(loc.first, loc.second)
+    LaunchedEffect(hasGpsPerm) {
+        if (hasGpsPerm) {
+            val loc = LocationHelper.getLastBestLocation(ctx)
+            if (loc != null) {
+                viewModel.load(loc.first, loc.second)
+            } else {
+                needCityPicker = true
+            }
         } else {
             needCityPicker = true
         }
     }
 
-    val prayer = viewModel.state.collectAsState().value
+    val prayer by viewModel.state.collectAsState()
     val now = LocalTime.now().toSecondOfDay()
 
     Box(modifier = Modifier.fillMaxSize()) {
+
         /* ---------- фон-слайдшоу ---------- */
         SlideshowBackground(
             modifier = Modifier.fillMaxSize(),
@@ -72,14 +93,13 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 Spacer(Modifier.height(12.dp))
                 prayer?.let {
                     listOf(
-                        "Fajr"    to it.fajr,
-                        "Dhuhr"   to it.dhuhr,
-                        "Asr"     to it.asr,
+                        "Fajr" to it.fajr,
+                        "Dhuhr" to it.dhuhr,
+                        "Asr" to it.asr,
                         "Maghrib" to it.maghrib,
-                        "Isha"    to it.isha
+                        "Isha" to it.isha
                     ).forEach { (name, time) -> TimeRow(name, time) }
 
-                    /* следующий намаз */
                     val (nName, nTime) = it.next(now)
                     Spacer(Modifier.height(8.dp))
                     AssistChip(
@@ -90,11 +110,14 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             }
         }
 
-        /* ---------- выбор города при отсутствии GPS ---------- */
+        /* ---------- CityPicker, если координат нет ---------- */
         CityPicker(
             show = needCityPicker,
-            onDismiss = { /* stay */ },
-            onCityChosen = { _, lat, lon -> viewModel.load(lat, lon) }
+            onDismiss = { /* остаёмся */ },
+            onCityChosen = { _, lat, lon ->
+                needCityPicker = false
+                viewModel.load(lat, lon)
+            }
         )
     }
 }

@@ -75,6 +75,10 @@ class MainActivity : AppCompatActivity() {
     }
 
 class MainActivity : ComponentActivity() {
+
+    /** создаём ViewModel “по-классически”, без compose-экстеншенов */
+    private val vm: PrayerViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

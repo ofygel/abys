@@ -1,29 +1,30 @@
 package com.example.abys.net
 
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitProvider {
-    private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC
-    }
-    private val ok = OkHttpClient.Builder()
-        .addInterceptor(logging)
+
+    /* ---------- общий OkHttpClient (без лог-интерсептора) ---------- */
+    private val okHttp: OkHttpClient = OkHttpClient.Builder()
         .build()
 
+    /* ---------- AlAdhan API ---------- */
     val aladhan: AladhanApi by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.aladhan.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(ok)
+            .addConverterFactory(MoshiConverterFactory.create())
+            .client(okHttp)
             .build()
             .create(AladhanApi::class.java)
     }
 
+    /* ---------- Nominatim (OpenStreetMap) ---------- */
     val nominatim: NominatimApi by lazy {
-        val ua = okhttp3.Interceptor { chain ->
+        /* добавляем кастомный User-Agent, как требует Nominatim */
+        val ua: Interceptor = Interceptor { chain ->
             chain.proceed(
                 chain.request().newBuilder()
                     .header("User-Agent", "PrayerTimesApp/1.0 (Android)")
@@ -31,10 +32,14 @@ object RetrofitProvider {
                     .build()
             )
         }
-        val okNominatim = ok.newBuilder().addInterceptor(ua).build()
+
+        val okNominatim = okHttp.newBuilder()
+            .addInterceptor(ua)
+            .build()
+
         Retrofit.Builder()
             .baseUrl("https://nominatim.openstreetmap.org/")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create())
             .client(okNominatim)
             .build()
             .create(NominatimApi::class.java)
