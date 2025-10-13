@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private var ticker: Runnable? = null
+    private var autoPermissionRequested = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -120,7 +121,6 @@ class MainActivity : AppCompatActivity() {
 
         // Поднимем сохранённую школу и попробуем авто-загрузку
         vm.loadSavedSchool(this)
-        requestLocationPermissionOrLoad()
 
         // --- ComposeView интеграция ---
         val composeBg = findViewById<ComposeView>(R.id.composeBg)
@@ -169,22 +169,39 @@ class MainActivity : AppCompatActivity() {
         // --- конец блока ComposeView ---
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (hasLocationPermission()) {
+            vm.loadByLocation(this)
+        } else if (!autoPermissionRequested) {
+            autoPermissionRequested = true
+            launchLocationPermissionRequest()
+        }
+    }
+
     private fun requestLocationPermissionOrLoad() {
+        if (hasLocationPermission()) {
+            vm.loadByLocation(this)
+        } else {
+            launchLocationPermissionRequest()
+        }
+    }
+
+    private fun hasLocationPermission(): Boolean {
         val fineGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+        return fineGranted || coarseGranted
+    }
 
-        if (fineGranted || coarseGranted) {
-            vm.loadByLocation(this)
-        } else {
-            permissionLauncher.launch(arrayOf(
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ))
-        }
+    private fun launchLocationPermissionRequest() {
+        permissionLauncher.launch(arrayOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ))
     }
 
     private fun showManualCityDialog() {
