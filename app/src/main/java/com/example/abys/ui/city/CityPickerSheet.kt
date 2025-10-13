@@ -8,17 +8,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.abys.logic.CitySearchViewModel
 import com.example.abys.net.NominatimPlace
 
 @Composable
-fun CityPickerSheet(onPick: (String) -> Unit) {
-    val vm: CitySearchViewModel = viewModel()
+fun CityPickerSheet(
+    onPick: (String) -> Unit,
+    vm: CitySearchViewModel
+) {
     var q by remember { mutableStateOf("") }
-    val results by vm.results.observeAsState(emptyList())
+    val results: List<NominatimPlace> = vm.results.value ?: emptyList()
 
-    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
         Text("Выбор города", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
@@ -35,20 +40,24 @@ fun CityPickerSheet(onPick: (String) -> Unit) {
         LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
             items(results) { p: NominatimPlace ->
                 Column(
-                    Modifier.fillMaxWidth()
+                    Modifier
+                        .fillMaxWidth()
                         .clickable { onPick(extractCity(p.display_name)) }
                         .padding(vertical = 10.dp)
                 ) {
                     Text(extractCity(p.display_name), style = MaterialTheme.typography.bodyLarge)
-                    Text(p.display_name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    Text(
+                        p.display_name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 }
-                Divider()
+                HorizontalDivider()
             }
         }
     }
 }
 
 private fun extractCity(display: String): String {
-    // Берём первое поле до запятой как «город»
     return display.substringBefore(",").trim()
 }

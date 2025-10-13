@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/splashRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
 
-    <VideoView
-        android:id="@+id/videoView"
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:keepScreenOn="true"
-        android:layout_gravity="center"/>
-
-    <!-- Лого/оверлей (по желанию) -->
-    <!--
-    <ImageView
-        android:src="@mipmap/ic_launcher_foreground"
-        android:layout_gravity="center"
-        android:layout_width="100dp"
-        android:layout_height="100dp"/>
-    -->
+        app:show_controller="false"
+        app:use_controller="false"
+        app:resize_mode="zoom" />
 </FrameLayout>

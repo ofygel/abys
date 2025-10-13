@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest package="com.example.abys"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Разрешения -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:allowBackup="true"
@@ -12,23 +12,20 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.BM">
-
-        <!-- СplashActivity = LAUNCHER (показывает 5-секундное видео) -->
+        android:theme="@style/Theme.Abys">
+        <!-- SplashActivity — показывает видеоролик -->
         <activity
             android:name=".ui.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.App.NoActionBar">
+            android:theme="@style/Theme.Abys.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <!-- Главный экран -->
-        <activity
-            android:name=".ui.MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.App.NoActionBar"/>
+        <!-- MainActivity — Compose host -->
+        <activity android:name=".ui.MainActivity"
+            android:exported="false"/>
     </application>
+
 </manifest>

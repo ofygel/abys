@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.App" parent="Theme.Material3.Light.NoActionBar">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Abys" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- status-bar делаем прозрачным -->
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
     </style>
 
-    <style name="Theme.App.NoActionBar" parent="Theme.Material3.Light.NoActionBar" />
-
-
-    <style name="Theme.BM" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/bm_accent</item>
-        <item name="colorPrimaryContainer">@color/bm_dark</item>
-        <item name="colorSurface">@color/bm_black</item>
-        <item name="colorOnSurface">@color/bm_text</item>
+    <style name="Theme.Abys.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 </resources>
+
