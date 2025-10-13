@@ -30,7 +30,7 @@ private val blackLetter = FontFamily(
 private val bmTypography = Typography(
     displayLarge = TextStyle(fontFamily = blackLetter, fontSize = 32.sp, lineHeight = 36.sp),
     titleMedium  = TextStyle(fontFamily = blackLetter, fontSize = 18.sp),
-    bodyLarge    = TextStyle(fontSize = 16.sp)
+    bodyLarge    = TextStyle(fontFamily = FontFamily.Default, fontSize = 16.sp)
 )
 
 // ----------  Тема  ----------
