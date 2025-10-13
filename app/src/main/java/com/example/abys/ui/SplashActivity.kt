@@ -1,7 +1,6 @@
 package com.example.abys.ui
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
@@ -21,8 +20,17 @@ class SplashActivity : AppCompatActivity() {
 
         playerView = findViewById(R.id.playerView)        // ← из разметки
 
+        val mediaItem = MediaItem.Builder()
+            .setUri("asset:///greeting.mp4")
+            .setClippingConfiguration(
+                MediaItem.ClippingConfiguration.Builder()
+                    .setEndPositionMs(2000)
+                    .build()
+            )
+            .build()
+
         player = ExoPlayer.Builder(this).build().apply {
-            setMediaItem(MediaItem.fromUri("asset:///greeting.mp4"))
+            setMediaItem(mediaItem)
             prepare()
             playWhenReady = true
             addListener(object : Player.Listener {
