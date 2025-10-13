@@ -1,15 +1,22 @@
 package com.example.abys.ui.background
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlin.math.floor
+import kotlin.random.Random
 
 /**
  * Детерминированное слайд-шоу:
@@ -80,11 +87,16 @@ fun SlideshowBackground(
 
     Box(Modifier.fillMaxSize()) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
+        val imageModifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer { saturation = 0f }
+            .blur(2.dp)
+
         if (alphaPrev > 0f) {
             AsyncImage(
                 model = slides[prevIdx],
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = imageModifier,
                 contentScale = ContentScale.Crop,
                 alpha = alphaPrev
             )
@@ -92,7 +104,7 @@ fun SlideshowBackground(
         AsyncImage(
             model = slides[currIdx],
             contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
+            modifier = imageModifier,
             contentScale = ContentScale.Crop,
             alpha = alphaCurr
         )
@@ -100,7 +112,7 @@ fun SlideshowBackground(
             AsyncImage(
                 model = slides[nextIdx],
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = imageModifier,
                 contentScale = ContentScale.Crop,
                 alpha = alphaNext
             )
@@ -112,5 +124,23 @@ fun SlideshowBackground(
                 .fillMaxSize()
                 .background(Color(0x80000000))
         )
+
+        Canvas(Modifier.fillMaxSize()) {
+            val rnd = Random(42)
+            val step = 4.dp.toPx().coerceAtLeast(1f)
+            var x = 0f
+            while (x < size.width) {
+                var y = 0f
+                while (y < size.height) {
+                    drawRect(
+                        color = Color.White.copy(alpha = rnd.nextFloat() * 0.02f),
+                        topLeft = Offset(x, y),
+                        size = Size(step, step)
+                    )
+                    y += step
+                }
+                x += step
+            }
+        }
     }
 }
