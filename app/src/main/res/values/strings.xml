@@ -1,9 +1,4 @@
 <resources>
-    <string name="app_name">Prayer Times</string>
-    <string name="location_permission_rationale">Нужна геолокация, чтобы показать время намаза для вашего города.</string>
-    <string name="grant">Разрешить</string>
-    <string name="deny">Отмена</string>
-    <string name="manual_city_title">Город</string>
-    <string name="manual_city_hint">Введите город (например, Almaty)</string>
-    <string name="apply">Применить</string>
+    <string name="app_name">Abys</string>
+    <string name="today_prayers">Сегодняшние намазы</string>
 </resources>

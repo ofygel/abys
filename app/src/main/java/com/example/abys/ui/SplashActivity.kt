@@ -1,52 +1,45 @@
 package com.example.abys.ui
 
 import android.content.Intent
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.abys.R
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.Player
+import com.example.abys.databinding.ActivitySplashBinding
 
 class SplashActivity : AppCompatActivity() {
 
-    private val delayMs = 5000L
-    private val handler = Handler(Looper.getMainLooper())
-    private lateinit var videoView: VideoView
-
-    private val goNext = Runnable {
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
-    }
+    private lateinit var binding: ActivitySplashBinding
+    private lateinit var player: ExoPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        videoView = findViewById(R.id.videoView)
-        val uri = Uri.parse("android.resource://${packageName}/${R.raw.greeting}")
-        videoView.setVideoURI(uri)
-        videoView.setOnPreparedListener { mp: MediaPlayer ->
-            // выключим звук
-            mp.setVolume(0f, 0f)
-            videoView.start()
+        player = ExoPlayer.Builder(this).build().apply {
+            val mediaItem = MediaItem.fromUri(
+                Uri.parse("asset:///greeting.mp4")
+            )
+            setMediaItem(mediaItem)
+            prepare()
+            playWhenReady = true
+            addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_ENDED) {
+                        startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                        finish()
+                    }
+                }
+            })
         }
-        // На случай, если видео короче/дольше — принудительно уходим через 5 сек
-        handler.postDelayed(goNext, delayMs)
-        videoView.setOnCompletionListener {
-            // если закончилось раньше — уйдём сразу
-            if (!isFinishing) {
-                handler.removeCallbacks(goNext)
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
-            }
-        }
+        binding.playerView.player = player
     }
 
-    override fun onDestroy() {
-        handler.removeCallbacks(goNext)
-        super.onDestroy()
+    override fun onStop() {
+        super.onStop()
+        player.release()
     }
 }

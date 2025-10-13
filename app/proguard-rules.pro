@@ -26,3 +26,11 @@
 -keepattributes Signature
 -dontwarn okio.**
 # ----------------------------------------------------------------------
+# Moshi
+-keep class com.squareup.moshi.** { *; }
+
+# Retrofit & Kotlin coroutines
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn javax.annotation.Nullable
+-dontwarn javax.annotation.ParametersAreNonnullByDefault

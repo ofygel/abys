@@ -1,4 +1,3 @@
-<!-- app/src/main/res/layout/item_prayer_card.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -31,6 +30,5 @@
             android:layout_height="wrap_content"
             android:text="05:12"
             android:textSize="18sp"/>
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
