@@ -1,14 +1,4 @@
 <resources>
-    <!-- Превью: временные алиасы на существующие slide_XX -->
-    <drawable name="thumb_leaves">@drawable/slide_01</drawable>
-    <drawable name="thumb_rain">@drawable/slide_02</drawable>
-    <drawable name="thumb_snow">@drawable/slide_03</drawable>
-    <drawable name="thumb_lightning">@drawable/slide_04</drawable>
-    <drawable name="thumb_wind">@drawable/slide_05</drawable>
-    <drawable name="thumb_storm">@drawable/slide_06</drawable>
-    <drawable name="thumb_sunset_snow">@drawable/slide_07</drawable>
-    <drawable name="thumb_night">@drawable/slide_08</drawable>
-
     <!-- Фоновые слайды: алиасы на временные slide_XX -->
     <drawable name="theme_leaves_bg01">@drawable/slide_01</drawable>
     <drawable name="theme_rain_bg01">@drawable/slide_02</drawable>
