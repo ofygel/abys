@@ -1,6 +1,8 @@
 package com.example.abys.net
 
 import com.example.abys.BuildConfig
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -9,6 +11,12 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitProvider {
+
+    private val moshi: Moshi by lazy {
+        Moshi.Builder()
+            .addLast(KotlinJsonAdapterFactory())
+            .build()
+    }
 
     /* ---------- общий OkHttpClient (с optional-логированием) ---------- */
     private val okHttp: OkHttpClient by lazy {
@@ -31,7 +39,7 @@ object RetrofitProvider {
     val aladhan: AladhanApi by lazy {
         Retrofit.Builder()
             .baseUrl("https://api.aladhan.com/")
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .client(okHttp)
             .build()
             .create(AladhanApi::class.java)
@@ -55,7 +63,7 @@ object RetrofitProvider {
 
         Retrofit.Builder()
             .baseUrl("https://nominatim.openstreetmap.org/")
-            .addConverterFactory(MoshiConverterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
             .client(okNominatim)
             .build()
             .create(NominatimApi::class.java)
