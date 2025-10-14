@@ -100,13 +100,13 @@ class MainViewModel(
             val tz = ZoneId.of(dStd.meta.timezone)
 
             val ui = UiTimings(
-                fajr    = dStd.timings.Fajr,
-                sunrise = dStd.timings.Sunrise,
-                dhuhr   = dStd.timings.Dhuhr,
-                asrStd  = dStd.timings.Asr,
-                asrHan  = dHan.timings.Asr,
-                maghrib = dStd.timings.Maghrib,
-                isha    = dStd.timings.Isha,
+                fajr    = dStd.timings.fajr,
+                sunrise = dStd.timings.sunrise,
+                dhuhr   = dStd.timings.dhuhr,
+                asrStd  = dStd.timings.asr,
+                asrHan  = dHan.timings.asr,
+                maghrib = dStd.timings.maghrib,
+                isha    = dStd.timings.isha,
                 tz      = tz
             )
             _timings.postValue(ui)

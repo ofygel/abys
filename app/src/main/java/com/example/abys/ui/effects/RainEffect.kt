@@ -16,13 +16,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-/** Параметры дождя (оставь твой, если уже есть с такими полями) */
-data class RainParams(
-    val dropsCount: Int = 140,     // «бюджет» при intensity=1 и FullHD
-    val speed: Float = 12f,        // базовая скорость падения (px/кадр при 60 fps)
-    val angleDeg: Float = 15f      // наклон ветра (градусы от вертикали, вправо)
-)
-
 /** Внутренняя предсозданная «частица». Без аллокаций на кадр. */
 private class Drop(
     var x: Float,

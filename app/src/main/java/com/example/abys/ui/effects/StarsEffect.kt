@@ -21,20 +21,6 @@ import kotlin.math.max
 import kotlin.math.sin
 import kotlin.random.Random
 
-data class StarsParams(
-    val starsCount: Int = 64,
-    val twinklePeriodMs: IntRange = 1200..2400,
-    val twinkleAmplitude: Float = 0.65f,
-    val baseAlpha: ClosedFloatingPointRange<Float> = 0.35f..0.85f,
-    val shootingStars: Int = 2,
-    val shootingIntervalMs: IntRange = 20000..35000,
-    val shootingSpeedPxSec: Float = 900f,
-    val tailLengthPx: Float = 160f,
-    val tailAlpha: Float = 0.9f
-) : EffectParams {
-    override val kind: EffectKind = EffectKind.NIGHT
-}
-
 /**
  * Звёздное небо:
  * - 3 слоя звёзд (размер/альфа/скорость мерцания отличаются) → ощущение глубины
@@ -220,7 +206,8 @@ fun StarsEffect(
     }
 
     Canvas(modifier = modifier.onSizeChanged { size = it }) {
-        val _ = frame
+        val frameTick = frame
+        if (frameTick < 0) return@Canvas
 
         for (i in 0 until n) {
             drawCircle(

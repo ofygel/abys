@@ -72,7 +72,14 @@ data class WindParams(
 data class StarsParams(
     val starsCount: Int = 70,
     /** период мерцания одной звезды (мс), выбирается случайно в этом диапазоне */
-    val twinklePeriodMs: KotlinIntRange = 1400..2500
+    val twinklePeriodMs: KotlinIntRange = 1400..2500,
+    val twinkleAmplitude: Float = 0.65f,
+    val baseAlpha: ClosedFloatingPointRange<Float> = 0.35f..0.85f,
+    val shootingStars: Int = 2,
+    val shootingIntervalMs: KotlinIntRange = 20000..35000,
+    val shootingSpeedPxSec: Float = 900f,
+    val tailLengthPx: Float = 160f,
+    val tailAlpha: Float = 0.9f
 ) : EffectParams { override val kind = EffectKind.NIGHT }
 
 /**

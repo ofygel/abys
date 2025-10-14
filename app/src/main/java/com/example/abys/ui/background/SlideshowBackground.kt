@@ -16,6 +16,8 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -95,6 +97,10 @@ fun SlideshowBackground(
         }
     }
 
+    val grayscaleFilter = remember {
+        ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    }
+
     Box(modifier.fillMaxSize()) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
         val imageModifier = Modifier
@@ -106,9 +112,9 @@ fun SlideshowBackground(
                 painter = painterResource(id = slides[prevIdx]),
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
-                    saturation = 0f
                     alpha = alphaPrev
                 },
+                colorFilter = grayscaleFilter,
                 contentScale = ContentScale.Crop
             )
         }
@@ -116,9 +122,9 @@ fun SlideshowBackground(
             painter = painterResource(id = slides[currIdx]),
             contentDescription = null,
             modifier = imageModifier.graphicsLayer {
-                saturation = 0f
                 alpha = alphaCurr
             },
+            colorFilter = grayscaleFilter,
             contentScale = ContentScale.Crop
         )
         if (alphaNext > 0f) {
@@ -126,9 +132,9 @@ fun SlideshowBackground(
                 painter = painterResource(id = slides[nextIdx]),
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
-                    saturation = 0f
                     alpha = alphaNext
                 },
+                colorFilter = grayscaleFilter,
                 contentScale = ContentScale.Crop
             )
         }
