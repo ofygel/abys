@@ -1,15 +1,31 @@
 package com.example.abys.net
 
+import com.example.abys.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import java.util.concurrent.TimeUnit
 
 object RetrofitProvider {
 
-    /* ---------- общий OkHttpClient (без лог-интерсептора) ---------- */
-    private val okHttp: OkHttpClient = OkHttpClient.Builder()
-        .build()
+    /* ---------- общий OkHttpClient (с optional-логированием) ---------- */
+    private val okHttp: OkHttpClient by lazy {
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
+
+        if (BuildConfig.DEBUG) {
+            val logging = HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            }
+            builder.addInterceptor(logging)
+        }
+
+        builder.build()
+    }
 
     /* ---------- AlAdhan API ---------- */
     val aladhan: AladhanApi by lazy {

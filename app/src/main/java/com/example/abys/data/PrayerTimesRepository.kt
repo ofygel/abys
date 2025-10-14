@@ -1,32 +1,25 @@
 package com.example.abys.data
 
 import com.example.abys.data.model.PrayerTimes
-import com.example.abys.data.model.ApiResponse     // ← добавили import
-import retrofit2.Retrofit
-import retrofit2.converter.moshi.MoshiConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Query
+import com.example.abys.net.AladhanApi
+import com.example.abys.net.RetrofitProvider
 
-class PrayerTimesRepository {
+class PrayerTimesRepository(
+    private val api: AladhanApi = RetrofitProvider.aladhan
+) {
 
-    private val api = Retrofit.Builder()
-        .baseUrl("https://api.aladhan.com/v1/")
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
-        .create(AlAdhanApi::class.java)
+    suspend fun fetch(lat: Double, lon: Double): PrayerTimes? {
+        val response = api.timings(latitude = lat, longitude = lon)
+        if (!response.isSuccessful) return null
 
-    suspend fun fetch(lat: Double, lon: Double): PrayerTimes? =
-        api.today(lat, lon).data              // ← data виден
-            ?.timings
-            ?.let { PrayerTimes.fromApi(it) }
+        val timings = response.body()?.data?.timings ?: return null
 
-    /* ---- Retrofit interface ---- */
-    interface AlAdhanApi {
-        @GET("timings")
-        suspend fun today(
-            @Query("latitude") lat: Double,
-            @Query("longitude") lon: Double,
-            @Query("method") method: Int = 2
-        ): ApiResponse
+        return PrayerTimes(
+            fajr = timings.Fajr,
+            dhuhr = timings.Dhuhr,
+            asr = timings.Asr,
+            maghrib = timings.Maghrib,
+            isha = timings.Isha
+        )
     }
 }
