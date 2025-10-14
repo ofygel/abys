@@ -21,6 +21,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -92,6 +93,8 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     val coroutineScope = rememberCoroutineScope()
     val citySearchVm: CitySearchViewModel = viewModel()
 
+    var showCitySheet by rememberSaveable { mutableStateOf(false) }
+
     var hasGpsPerm by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -99,24 +102,28 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
+    var pendingLocationFetch by remember { mutableStateOf(false) }
+    var isRequestingLocation by remember { mutableStateOf(false) }
 
     val permLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
         hasGpsPerm = granted
+        if (granted) {
+            pendingLocationFetch = true
+        } else {
+            isRequestingLocation = false
+        }
     }
 
     LaunchedEffect(Unit) {
         viewModel.initialize(context)
         val savedCoords = SettingsStore.getLastCoordinates(context)
         val savedCity = SettingsStore.getCity(context)
-        if (savedCoords != null && state.timings == null) {
+        if (savedCoords != null) {
             viewModel.load(savedCoords.first, savedCoords.second, savedCity)
-        }
-        if (!hasGpsPerm) {
-            permLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            showCitySheet = true
         }
     }
-
-    var showCitySheet by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(showCitySheet) {
         if (!showCitySheet) {
@@ -124,8 +131,9 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         }
     }
 
-    LaunchedEffect(hasGpsPerm) {
-        if (hasGpsPerm) {
+    LaunchedEffect(pendingLocationFetch, hasGpsPerm) {
+        if (pendingLocationFetch && hasGpsPerm) {
+            isRequestingLocation = true
             val loc = LocationHelper.getLastBestLocation(context)
             if (loc != null) {
                 val label = context.getString(R.string.location_current)
@@ -137,8 +145,18 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             } else if (state.timings == null) {
                 showCitySheet = true
             }
-        } else if (state.timings == null) {
-            showCitySheet = true
+            isRequestingLocation = false
+            pendingLocationFetch = false
+        }
+    }
+
+    val requestLocation: () -> Unit = {
+        if (hasGpsPerm) {
+            pendingLocationFetch = true
+            isRequestingLocation = true
+        } else {
+            isRequestingLocation = true
+            permLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
@@ -198,6 +216,9 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                         onCityChange = {
                             showCitySheet = true
                         },
+                        onUseLocation = requestLocation,
+                        isLocationLoading = isRequestingLocation,
+                        hasLocationPermission = hasGpsPerm,
                         onToggleSchool = { newSchool ->
                             viewModel.updateSchool(context, newSchool)
                         },
@@ -270,6 +291,9 @@ private fun rememberToggleState(initial: Boolean = true): MutableState<Boolean> 
 private fun HomeContent(
     state: PrayerViewModel.PrayerUiState,
     onCityChange: () -> Unit,
+    onUseLocation: () -> Unit,
+    isLocationLoading: Boolean,
+    hasLocationPermission: Boolean,
     onToggleSchool: (Int) -> Unit,
     remindersState: MutableState<Boolean>,
     countdownState: MutableState<Boolean>
@@ -305,7 +329,15 @@ private fun HomeContent(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        HeaderSection(state = state, onCityChange = onCityChange, wind = wind, windEnabled = windEnabled)
+        HeaderSection(
+            state = state,
+            onCityChange = onCityChange,
+            onUseLocation = onUseLocation,
+            isLocationLoading = isLocationLoading,
+            hasLocationPermission = hasLocationPermission,
+            wind = wind,
+            windEnabled = windEnabled
+        )
 
         if (state.errorMessage != null) {
             OutlinedCard(border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
@@ -392,43 +424,80 @@ private fun HomeContent(
 private fun HeaderSection(
     state: PrayerViewModel.PrayerUiState,
     onCityChange: () -> Unit,
+    onUseLocation: () -> Unit,
+    isLocationLoading: Boolean,
+    hasLocationPermission: Boolean,
     wind: WindState?,
     windEnabled: Boolean
 ) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(Modifier.weight(1f)) {
+        Text(
+            text = state.locationLabel ?: stringResource(R.string.location_placeholder),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        val gregorian = state.timings?.readableDate
+        val hijri = listOfNotNull(state.timings?.hijriMonth, state.timings?.hijriYear)
+            .joinToString(" ").ifBlank { null }
+        if (!gregorian.isNullOrBlank()) {
             Text(
-                text = state.locationLabel ?: stringResource(R.string.location_placeholder),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                gregorian,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 2) else Modifier
             )
-            val gregorian = state.timings?.readableDate
-            val hijri = listOfNotNull(state.timings?.hijriMonth, state.timings?.hijriYear)
-                .joinToString(" ").ifBlank { null }
-            if (!gregorian.isNullOrBlank()) {
-                Text(
-                    gregorian,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 2) else Modifier
-                )
+        }
+        if (!hijri.isNullOrBlank()) {
+            Text(
+                hijri,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
+            )
+        }
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onUseLocation,
+                enabled = !isLocationLoading,
+                modifier = Modifier.weight(1f)
+            ) {
+                if (isLocationLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
+                val label = if (isLocationLoading) {
+                    stringResource(id = R.string.action_use_location_loading)
+                } else {
+                    stringResource(id = R.string.action_use_location)
+                }
+                Text(label, maxLines = 1)
             }
-            if (!hijri.isNullOrBlank()) {
-                Text(
-                    hijri,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
-                )
+            FilledTonalButton(
+                onClick = onCityChange,
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(id = R.string.action_change_city))
             }
         }
-        FilledTonalButton(onClick = onCityChange) {
-            Text(stringResource(id = R.string.action_change_city))
+
+        if (!hasLocationPermission) {
+            Text(
+                text = stringResource(id = R.string.location_permission_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

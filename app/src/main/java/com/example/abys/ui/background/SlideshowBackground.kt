@@ -1,6 +1,5 @@
 package com.example.abys.ui.background
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,19 +11,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlin.math.floor
-import kotlin.random.Random
 
 /**
  * Детерминированное слайд-шоу:
@@ -97,15 +90,10 @@ fun SlideshowBackground(
         }
     }
 
-    val grayscaleFilter = remember {
-        ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-    }
-
     Box(modifier.fillMaxSize()) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
         val imageModifier = Modifier
             .fillMaxSize()
-            .blur(2.dp)
 
         if (alphaPrev > 0f) {
             Image(
@@ -114,7 +102,6 @@ fun SlideshowBackground(
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaPrev
                 },
-                colorFilter = grayscaleFilter,
                 contentScale = ContentScale.Crop
             )
         }
@@ -124,7 +111,6 @@ fun SlideshowBackground(
             modifier = imageModifier.graphicsLayer {
                 alpha = alphaCurr
             },
-            colorFilter = grayscaleFilter,
             contentScale = ContentScale.Crop
         )
         if (alphaNext > 0f) {
@@ -134,34 +120,22 @@ fun SlideshowBackground(
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaNext
                 },
-                colorFilter = grayscaleFilter,
                 contentScale = ContentScale.Crop
             )
         }
 
-        // Лёгкий тёмный слой для читаемости текста
+        // Лёгкий градиент для читаемости текста, без «нуарного» эффекта
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color(0x80000000))
-        )
-
-        Canvas(Modifier.fillMaxSize()) {
-            val rnd = Random(42)
-            val step = 4.dp.toPx().coerceAtLeast(1f)
-            var x = 0f
-            while (x < size.width) {
-                var y = 0f
-                while (y < size.height) {
-                    drawRect(
-                        color = Color.White.copy(alpha = rnd.nextFloat() * 0.02f),
-                        topLeft = Offset(x, y),
-                        size = Size(step, step)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.15f),
+                            Color.Black.copy(alpha = 0.45f)
+                        )
                     )
-                    y += step
-                }
-                x += step
-            }
-        }
+                )
+        )
     }
 }
