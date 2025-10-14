@@ -40,6 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
+import kotlinx.coroutines.launch
 import java.time.Duration
 
 class MainActivity : AppCompatActivity() {
@@ -197,7 +198,7 @@ class MainActivity : AppCompatActivity() {
         cv.setContent {
             MaterialTheme {
                 CityPickerSheet(onPick = { picked ->
-                    lifecycleScope.launchWhenStarted {
+                    lifecycleScope.launch {
                         SettingsStore.setCity(this@MainActivity, picked.title)
                         SettingsStore.setLastCoordinates(this@MainActivity, picked.latitude, picked.longitude)
                     }

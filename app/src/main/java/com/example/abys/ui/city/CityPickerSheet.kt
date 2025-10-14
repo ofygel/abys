@@ -121,7 +121,7 @@ fun CityPickerSheet(
                                 lineHeight = 16.sp
                             )
                         }
-                        Divider()
+                        HorizontalDivider()
                     }
                 }
             }
