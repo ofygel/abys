@@ -44,14 +44,6 @@ data class LightningParams(
     override val kind: EffectKind = EffectKind.LIGHTNING
 }
 
-data class WindParams(
-    val swayX: Float,
-    val swayY: Float,
-    val speed: Float
-) : EffectParams {
-    override val kind: EffectKind = EffectKind.WIND
-}
-
 data class StormParams(
     val rain: RainParams,
     val wind: WindParams,
@@ -136,9 +128,14 @@ val THEMES: List<ThemeSpec> = listOf(
         thumbRes = R.drawable.thumb_wind,
         backgrounds = listOf(R.drawable.theme_wind_bg01),
         params = WindParams(
-            swayX = 8f,
-            swayY = 3f,
-            speed = 0.05f
+            speed = 0.065f,
+            swayX = 12f,
+            swayY = 5f,
+            rotZDeg = 0.5f,
+            parallaxBack = 0.25f,
+            parallaxFront = 0.12f,
+            gustBoost = 2.0f,
+            gustPeriodSec = 3.5f..7.5f
         ),
         defaultIntensity = 60,
         supportsWindSway = true,
@@ -151,7 +148,16 @@ val THEMES: List<ThemeSpec> = listOf(
         backgrounds = listOf(R.drawable.theme_storm_bg01),
         params = StormParams(
             rain = RainParams(dropsCount = 160, speed = 16f, angleDeg = 20f),
-            wind = WindParams(swayX = 12f, swayY = 5f, speed = 0.06f),
+            wind = WindParams(
+                speed = 0.07f,
+                swayX = 14f,
+                swayY = 6f,
+                rotZDeg = 0.65f,
+                parallaxBack = 0.3f,
+                parallaxFront = 0.15f,
+                gustBoost = 2.2f,
+                gustPeriodSec = 3f..6.5f
+            ),
             lightning = LightningParams(minDelayMs = 2200, maxDelayMs = 5200, flashAlpha = 0.8f, flashMs = 70)
         ),
         defaultIntensity = 75,
