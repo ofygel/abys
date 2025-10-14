@@ -12,20 +12,24 @@ fun SlideshowBackground(
     images: List<Int>,
     intervalMs: Long = 8000L
 ) {
-    var index by remember { mutableStateOf(0) }
+    var index by remember(images) { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(images) {
         while (true) {
             delay(intervalMs)
-            index = (index + 1) % images.size
+            if (images.isNotEmpty()) {
+                index = (index + 1) % images.size
+            }
         }
     }
 
-    Crossfade(targetState = index, label = "bg") { i ->
-        AsyncImage(
-            model = images[i],
-            contentDescription = null,
-            modifier = modifier
-        )
+    if (images.isNotEmpty()) {
+        Crossfade(targetState = index, label = "bg") { i ->
+            AsyncImage(
+                model = images[i],
+                contentDescription = null,
+                modifier = modifier
+            )
+        }
     }
 }
