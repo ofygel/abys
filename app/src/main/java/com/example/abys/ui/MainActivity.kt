@@ -31,7 +31,7 @@ import com.example.abys.logic.SettingsStore
 import com.example.abys.logic.TimeHelper
 import com.example.abys.ui.background.SlideshowBackground
 import com.example.abys.ui.city.CityPickerSheet
-import com.example.abys.ui.components.GlassCard
+import com.example.abys.ui.components.FrostedGlassCard
 import com.example.abys.ui.components.NightTimeline
 import com.example.abys.ui.components.PrayerBoard
 import com.example.abys.ui.components.TopOverlay
@@ -145,7 +145,7 @@ class MainActivity : AppCompatActivity() {
                 if (t != null) {
                     PrayerBoard(t!!, selectedSchool = sel)
                 } else {
-                    GlassCard(
+                    FrostedGlassCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp)
