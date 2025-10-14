@@ -1,11 +1,14 @@
 package com.example.abys.ui.effects
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -23,8 +26,10 @@ data class WindState(
     val swayX: Float = 0f,     // готовые значения для карточки
     val swayY: Float = 0f,
     val rotZ: Float = 0f,      // вращение карточки в градусах
-    val parallaxX: Float = 0f, // базовый параллакс для заднего слоя (умножайте на depth)
-    val parallaxY: Float = 0f
+    val parallaxX: Float = 0f, // базовый параллакс, умножайте на depth
+    val parallaxY: Float = 0f,
+    val parallaxBackScale: Float = WindParams().parallaxBack,
+    val parallaxFrontScale: Float = WindParams().parallaxFront
 )
 
 /** Хук: вернуть актуальный WindState, синхронизированный с VSync и с «порывами». */
@@ -39,6 +44,14 @@ fun rememberWind(
 
     // внутренняя машина времени
     LaunchedEffect(params, I) {
+        if (I <= 0f) {
+            state = WindState(
+                parallaxBackScale = params.parallaxBack,
+                parallaxFrontScale = params.parallaxFront
+            )
+            return@LaunchedEffect
+        }
+
         var lastNs = 0L
         var phase = 0f
 
@@ -103,7 +116,9 @@ fun rememberWind(
                 swayY = swayY,
                 rotZ = rotZ,
                 parallaxX = parallaxX,
-                parallaxY = parallaxY
+                parallaxY = parallaxY,
+                parallaxBackScale = params.parallaxBack,
+                parallaxFrontScale = params.parallaxFront
             )
         }
     }
@@ -122,10 +137,11 @@ fun Modifier.windSway(wind: WindState): Modifier =
     }
 
 /** Параллакс: depth < 0 для задних слоёв (фон), > 0 — для передних. */
-fun Modifier.windParallax(wind: WindState, depth: Float, params: WindParams = WindParams()): Modifier =
+fun Modifier.windParallax(wind: WindState, depth: Float): Modifier =
     this.graphicsLayer {
-        translationX += wind.parallaxX * params.parallaxBack * depth
-        translationY += wind.parallaxY * params.parallaxBack * depth
+        val scale = if (depth < 0f) wind.parallaxBackScale else wind.parallaxFrontScale
+        translationX += wind.parallaxX * scale * depth
+        translationY += wind.parallaxY * scale * depth
     }
 
 /** Лёгкая «дрожь» букв/цифр (опционально для заголовков, строк расписания). */
@@ -137,3 +153,26 @@ fun Modifier.windJitter(wind: WindState, amplitudePx: Float = 0.6f, seed: Int = 
         translationX += fx * amplitudePx * wind.amp
         translationY += fy * amplitudePx * 0.6f * wind.amp
     }
+
+/** Глобальный провайдер состояния ветра, чтобы и фон, и карточка могли его читать. */
+val LocalWind: ProvidableCompositionLocal<WindState?> = staticCompositionLocalOf { null }
+
+/** Обёртка, которая рассчитывает состояние ветра для темы и кладёт его в LocalWind. */
+@Composable
+fun ProvideWind(
+    theme: ThemeSpec,
+    intensityOverride: Float? = null,
+    content: @Composable () -> Unit
+) {
+    val intensity = (intensityOverride ?: (theme.defaultIntensity / 100f)).coerceIn(0f, 1f)
+    if (intensity <= 0f) {
+        CompositionLocalProvider(LocalWind provides null, content = content)
+        return
+    }
+    val wind: WindState? = when (val p = theme.params) {
+        is WindParams -> rememberWind(p, intensity)
+        is StormParams -> rememberWind(p.wind, intensity)
+        else -> null
+    }
+    CompositionLocalProvider(LocalWind provides wind, content = content)
+}

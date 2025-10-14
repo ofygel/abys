@@ -26,10 +26,8 @@ import com.example.abys.ui.effects.EffectLayer
 import com.example.abys.ui.effects.ThemeSpec
 import com.example.abys.ui.effects.THEMES
 import com.example.abys.ui.effects.themeById
-import com.example.abys.ui.effects.StormParams
-import com.example.abys.ui.effects.WindParams
-import com.example.abys.ui.effects.WindState
-import com.example.abys.ui.effects.rememberWind
+import com.example.abys.ui.effects.LocalWind
+import com.example.abys.ui.effects.ProvideWind
 import com.example.abys.ui.effects.windJitter
 import com.example.abys.ui.effects.windParallax
 import com.example.abys.ui.effects.windSway
@@ -110,136 +108,131 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     }
 
     val backgrounds = appliedTheme.backgrounds.ifEmpty { STATIC_BACKGROUNDS }
-    val windConfig = appliedTheme.windParams()
-    val hasWind = windConfig != null && appliedTheme.supportsWindSway
-    val windParams = windConfig ?: WindParams()
-    val wind = if (hasWind) {
-        rememberWind(params = windParams, intensity = appliedTheme.defaultIntensity / 100f)
-    } else {
-        remember { WindState() }
-    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    ProvideWind(theme = appliedTheme) {
+        val wind = LocalWind.current
+        val windEnabled = appliedTheme.supportsWindSwayEffective && wind != null
 
-        /* ---------- фон-слайдшоу ---------- */
-        SlideshowBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .let { base -> if (hasWind) base.windParallax(wind, depth = -1f, params = windParams) else base },
-            images = backgrounds
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
 
-        /* ---------- слой эффектов ---------- */
-        EffectLayer(Modifier.fillMaxSize(), theme = appliedTheme)
-
-        /* ---------- карточка с намазами ---------- */
-        Box(
-            Modifier
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            GlassCard(
+            /* ---------- фон-слайдшоу ---------- */
+            SlideshowBackground(
                 modifier = Modifier
-                    .fillMaxWidth(0.90f)
-                    .fillMaxHeight(0.60f)
-                    .let { base -> if (hasWind) base.windSway(wind) else base }
-            ) {
-                Text(
-                    text = stringResource(id = R.string.today_prayers),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.then(
-                        if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier
-                    )
-                )
-                Spacer(Modifier.height(12.dp))
-
-                if (prayer == null) {
-                    CircularProgressIndicator()
-                } else {
-                    PrayerTable(
-                        t = UiTimings(
-                            fajr = prayer.fajr,
-                            sunrise = "--",
-                            dhuhr = prayer.dhuhr,
-                            asrStd = prayer.asr,
-                            asrHan = prayer.asr,
-                            maghrib = prayer.maghrib,
-                            isha = prayer.isha,
-                            tz = ZoneId.systemDefault()
-                        ),
-                        selectedSchool = 0
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = stringResource(id = R.string.theme_active_label, stringResource(id = appliedTheme.titleRes)),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.then(
-                        if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.4f, seed = 2) else Modifier
-                    )
-                )
-                if (!carouselCollapsed && focusedTheme.id != appliedTheme.id) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = stringResource(id = R.string.theme_preview_label, stringResource(id = focusedTheme.titleRes)),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.then(
-                            if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
-                        )
-                    )
-                }
-            }
-        }
-
-        /* ---------- нижняя карусель ---------- */
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp)
-        ) {
-            val applyTheme: (ThemeSpec) -> Unit = { spec ->
-                appliedTheme = spec
-                carouselCollapsed = true
-                focusedTheme = spec
-                applyFlash = true
-                scope.launch { SettingsStore.setThemeId(ctxState, spec.id) }
-            }
-
-            EffectCarousel(
-                themes = themes,
-                selectedThemeId = appliedTheme.id,
-                collapsed = carouselCollapsed,
-                onCollapsedChange = { carouselCollapsed = it },
-                onThemeSnapped = { focusedTheme = it },
-                onDoubleTapApply = applyTheme,
-                onTapCenterApply = applyTheme
+                    .fillMaxSize()
+                    .let { base ->
+                        wind?.let { base.windParallax(it, depth = -1f) } ?: base
+                    },
+                images = backgrounds
             )
-        }
 
-        if (flashAlpha > 0f) {
+            /* ---------- слой эффектов ---------- */
+            EffectLayer(Modifier.fillMaxSize(), theme = appliedTheme)
+
+            /* ---------- карточка с намазами ---------- */
             Box(
                 Modifier
-                    .fillMaxSize()
-                    .background(Color.White.copy(alpha = flashAlpha))
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth(0.90f)
+                        .fillMaxHeight(0.60f)
+                        .let { base ->
+                            if (windEnabled) wind?.let { base.windSway(it) } ?: base else base
+                        }
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.today_prayers),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.then(
+                            if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier
+                        )
+                    )
+                    Spacer(Modifier.height(12.dp))
+
+                    if (prayer == null) {
+                        CircularProgressIndicator()
+                    } else {
+                        PrayerTable(
+                            t = UiTimings(
+                                fajr = prayer.fajr,
+                                sunrise = "--",
+                                dhuhr = prayer.dhuhr,
+                                asrStd = prayer.asr,
+                                asrHan = prayer.asr,
+                                maghrib = prayer.maghrib,
+                                isha = prayer.isha,
+                                tz = ZoneId.systemDefault()
+                            ),
+                            selectedSchool = 0
+                        )
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(id = R.string.theme_active_label, stringResource(id = appliedTheme.titleRes)),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.then(
+                            if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.4f, seed = 2) else Modifier
+                        )
+                    )
+                    if (!carouselCollapsed && focusedTheme.id != appliedTheme.id) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = stringResource(id = R.string.theme_preview_label, stringResource(id = focusedTheme.titleRes)),
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.then(
+                                if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
+                            )
+                        )
+                    }
+                }
+            }
+
+            /* ---------- нижняя карусель ---------- */
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp)
+            ) {
+                val applyTheme: (ThemeSpec) -> Unit = { spec ->
+                    appliedTheme = spec
+                    carouselCollapsed = true
+                    focusedTheme = spec
+                    applyFlash = true
+                    scope.launch { SettingsStore.setThemeId(ctxState, spec.id) }
+                }
+
+                EffectCarousel(
+                    themes = themes,
+                    selectedThemeId = appliedTheme.id,
+                    collapsed = carouselCollapsed,
+                    onCollapsedChange = { carouselCollapsed = it },
+                    onThemeSnapped = { focusedTheme = it },
+                    onDoubleTapApply = applyTheme,
+                    onTapCenterApply = applyTheme
+                )
+            }
+
+            if (flashAlpha > 0f) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = flashAlpha))
+                )
+            }
+
+            /* ---------- CityPicker, если координат нет ---------- */
+            CityPicker(
+                show = needCityPicker,
+                onDismiss = { /* остаёмся */ },
+                onCityChosen = { _, lat, lon ->
+                    needCityPicker = false
+                    viewModel.load(lat, lon)
+                }
             )
         }
-
-        /* ---------- CityPicker, если координат нет ---------- */
-        CityPicker(
-            show = needCityPicker,
-            onDismiss = { /* остаёмся */ },
-            onCityChosen = { _, lat, lon ->
-                needCityPicker = false
-                viewModel.load(lat, lon)
-            }
-        )
     }
-}
-
-private fun ThemeSpec.windParams(): WindParams? = when (val params = params) {
-    is WindParams -> params
-    is StormParams -> params.wind
-    else -> null
 }
 
 private val STATIC_BACKGROUNDS = listOf(
