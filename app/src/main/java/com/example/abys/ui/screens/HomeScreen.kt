@@ -62,7 +62,7 @@ import com.example.abys.ui.PrayerViewModel
 import com.example.abys.ui.city.CityPickerSheet
 import com.example.abys.ui.components.DayProgress
 import com.example.abys.ui.components.EffectCarousel
-import com.example.abys.ui.components.GlassCard
+import com.example.abys.ui.components.FrostedGlassCard
 import com.example.abys.ui.components.InfoPill
 import com.example.abys.ui.components.NextPrayerChip
 import com.example.abys.ui.components.NightTimeline
@@ -219,7 +219,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                     is StormParams -> 1.45f
                     else -> 1f
                 }
-                GlassCard(
+                FrostedGlassCard(
                     modifier = Modifier
                         .fillMaxWidth(0.9f)
                         .heightIn(max = 520.dp)
