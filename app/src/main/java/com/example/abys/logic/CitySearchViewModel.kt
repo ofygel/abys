@@ -8,6 +8,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Поиск города (Nominatim) с дебаунсом и отменой предыдущего запроса.
+ */
 class CitySearchViewModel : ViewModel() {
     private val api = RetrofitProvider.nominatim
 
@@ -16,15 +19,20 @@ class CitySearchViewModel : ViewModel() {
 
     private var job: Job? = null
 
-    fun query(q: String) {
+    fun search(query: String) {
         job?.cancel()
+        if (query.isBlank()) {
+            _results.value = emptyList()
+            return
+        }
         job = viewModelScope.launch(Dispatchers.IO) {
-            delay(200) // debounce
-            if (q.length < 2) {
-                _results.postValue(emptyList()); return@launch
+            delay(250) // debounce
+            val resp = runCatching { api.search(query) }.getOrNull()
+            if (resp?.isSuccessful == true) {
+                _results.postValue(resp.body().orEmpty())
+            } else {
+                _results.postValue(emptyList())
             }
-            val resp = api.search(q)
-            _results.postValue(resp.body().orEmpty())
         }
     }
 }
