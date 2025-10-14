@@ -14,6 +14,9 @@
     <string name="theme_active_label">Тема: %1$s</string>
     <string name="theme_preview_label">Предпросмотр: %1$s</string>
     <string name="theme_apply_hint">Двойной тап — применить тему</string>
+    <string name="theme_apply_talkback">Дважды коснитесь, чтобы применить тему %1$s</string>
+    <string name="theme_apply_action">Применить тему %1$s</string>
+    <string name="theme_apply_double_tap">Двойной тап — применить тему %1$s</string>
 
     <!-- Намазы -->
     <string name="prayer_fajr">Fajr</string>

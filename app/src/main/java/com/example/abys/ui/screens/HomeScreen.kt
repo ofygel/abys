@@ -11,8 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.hapticfeedback.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
@@ -90,7 +88,6 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     var windPhase by remember { mutableStateOf(0f) }
     var applyFlash by remember { mutableStateOf(false) }
     val flashAlpha by animateFloatAsState(if (applyFlash) 0.3f else 0f, label = "applyFlash")
-    val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
     val ctxState = LocalContext.current
@@ -202,20 +199,22 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 12.dp)
         ) {
+            val applyTheme: (ThemeSpec) -> Unit = { spec ->
+                appliedTheme = spec
+                carouselCollapsed = true
+                focusedTheme = spec
+                applyFlash = true
+                scope.launch { SettingsStore.setThemeId(ctxState, spec.id) }
+            }
+
             EffectCarousel(
                 themes = themes,
                 selectedThemeId = appliedTheme.id,
                 collapsed = carouselCollapsed,
                 onCollapsedChange = { carouselCollapsed = it },
                 onThemeSnapped = { focusedTheme = it },
-                onDoubleTapApply = { spec ->
-                    appliedTheme = spec
-                    carouselCollapsed = true
-                    focusedTheme = spec
-                    applyFlash = true
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    scope.launch { SettingsStore.setThemeId(ctxState, spec.id) }
-                }
+                onDoubleTapApply = applyTheme,
+                onTapCenterApply = applyTheme
             )
         }
 
