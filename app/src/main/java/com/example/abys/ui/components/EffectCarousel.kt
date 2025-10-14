@@ -193,6 +193,18 @@ fun EffectCarousel(
                             }
                         }
                         val title = stringResource(id = spec.titleRes)
+                        val talkbackDescription = stringResource(
+                            id = R.string.theme_apply_talkback,
+                            title
+                        )
+                        val applyActionLabel = stringResource(
+                            id = R.string.theme_apply_action,
+                            title
+                        )
+                        val doubleTapLabel = stringResource(
+                            id = R.string.theme_apply_double_tap,
+                            title
+                        )
 
                         Box(
                             Modifier
@@ -246,18 +258,15 @@ fun EffectCarousel(
                                     )
                                 }
                                 .semantics(mergeDescendants = true) {
-                                    contentDescription = stringResource(
-                                        id = R.string.theme_apply_talkback,
-                                        title
-                                    )
-                                    onClick(label = stringResource(id = R.string.theme_apply_action, title)) {
+                                    contentDescription = talkbackDescription
+                                    onClick(label = applyActionLabel) {
                                         if (!isCentered) return@onClick false
                                         applyAndCollapse(spec, updatedOnTapApply)
                                         true
                                     }
                                     customActions = listOf(
                                         CustomAccessibilityAction(
-                                            label = stringResource(id = R.string.theme_apply_double_tap, title)
+                                            label = doubleTapLabel
                                         ) {
                                             if (state.isScrollInProgress) return@CustomAccessibilityAction false
                                             scope.launch {
