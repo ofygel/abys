@@ -49,6 +49,8 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.runtime:runtime-livedata")
+    implementation("androidx.compose.runtime:runtime-saveable")
+    implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
@@ -71,6 +73,8 @@ dependencies {
 
     // Image loading
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
     // java.time на API 23
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
