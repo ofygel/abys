@@ -52,6 +52,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
 fun EffectCarousel(
@@ -211,7 +212,7 @@ fun EffectCarousel(
                     .collectLatest { scrolling ->
                         if (!scrolling) {
                             delay(450)
-                            val center = listCenter.takeIf { it > 0f } ?: return@collect
+                            val center = listCenter.takeIf { it > 0f } ?: return@collectLatest
                             val layoutInfo = state.layoutInfo
                             val visible = layoutInfo.visibleItemsInfo
                             val closest = visible.minByOrNull { info ->
@@ -226,8 +227,9 @@ fun EffectCarousel(
                                 val itemCenterPx = info.offset + info.size / 2f
                                 val delta = itemCenterPx - center
                                 if (abs(delta) > 4f) {
+                                    val desiredOffset = (center - info.size / 2f).roundToInt()
                                     scope.launch {
-                                        state.animateScrollBy(delta)
+                                        state.animateScrollToItem(info.index, scrollOffset = desiredOffset)
                                     }
                                 }
                             }
