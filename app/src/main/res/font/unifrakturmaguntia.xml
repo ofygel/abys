@@ -3,5 +3,5 @@
     <font
         android:fontStyle="normal"
         android:fontWeight="700"
-        android:font="@font/unifrakturmaguntia" />
+        android:font="@font/unifrakturmaguntia_regular" />
 </font-family>
