@@ -144,7 +144,8 @@ fun SnowEffect(
     Canvas(
         modifier = modifier.onSizeChanged { size = it }
     ) {
-        val _ = frame
+        val frameTick = frame
+        if (frameTick < 0) return@Canvas
         for (index in 0 until flakesCount) {
             drawCircle(
                 color = Color.White,
