@@ -6,57 +6,72 @@ import com.example.abys.R
 
 enum class EffectKind { LEAVES, RAIN, SNOW, LIGHTNING, WIND, STORM, SUNSET_SNOW, NIGHT }
 
-sealed interface EffectParams
+sealed interface EffectParams {
+    val kind: EffectKind
+}
 
 data class LeavesParams(
     val density: Float,
     val speedY: Float,
     val driftX: Float
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.LEAVES
+}
 
 data class RainParams(
     val dropsCount: Int,
     val speed: Float,
     val angleDeg: Float
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.RAIN
+}
 
 data class SnowParams(
     val flakesCount: Int,
     val speed: Float,
     val driftX: Float,
     val size: ClosedFloatingPointRange<Float>
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.SNOW
+}
 
 data class LightningParams(
     val minDelayMs: Int,
     val maxDelayMs: Int,
     val flashAlpha: Float,
     val flashMs: Int
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.LIGHTNING
+}
 
 data class WindParams(
     val swayX: Float,
     val swayY: Float,
     val speed: Float
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.WIND
+}
 
 data class StormParams(
     val rain: RainParams,
     val wind: WindParams,
     val lightning: LightningParams
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.STORM
+}
 
 data class StarsParams(
     val starsCount: Int,
     val twinklePeriodMs: IntRange
-) : EffectParams
+) : EffectParams {
+    override val kind: EffectKind = EffectKind.NIGHT
+}
 
 data class ThemeSpec(
     val id: String,
     @StringRes val titleRes: Int,
     @DrawableRes val thumbRes: Int,
     @DrawableRes val backgrounds: List<Int>,
-    val effect: EffectKind,
     val params: EffectParams,
     val defaultIntensity: Int,
     val supportsWindSway: Boolean,
@@ -69,7 +84,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_leaves,
         thumbRes = R.drawable.thumb_leaves,
         backgrounds = listOf(R.drawable.theme_leaves_bg01),
-        effect = EffectKind.LEAVES,
         params = LeavesParams(
             density = 0.12f,
             speedY = 0.9f,
@@ -84,7 +98,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_rain,
         thumbRes = R.drawable.thumb_rain,
         backgrounds = listOf(R.drawable.theme_rain_bg01),
-        effect = EffectKind.RAIN,
         params = RainParams(
             dropsCount = 140,
             speed = 14f,
@@ -99,7 +112,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_snow,
         thumbRes = R.drawable.thumb_snow,
         backgrounds = listOf(R.drawable.theme_snow_bg01),
-        effect = EffectKind.SNOW,
         params = SnowParams(
             flakesCount = 100,
             speed = 1.4f,
@@ -115,7 +127,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_lightning,
         thumbRes = R.drawable.thumb_lightning,
         backgrounds = listOf(R.drawable.theme_lightning_bg01),
-        effect = EffectKind.LIGHTNING,
         params = LightningParams(
             minDelayMs = 1500,
             maxDelayMs = 6000,
@@ -131,7 +142,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_wind,
         thumbRes = R.drawable.thumb_wind,
         backgrounds = listOf(R.drawable.theme_wind_bg01),
-        effect = EffectKind.WIND,
         params = WindParams(
             swayX = 8f,
             swayY = 3f,
@@ -146,7 +156,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_storm,
         thumbRes = R.drawable.thumb_storm,
         backgrounds = listOf(R.drawable.theme_storm_bg01),
-        effect = EffectKind.STORM,
         params = StormParams(
             rain = RainParams(dropsCount = 160, speed = 16f, angleDeg = 20f),
             wind = WindParams(swayX = 12f, swayY = 5f, speed = 0.06f),
@@ -161,7 +170,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_sunset_snow,
         thumbRes = R.drawable.thumb_sunset_snow,
         backgrounds = listOf(R.drawable.theme_sunset_snow_bg01),
-        effect = EffectKind.SUNSET_SNOW,
         params = SnowParams(
             flakesCount = 80,
             speed = 0.9f,
@@ -177,7 +185,6 @@ val THEMES: List<ThemeSpec> = listOf(
         titleRes = R.string.theme_night,
         thumbRes = R.drawable.thumb_night,
         backgrounds = listOf(R.drawable.theme_night_bg01),
-        effect = EffectKind.NIGHT,
         params = StarsParams(starsCount = 70, twinklePeriodMs = 1400..2500),
         defaultIntensity = 45,
         supportsWindSway = false,
