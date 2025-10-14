@@ -59,8 +59,6 @@ class MainActivity : AppCompatActivity() {
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private var ticker: Runnable? = null
-    private var autoPermissionRequested = false
-
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
@@ -166,16 +164,6 @@ class MainActivity : AppCompatActivity() {
             t?.let { NightTimeline(maghrib = it.maghrib, fajr = it.fajr, zone = it.tz) }
         }
         // --- конец блока ComposeView ---
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (hasLocationPermission()) {
-            vm.loadByLocation(this)
-        } else if (!autoPermissionRequested) {
-            autoPermissionRequested = true
-            launchLocationPermissionRequest()
-        }
     }
 
     private fun requestLocationPermissionOrLoad() {

@@ -31,6 +31,9 @@
     <string name="location_current">Текущее местоположение</string>
     <string name="location_placeholder">Не выбран город</string>
     <string name="action_change_city">Сменить город</string>
+    <string name="action_use_location">Определить автоматически</string>
+    <string name="action_use_location_loading">Определяем…</string>
+    <string name="location_permission_hint">Разрешите геолокацию, чтобы определить город автоматически.</string>
     <string name="asr_school_label">Мазхаб Asr</string>
     <string name="asr_school_standard">Стандарт</string>
     <string name="asr_school_hanafi">Ханафи</string>
