@@ -8,12 +8,12 @@ import androidx.activity.result.contract.ActivityResultContracts.RequestPermissi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -84,6 +84,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
 @SuppressLint("MissingPermission")
+@Suppress("unused")
 @Composable
 fun HomeScreen(viewModel: PrayerViewModel) {
     val context = LocalContext.current
@@ -165,11 +166,15 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         }
     }
 
-    val backgrounds = appliedTheme.backgrounds.ifEmpty { STATIC_BACKGROUNDS }
+    val displayTheme = if (carouselCollapsed) appliedTheme else focusedTheme
+    val backgrounds = displayTheme.backgrounds
+        .takeIf { it.isNotEmpty() }
+        ?.toList()
+        ?: STATIC_BACKGROUNDS
 
-    ProvideWind(theme = appliedTheme) {
+    ProvideWind(theme = displayTheme) {
         val wind = LocalWind.current
-        val windEnabled = appliedTheme.supportsWindSwayEffective && wind != null
+        val windEnabled = displayTheme.supportsWindSwayEffective && wind != null
 
         Box(modifier = Modifier.fillMaxSize()) {
             SlideshowBackground(
@@ -179,7 +184,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 images = backgrounds
             )
 
-            EffectLayer(Modifier.fillMaxSize(), theme = appliedTheme)
+            EffectLayer(Modifier.fillMaxSize(), theme = displayTheme)
 
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 GlassCard(
@@ -196,8 +201,8 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                         onToggleSchool = { newSchool ->
                             viewModel.updateSchool(context, newSchool)
                         },
-                        remindersState = rememberToggleState(initial = true),
-                        countdownState = rememberToggleState(initial = true)
+                        remindersState = rememberToggleState(),
+                        countdownState = rememberToggleState()
                     )
                 }
             }
@@ -259,7 +264,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
 }
 
 @Composable
-private fun rememberToggleState(initial: Boolean = false): MutableState<Boolean> = rememberSaveable { mutableStateOf(initial) }
+private fun rememberToggleState(initial: Boolean = true): MutableState<Boolean> = rememberSaveable { mutableStateOf(initial) }
 
 @Composable
 private fun HomeContent(
@@ -303,7 +308,7 @@ private fun HomeContent(
         HeaderSection(state = state, onCityChange = onCityChange, wind = wind, windEnabled = windEnabled)
 
         if (state.errorMessage != null) {
-            OutlinedCard(border = ButtonDefaults.outlinedButtonBorder) {
+            OutlinedCard(border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
                 Text(
                     text = state.errorMessage,
                     modifier = Modifier.padding(12.dp),
