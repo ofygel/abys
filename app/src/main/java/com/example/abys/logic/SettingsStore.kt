@@ -15,6 +15,8 @@ object SettingsStore {
     private const val KEY_CITY       = "last_city"
     private const val KEY_LAST_JSON  = "last_timings_json"
     private const val KEY_THEME_ID   = "theme_id"
+    private const val KEY_LAST_LAT   = "last_lat"
+    private const val KEY_LAST_LON   = "last_lon"
 
     private fun prefs(ctx: Context) =
         ctx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -37,6 +39,19 @@ object SettingsStore {
 
     suspend fun getCity(ctx: Context): String? = withContext(Dispatchers.IO) {
         prefs(ctx).getString(KEY_CITY, null)
+    }
+
+    suspend fun setLastCoordinates(ctx: Context, lat: Double, lon: Double) = withContext(Dispatchers.IO) {
+        prefs(ctx).edit {
+            putString(KEY_LAST_LAT, lat.toString())
+            putString(KEY_LAST_LON, lon.toString())
+        }
+    }
+
+    suspend fun getLastCoordinates(ctx: Context): Pair<Double, Double>? = withContext(Dispatchers.IO) {
+        val lat = prefs(ctx).getString(KEY_LAST_LAT, null)?.toDoubleOrNull()
+        val lon = prefs(ctx).getString(KEY_LAST_LON, null)?.toDoubleOrNull()
+        if (lat != null && lon != null) lat to lon else null
     }
 
     /* -------------- last_timings_json ----------- */
