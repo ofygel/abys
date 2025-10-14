@@ -210,9 +210,10 @@ class MainActivity : AppCompatActivity() {
             MaterialTheme {
                 CityPickerSheet(onPick = { picked ->
                     lifecycleScope.launchWhenStarted {
-                        SettingsStore.setCity(this@MainActivity, picked)
+                        SettingsStore.setCity(this@MainActivity, picked.title)
+                        SettingsStore.setLastCoordinates(this@MainActivity, picked.latitude, picked.longitude)
                     }
-                    vm.loadByCity(picked)
+                    vm.loadByCity(picked.title)
                     sheet.dismiss()
                 }, vm = cityVm)
             }

@@ -1,5 +1,7 @@
 package com.example.abys.net
 
+import com.squareup.moshi.Json
+
 data class TimingsResponse(
     val code: Int,
     val status: String,
@@ -12,12 +14,17 @@ data class TimingsResponse(
     )
 
     data class Timings(
-        val Fajr: String,
-        val Sunrise: String,
-        val Dhuhr: String,
-        val Asr: String,
-        val Maghrib: String,
-        val Isha: String
+        @Json(name = "Fajr") val fajr: String,
+        @Json(name = "Sunrise") val sunrise: String,
+        @Json(name = "Dhuhr") val dhuhr: String,
+        @Json(name = "Asr") val asr: String,
+        @Json(name = "Maghrib") val maghrib: String,
+        @Json(name = "Isha") val isha: String,
+        @Json(name = "Sunset") val sunset: String? = null,
+        @Json(name = "Imsak") val imsak: String? = null,
+        @Json(name = "Midnight") val midnight: String? = null,
+        @Json(name = "Firstthird") val firstThird: String? = null,
+        @Json(name = "Lastthird") val lastThird: String? = null
     )
 
     data class DateInfo(

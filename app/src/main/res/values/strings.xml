@@ -26,4 +26,35 @@
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
     <string name="prayer_remaining">через %1$02d:%2$02d:%3$02d</string>
+
+    <!-- Экран Home -->
+    <string name="location_current">Текущее местоположение</string>
+    <string name="location_placeholder">Не выбран город</string>
+    <string name="action_change_city">Сменить город</string>
+    <string name="asr_school_label">Мазхаб Asr</string>
+    <string name="asr_school_standard">Стандарт</string>
+    <string name="asr_school_hanafi">Ханафи</string>
+    <string name="next_prayer_label">Следующий намаз</string>
+    <string name="prayer_loading_hint">Выберите город или разрешите геолокацию, чтобы увидеть расписание.</string>
+    <string name="reminder_toggle_label">Напоминание перед намазом</string>
+    <string name="reminder_enabled">Напоминания активны: за 15 минут до намаза.</string>
+    <string name="reminder_disabled">Напоминания выключены.</string>
+    <string name="countdown_toggle_label">Показывать отсчёт</string>
+    <string name="countdown_label_short">Осталось</string>
+    <string name="prayer_extras_title">Дополнительные времена</string>
+    <string name="prayer_meta_imsak">Имсак</string>
+    <string name="prayer_meta_sunset">Закат солнца</string>
+    <string name="prayer_meta_midnight">Исламская полночь</string>
+    <string name="prayer_meta_last_third">Последняя треть ночи</string>
+    <string name="prayer_meta_first_third">Первая треть ночи</string>
+    <string name="prayer_meta_method">Метод расчёта: %1$s</string>
+    <string name="prayer_meta_method_unknown">Метод расчёта</string>
+    <string name="prayer_meta_timezone">Часовой пояс: %1$s</string>
+    <string name="prayer_schedule_today">Намазы на сегодня</string>
+
+    <!-- Поиск города -->
+    <string name="city_search_title">Выбор города</string>
+    <string name="city_search_hint">Almaty / Astana / Shymkent …</string>
+    <string name="city_search_featured">Популярные города</string>
+    <string name="city_search_empty">Ничего не найдено</string>
 </resources>

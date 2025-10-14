@@ -17,15 +17,20 @@ class CitySearchViewModel : ViewModel() {
     private val _results = MutableLiveData<List<NominatimPlace>>(emptyList())
     val results: LiveData<List<NominatimPlace>> = _results
 
+    private val _loading = MutableLiveData(false)
+    val loading: LiveData<Boolean> = _loading
+
     private var job: Job? = null
 
     fun search(query: String) {
         job?.cancel()
         if (query.isBlank()) {
             _results.value = emptyList()
+            _loading.value = false
             return
         }
         job = viewModelScope.launch(Dispatchers.IO) {
+            _loading.postValue(true)
             delay(250) // debounce
             val resp = runCatching { api.search(query) }.getOrNull()
             if (resp?.isSuccessful == true) {
@@ -33,6 +38,9 @@ class CitySearchViewModel : ViewModel() {
             } else {
                 _results.postValue(emptyList())
             }
+            _loading.postValue(false)
         }
     }
+
+    fun query(query: String) = search(query)
 }

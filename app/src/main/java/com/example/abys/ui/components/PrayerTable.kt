@@ -1,11 +1,15 @@
 package com.example.abys.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.abys.logic.TimeHelper
@@ -16,7 +20,7 @@ import java.time.ZoneId
 import com.example.abys.R
 
 @Composable
-fun PrayerTable(t: UiTimings, selectedSchool: Int) {
+fun PrayerTable(t: UiTimings, selectedSchool: Int, highlightKey: String? = null) {
     val tz: ZoneId = t.tz
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while (true) { delay(1000); tick++ } }
@@ -34,29 +38,46 @@ fun PrayerTable(t: UiTimings, selectedSchool: Int) {
     )
 
     Column(Modifier.fillMaxWidth()) {
-        rows.forEach { (key, label, time) ->
+        rows.forEachIndexed { index, (key, label, time) ->
+            val active = highlightKey == key || next?.first == key
+            val background by animateColorAsState(
+                if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color.Transparent,
+                label = "prayerRowBg"
+            )
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 6.dp),
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(background)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // СЛЕВА: Время + «до события»
                 Column {
-                    Text(text = time, style = MaterialTheme.typography.titleLarge)
-                    if (next?.first == key && remain != null) {
+                    Text(
+                        text = time,
+                        style = if (active) MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary)
+                        else MaterialTheme.typography.titleLarge
+                    )
+                    if (active && remain != null) {
                         val h = remain.toHours()
                         val m = remain.toMinutes() % 60
                         val s = remain.seconds % 60
                         Text(
                             text = stringResource(id = R.string.prayer_remaining, h, m, s),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
-                // СПРАВА: Название
-                Text(text = stringResource(id = label), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = stringResource(id = label),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (index != rows.lastIndex) {
+                Spacer(Modifier.height(6.dp))
             }
         }
     }
