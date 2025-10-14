@@ -3,7 +3,9 @@ package com.example.abys.ui
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.abys.R
 import com.example.abys.data.PrayerTimesRepository
+import com.example.abys.data.PrayerTimesSerializer
 import com.example.abys.data.model.PrayerTimes
 import com.example.abys.logic.SettingsStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,26 +32,50 @@ class PrayerViewModel(
         viewModelScope.launch {
             val savedSchool = SettingsStore.getSchool(context)
             val savedCity = SettingsStore.getCity(context)
-            _state.update { it.copy(selectedSchool = savedSchool, locationLabel = savedCity ?: it.locationLabel) }
+            val cached = SettingsStore.getLastJson(context)?.let { PrayerTimesSerializer.decode(it) }
+            val fallbackLabel = savedCity ?: cached?.timezone?.id?.substringAfterLast('/')
+                ?.replace('_', ' ')
+            _state.update {
+                it.copy(
+                    selectedSchool = savedSchool,
+                    locationLabel = fallbackLabel ?: it.locationLabel,
+                    timings = cached ?: it.timings
+                )
+            }
         }
     }
 
-    fun load(lat: Double, lon: Double, label: String? = null) {
+    fun load(context: Context, lat: Double, lon: Double, label: String? = null) {
         _state.update { it.copy(isLoading = true, errorMessage = null, locationLabel = label ?: it.locationLabel) }
         viewModelScope.launch {
             val result = repo.fetch(lat, lon)
-            _state.update { prev ->
-                if (result == null) {
-                    prev.copy(isLoading = false, errorMessage = "Не удалось загрузить расписание")
-                } else {
-                    val resolvedLabel = label ?: result.timezone.id.substringAfterLast('/')
-                        .replace('_', ' ')
+            if (result != null) {
+                val resolvedLabel = label ?: result.timezone.id.substringAfterLast('/')
+                    .replace('_', ' ')
+                PrayerTimesSerializer.encode(result)?.let { SettingsStore.setLastJson(context, it) }
+                _state.update { prev ->
                     prev.copy(
                         isLoading = false,
                         timings = result,
                         locationLabel = resolvedLabel,
                         errorMessage = null
                     )
+                }
+            } else {
+                val cached = SettingsStore.getLastJson(context)?.let { PrayerTimesSerializer.decode(it) }
+                _state.update { prev ->
+                    if (cached != null) {
+                        prev.copy(
+                            isLoading = false,
+                            timings = cached,
+                            errorMessage = context.getString(R.string.prayer_load_error_cached)
+                        )
+                    } else {
+                        prev.copy(
+                            isLoading = false,
+                            errorMessage = context.getString(R.string.prayer_load_error_generic)
+                        )
+                    }
                 }
             }
         }

@@ -26,6 +26,8 @@
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
     <string name="prayer_remaining">через %1$02d:%2$02d:%3$02d</string>
+    <string name="prayer_asr_alt_standard">Стандарт: %1$s</string>
+    <string name="prayer_asr_alt_hanafi">Ханафи: %1$s</string>
 
     <!-- Экран Home -->
     <string name="location_current">Текущее местоположение</string>
@@ -54,6 +56,13 @@
     <string name="prayer_meta_method_unknown">Метод расчёта</string>
     <string name="prayer_meta_timezone">Часовой пояс: %1$s</string>
     <string name="prayer_schedule_today">Намазы на сегодня</string>
+    <string name="prayer_load_error_cached">Не удалось обновить расписание. Показаны сохранённые данные.</string>
+    <string name="prayer_load_error_generic">Не удалось загрузить расписание. Попробуйте позже.</string>
+    <string name="prayer_empty_title">Здесь пока пусто</string>
+    <string name="prayer_empty_body">Выберите город или определите геолокацию, чтобы увидеть времена намазов.</string>
+    <string name="theme_carousel_handle">Темы</string>
+    <string name="theme_carousel_expand">Открыть подбор тем</string>
+    <string name="theme_carousel_collapse">Свернуть подбор тем</string>
 
     <!-- Поиск города -->
     <string name="city_search_title">Выбор города</string>

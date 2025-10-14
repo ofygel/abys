@@ -46,9 +46,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.abys.R
@@ -72,6 +74,7 @@ import com.example.abys.ui.effects.ProvideWind
 import com.example.abys.ui.effects.ThemeSpec
 import com.example.abys.ui.effects.THEMES
 import com.example.abys.ui.effects.themeById
+import com.example.abys.ui.effects.StormParams
 import com.example.abys.ui.effects.windJitter
 import com.example.abys.ui.effects.windParallax
 import com.example.abys.ui.effects.windSway
@@ -119,7 +122,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         val savedCoords = SettingsStore.getLastCoordinates(context)
         val savedCity = SettingsStore.getCity(context)
         if (savedCoords != null) {
-            viewModel.load(savedCoords.first, savedCoords.second, savedCity)
+            viewModel.load(context, savedCoords.first, savedCoords.second, savedCity)
         } else {
             showCitySheet = true
         }
@@ -137,7 +140,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             val loc = LocationHelper.getLastBestLocation(context)
             if (loc != null) {
                 val label = context.getString(R.string.location_current)
-                viewModel.load(loc.first, loc.second, label)
+                viewModel.load(context, loc.first, loc.second, label)
                 coroutineScope.launch {
                     SettingsStore.setLastCoordinates(context, loc.first, loc.second)
                     SettingsStore.setCity(context, label)
@@ -165,7 +168,10 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     var focusedTheme by remember { mutableStateOf<ThemeSpec>(appliedTheme) }
     var carouselCollapsed by remember { mutableStateOf(false) }
     var applyFlash by remember { mutableStateOf(false) }
-    val flashAlpha by animateFloatAsState(if (applyFlash) 0.3f else 0f, label = "applyFlash")
+    val flashAlpha by animateFloatAsState(
+        targetValue = if (applyFlash && appliedTheme.supportsFlashEffective) 0.28f else 0f,
+        label = "applyFlash"
+    )
 
     val savedThemeContext = LocalContext.current
     LaunchedEffect(Unit) {
@@ -204,12 +210,24 @@ fun HomeScreen(viewModel: PrayerViewModel) {
 
             EffectLayer(Modifier.fillMaxSize(), theme = displayTheme)
 
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                val swayMultiplier = when (displayTheme.params) {
+                    is StormParams -> 1.45f
+                    else -> 1f
+                }
                 GlassCard(
                     modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .fillMaxHeight(0.68f)
-                        .let { base -> if (windEnabled) wind?.let { base.windSway(it) } ?: base else base }
+                        .fillMaxWidth(0.9f)
+                        .heightIn(max = 520.dp)
+                        .offset(y = 48.dp)
+                        .zIndex(1f)
+                        .let { base ->
+                            if (windEnabled) wind?.let { base.windSway(it, swayMultiplier) } ?: base else base
+                        }
                 ) {
                     HomeContent(
                         state = state,
@@ -231,13 +249,17 @@ fun HomeScreen(viewModel: PrayerViewModel) {
             Box(
                 Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
+                    .padding(bottom = 16.dp)
+                    .navigationBarsPadding()
+                    .zIndex(2f)
             ) {
                 val applyTheme: (ThemeSpec) -> Unit = { spec ->
                     appliedTheme = spec
                     carouselCollapsed = true
                     focusedTheme = spec
-                    applyFlash = true
+                    if (spec.supportsFlashEffective) {
+                        applyFlash = true
+                    }
                     coroutineScope.launch { SettingsStore.setThemeId(savedThemeContext, spec.id) }
                 }
 
@@ -272,7 +294,7 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 vm = citySearchVm,
                 onPick = { suggestion ->
                     showCitySheet = false
-                    viewModel.load(suggestion.latitude, suggestion.longitude, suggestion.title)
+                    viewModel.load(context, suggestion.latitude, suggestion.longitude, suggestion.title)
                     coroutineScope.launch {
                         SettingsStore.setCity(context, suggestion.title)
                         SettingsStore.setLastCoordinates(context, suggestion.latitude, suggestion.longitude)
@@ -286,6 +308,72 @@ fun HomeScreen(viewModel: PrayerViewModel) {
 
 @Composable
 private fun rememberToggleState(initial: Boolean = true): MutableState<Boolean> = rememberSaveable { mutableStateOf(initial) }
+
+@Composable
+private fun prayerNameForKey(key: String): String? = when (key) {
+    "Fajr" -> stringResource(id = R.string.prayer_fajr)
+    "Sunrise", "Shuruq" -> stringResource(id = R.string.prayer_shuruq)
+    "Dhuhr" -> stringResource(id = R.string.prayer_dhuhr)
+    "Asr" -> stringResource(id = R.string.prayer_asr)
+    "Maghrib" -> stringResource(id = R.string.prayer_maghrib)
+    "Isha" -> stringResource(id = R.string.prayer_isha)
+    else -> null
+}
+
+@Composable
+private fun EmptyScheduleState(
+    onUseLocation: () -> Unit,
+    onCityChange: () -> Unit,
+    isLocationLoading: Boolean,
+    hasLocationPermission: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = stringResource(id = R.string.prayer_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = stringResource(id = R.string.prayer_empty_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        FilledTonalButton(onClick = onCityChange) {
+            Text(stringResource(id = R.string.action_change_city))
+        }
+        OutlinedButton(onClick = onUseLocation, enabled = !isLocationLoading) {
+            if (isLocationLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(
+                text = if (isLocationLoading) {
+                    stringResource(id = R.string.action_use_location_loading)
+                } else {
+                    stringResource(id = R.string.action_use_location)
+                }
+            )
+        }
+        if (!hasLocationPermission) {
+            Text(
+                text = stringResource(id = R.string.location_permission_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 
 @Composable
 private fun HomeContent(
@@ -355,16 +443,19 @@ private fun HomeContent(
                     CircularProgressIndicator()
                 }
             } else {
-                Text(
-                    text = stringResource(id = R.string.prayer_loading_hint),
-                    style = MaterialTheme.typography.bodyMedium
+                EmptyScheduleState(
+                    onUseLocation = onUseLocation,
+                    onCityChange = onCityChange,
+                    isLocationLoading = isLocationLoading,
+                    hasLocationPermission = hasLocationPermission
                 )
             }
         } else {
             AnimatedVisibility(visible = countdownState.value && nextPrayer != null) {
+                val localizedNextName = nextPrayer?.first?.let { key -> prayerNameForKey(key) }
                 NextPrayerChip(
                     title = stringResource(R.string.next_prayer_label),
-                    name = nextPrayer?.first ?: "",
+                    name = localizedNextName ?: (nextPrayer?.first ?: ""),
                     time = nextPrayer?.second ?: "",
                     remaining = remaining
                 )

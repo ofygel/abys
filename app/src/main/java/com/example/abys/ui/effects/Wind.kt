@@ -129,11 +129,12 @@ fun rememberWind(
 /* ------------------------------ МОДИФИКАТОРЫ ------------------------------ */
 
 /** Применить ветер к «стеклянной» карточке (сдвиг + лёгкий наклон). */
-fun Modifier.windSway(wind: WindState): Modifier =
+fun Modifier.windSway(wind: WindState, boost: Float = 1f): Modifier =
     this.graphicsLayer {
-        translationX = wind.swayX
-        translationY = wind.swayY
-        rotationZ = wind.rotZ
+        val clamped = boost.coerceIn(0.5f, 2.2f)
+        translationX = wind.swayX * clamped
+        translationY = wind.swayY * clamped
+        rotationZ = wind.rotZ * clamped
     }
 
 /** Параллакс: depth < 0 для задних слоёв (фон), > 0 — для передних. */
