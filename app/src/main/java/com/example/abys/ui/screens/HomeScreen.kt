@@ -21,6 +21,7 @@ import com.example.abys.logic.UiTimings
 import com.example.abys.logic.SettingsStore
 import com.example.abys.ui.PrayerViewModel
 import com.example.abys.ui.components.EffectCarousel
+import com.example.abys.ui.components.GlassCard
 import com.example.abys.ui.components.PrayerTable
 import com.example.abys.ui.effects.EffectLayer
 import com.example.abys.ui.effects.ThemeSpec
@@ -31,8 +32,7 @@ import com.example.abys.ui.effects.ProvideWind
 import com.example.abys.ui.effects.windJitter
 import com.example.abys.ui.effects.windParallax
 import com.example.abys.ui.effects.windSway
-import com.example.abys.ui.screens.background.SlideshowBackground
-import com.example.abys.ui.screens.components.GlassCard
+import com.example.abys.ui.background.SlideshowBackground
 import com.example.abys.util.LocationHelper
 import java.time.ZoneId
 import kotlinx.coroutines.delay
@@ -142,49 +142,51 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                             if (windEnabled) wind?.let { base.windSway(it) } ?: base else base
                         }
                 ) {
-                    Text(
-                        text = stringResource(id = R.string.today_prayers),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.then(
-                            if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier
-                        )
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    if (prayer == null) {
-                        CircularProgressIndicator()
-                    } else {
-                        PrayerTable(
-                            t = UiTimings(
-                                fajr = prayer.fajr,
-                                sunrise = "--",
-                                dhuhr = prayer.dhuhr,
-                                asrStd = prayer.asr,
-                                asrHan = prayer.asr,
-                                maghrib = prayer.maghrib,
-                                isha = prayer.isha,
-                                tz = ZoneId.systemDefault()
-                            ),
-                            selectedSchool = 0
-                        )
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(id = R.string.theme_active_label, stringResource(id = appliedTheme.titleRes)),
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.then(
-                            if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.4f, seed = 2) else Modifier
-                        )
-                    )
-                    if (!carouselCollapsed && focusedTheme.id != appliedTheme.id) {
-                        Spacer(Modifier.height(6.dp))
+                    Column {
                         Text(
-                            text = stringResource(id = R.string.theme_preview_label, stringResource(id = focusedTheme.titleRes)),
-                            style = MaterialTheme.typography.bodySmall,
+                            text = stringResource(id = R.string.today_prayers),
+                            style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.then(
-                                if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
+                                if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier
                             )
                         )
+                        Spacer(Modifier.height(12.dp))
+
+                        if (prayer == null) {
+                            CircularProgressIndicator()
+                        } else {
+                            PrayerTable(
+                                t = UiTimings(
+                                    fajr = prayer.fajr,
+                                    sunrise = "--",
+                                    dhuhr = prayer.dhuhr,
+                                    asrStd = prayer.asr,
+                                    asrHan = prayer.asr,
+                                    maghrib = prayer.maghrib,
+                                    isha = prayer.isha,
+                                    tz = ZoneId.systemDefault()
+                                ),
+                                selectedSchool = 0
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.theme_active_label, stringResource(id = appliedTheme.titleRes)),
+                            style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.then(
+                                if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.4f, seed = 2) else Modifier
+                            )
+                        )
+                        if (!carouselCollapsed && focusedTheme.id != appliedTheme.id) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = stringResource(id = R.string.theme_preview_label, stringResource(id = focusedTheme.titleRes)),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.then(
+                                    if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
+                                )
+                            )
+                        }
                     }
                 }
             }

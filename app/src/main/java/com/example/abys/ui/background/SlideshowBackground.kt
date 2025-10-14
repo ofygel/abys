@@ -1,10 +1,16 @@
 package com.example.abys.ui.background
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
@@ -12,8 +18,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlin.math.floor
 import kotlin.random.Random
@@ -27,13 +33,17 @@ import kotlin.random.Random
  */
 @Composable
 fun SlideshowBackground(
+    modifier: Modifier = Modifier,
+    images: List<Int> = Slides.all,
     visibleMs: Long = 15_000L,
     fadeInMs: Long = 900L,
     fadeOutMs: Long = 500L,
     // фиксированная опорная точка (UTC). Можно поменять на «момент первого запуска», если захочешь.
     anchorMs: Long = 0L
 ) {
-    val slides = remember { Slides.all }
+    val slides = remember(images) {
+        images.takeIf { it.isNotEmpty() } ?: Slides.all
+    }
     val n = slides.size.coerceAtLeast(1)
     val period = visibleMs + fadeInMs + fadeOutMs
 
@@ -85,36 +95,41 @@ fun SlideshowBackground(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
         val imageModifier = Modifier
             .fillMaxSize()
-            .graphicsLayer { saturation = 0f }
             .blur(2.dp)
 
         if (alphaPrev > 0f) {
-            AsyncImage(
-                model = slides[prevIdx],
+            Image(
+                painter = painterResource(id = slides[prevIdx]),
                 contentDescription = null,
-                modifier = imageModifier,
-                contentScale = ContentScale.Crop,
-                alpha = alphaPrev
+                modifier = imageModifier.graphicsLayer {
+                    saturation = 0f
+                    alpha = alphaPrev
+                },
+                contentScale = ContentScale.Crop
             )
         }
-        AsyncImage(
-            model = slides[currIdx],
+        Image(
+            painter = painterResource(id = slides[currIdx]),
             contentDescription = null,
-            modifier = imageModifier,
-            contentScale = ContentScale.Crop,
-            alpha = alphaCurr
+            modifier = imageModifier.graphicsLayer {
+                saturation = 0f
+                alpha = alphaCurr
+            },
+            contentScale = ContentScale.Crop
         )
         if (alphaNext > 0f) {
-            AsyncImage(
-                model = slides[nextIdx],
+            Image(
+                painter = painterResource(id = slides[nextIdx]),
                 contentDescription = null,
-                modifier = imageModifier,
-                contentScale = ContentScale.Crop,
-                alpha = alphaNext
+                modifier = imageModifier.graphicsLayer {
+                    saturation = 0f
+                    alpha = alphaNext
+                },
+                contentScale = ContentScale.Crop
             )
         }
 
