@@ -60,13 +60,6 @@ data class StormParams(
     override val kind: EffectKind = EffectKind.STORM
 }
 
-data class StarsParams(
-    val starsCount: Int,
-    val twinklePeriodMs: IntRange
-) : EffectParams {
-    override val kind: EffectKind = EffectKind.NIGHT
-}
-
 data class ThemeSpec(
     val id: String,
     @StringRes val titleRes: Int,
