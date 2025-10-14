@@ -2,7 +2,6 @@ package com.example.abys.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,12 +9,15 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,7 +40,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -81,8 +82,7 @@ fun EffectCarousel(
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
 
-    val alpha by animateFloatAsState(targetValue = if (collapsed) 0.35f else 1f, label = "carAlpha")
-    val targetHeight = if (collapsed) 72.dp else 132.dp
+    val targetHeight = if (collapsed) 96.dp else 156.dp
     val height by animateDpAsState(targetValue = targetHeight, label = "carHeight")
     val updatedOnSnapped by rememberUpdatedState(onThemeSnapped)
     val updatedOnDoubleTap by rememberUpdatedState(onDoubleTapApply)
@@ -96,34 +96,74 @@ fun EffectCarousel(
         Modifier
             .fillMaxWidth()
             .height(height)
-            .alpha(alpha)
-            .pointerInput(collapsed) {
-                detectTapGestures(onTap = { if (collapsed) onCollapsedChange(false) })
-            }
     ) {
         if (collapsed) {
             val selectedTheme = remember(selectedThemeId, themes) {
                 themes.firstOrNull { it.id == selectedThemeId } ?: themes.first()
             }
-            Box(
-                Modifier
+            Surface(
+                modifier = Modifier
                     .align(Alignment.Center)
-                    .size(68.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(
-                        width = 2.dp,
-                        brush = Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.12f))
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    .background(Color.Black.copy(alpha = 0.35f))
+                    .padding(horizontal = 32.dp)
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = stringResource(id = R.string.theme_carousel_expand)
+                    },
+                shape = RoundedCornerShape(28.dp),
+                color = Color.Black.copy(alpha = 0.58f),
+                tonalElevation = 2.dp,
+                onClick = { onCollapsedChange(false) }
             ) {
-                Image(
-                    painter = painterResource(id = selectedTheme.thumbRes),
-                    contentDescription = stringResource(id = selectedTheme.titleRes),
-                    modifier = Modifier.fillMaxSize()
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .border(
+                                    width = 2.dp,
+                                    brush = Brush.verticalGradient(
+                                        listOf(Color.White.copy(alpha = 0.38f), Color.White.copy(alpha = 0.14f))
+                                    ),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .background(Color.Black.copy(alpha = 0.35f))
+                        ) {
+                            Image(
+                                painter = painterResource(id = selectedTheme.thumbRes),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                text = stringResource(id = R.string.theme_carousel_handle),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(id = selectedTheme.titleRes),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White.copy(alpha = 0.75f)
+                            )
+                        }
+                    }
+                    Text(
+                        text = "\u02C4",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
             }
         } else {
             var snappedIndex by remember { mutableStateOf(0) }
@@ -392,9 +432,43 @@ fun EffectCarousel(
                 }
             }
 
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 4.dp)
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = stringResource(id = R.string.theme_carousel_collapse)
+                    },
+                shape = RoundedCornerShape(18.dp),
+                color = Color.Black.copy(alpha = 0.42f),
+                tonalElevation = 1.dp,
+                onClick = { onCollapsedChange(true) }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.theme_carousel_handle),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "\u02C5",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
+                }
+            }
+
             LaunchedEffect(collapsed) {
                 if (!collapsed) {
+                    showHint = true
                     delay(3200)
+                    showHint = false
+                } else {
                     showHint = false
                 }
             }

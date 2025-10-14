@@ -74,6 +74,7 @@ fun LeavesEffect(
     var frameTick by remember { mutableStateOf(0) }
     var currentIntensity by remember { mutableStateOf(intensity) }
     var previousParams by remember { mutableStateOf(params) }
+    val ambientWind = LocalWind.current
 
     LaunchedEffect(intensity) {
         currentIntensity = intensity.coerceIn(0f, 1f)
@@ -92,7 +93,7 @@ fun LeavesEffect(
         }
     }
 
-    LaunchedEffect(canvasWidth, canvasHeight, params, currentIntensity) {
+    LaunchedEffect(canvasWidth, canvasHeight, params, currentIntensity, ambientWind) {
         var windPhase = leafRandom.nextFloat() * TAU
         var gustTimer = 0f
         var gustDuration = randomRange(0.8f, 1.2f)
@@ -110,6 +111,7 @@ fun LeavesEffect(
             val swayScale = 0.8f + 0.5f * currentIntensity
             val driftScale = 0.6f + 0.5f * currentIntensity
             val spinScale = 0.5f + 0.7f * currentIntensity
+            val ambientAmp = (ambientWind?.amp ?: 1f).coerceAtLeast(0.6f)
 
             windPhase += FRAME_DT * TAU / windPeriod
             if (windPhase > TAU) windPhase -= TAU
@@ -118,18 +120,21 @@ fun LeavesEffect(
             if (gustTimer >= gustDuration) {
                 gustTimer = 0f
                 gustDuration = randomRange(0.8f, 1.2f)
-                gustTarget = randomRange(-1f, 1f) * params.driftX * 120f
+                val ambientPush = (ambientWind?.swayX ?: 0f) * 0.4f
+                gustTarget = randomRange(-1f, 1f) * params.driftX * 120f * ambientAmp + ambientPush
             }
             gustStrength += (gustTarget - gustStrength) * 0.08f
 
             val baseWind = sin(windPhase) * params.driftX * 42f
-            val windX = (baseWind + gustStrength) * (0.7f + 0.6f * currentIntensity)
+            val ambientPushX = (ambientWind?.swayX ?: 0f) * 0.18f
+            val ambientPushY = (ambientWind?.swayY ?: 0f) * 0.08f
+            val windX = (baseWind + gustStrength + ambientPushX) * (0.7f + 0.6f * currentIntensity) * ambientAmp
 
             leaves.forEach { leaf ->
                 val vx = leaf.baseVx * driftScale
-                val vy = leaf.baseVy * speedScale
+                val vy = leaf.baseVy * speedScale + ambientPushY
                 val swayVelocity = leaf.baseSway * swayScale
-                val spinSpeed = leaf.baseSpinSpeed * spinScale
+                val spinSpeed = leaf.baseSpinSpeed * spinScale * ambientAmp
 
                 leaf.phase += leaf.basePhaseSpeed * FRAME_DT
                 if (leaf.phase > TAU) leaf.phase -= TAU

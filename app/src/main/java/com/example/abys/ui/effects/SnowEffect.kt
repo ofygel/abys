@@ -35,6 +35,14 @@ fun SnowEffect(
     var layer by remember { mutableStateOf(IntArray(0)) }
     var alpha by remember { mutableStateOf(FloatArray(0)) }
 
+    var clusterCount by remember { mutableStateOf(0) }
+    var clusterX by remember { mutableStateOf(FloatArray(0)) }
+    var clusterY by remember { mutableStateOf(FloatArray(0)) }
+    var clusterRadius by remember { mutableStateOf(FloatArray(0)) }
+    var clusterSpeed by remember { mutableStateOf(FloatArray(0)) }
+    var clusterAlpha by remember { mutableStateOf(FloatArray(0)) }
+    var clusterPhase by remember { mutableStateOf(FloatArray(0)) }
+
     var frame by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(size, intensity, params) {
@@ -93,6 +101,24 @@ fun SnowEffect(
                 else -> 0.55f
             }
         }
+
+        val clusterTarget = (2 + (intensity * 5f)).toInt().coerceIn(2, 7)
+        clusterCount = clusterTarget
+        clusterX = FloatArray(clusterTarget)
+        clusterY = FloatArray(clusterTarget)
+        clusterRadius = FloatArray(clusterTarget)
+        clusterSpeed = FloatArray(clusterTarget)
+        clusterAlpha = FloatArray(clusterTarget)
+        clusterPhase = FloatArray(clusterTarget)
+
+        repeat(clusterTarget) { index ->
+            clusterX[index] = random.nextFloat() * width
+            clusterY[index] = random.nextFloat() * height
+            clusterRadius[index] = 12f + random.nextFloat() * 18f
+            clusterSpeed[index] = (params.speed * 18f) * (0.6f + random.nextFloat() * 0.5f)
+            clusterAlpha[index] = 0.12f + random.nextFloat() * 0.18f
+            clusterPhase[index] = random.nextFloat() * (PI.toFloat() * 2f)
+        }
     }
 
     LaunchedEffect(size, flakesCount, params, intensity) {
@@ -137,6 +163,20 @@ fun SnowEffect(
                 }
             }
 
+            if (clusterCount > 0) {
+                for (index in 0 until clusterCount) {
+                    clusterPhase[index] += 0.015f
+                    val sway = sin(clusterPhase[index] * 0.6f) * params.driftX * 22f
+                    clusterY[index] += clusterSpeed[index] * (0.5f + intensity * 0.6f) * dt
+                    clusterX[index] += sway * dt
+
+                    if (clusterY[index] > height + clusterRadius[index]) {
+                        clusterY[index] = -clusterRadius[index] - Random.nextFloat() * height * 0.1f
+                        clusterX[index] = Random.nextFloat() * width
+                    }
+                }
+            }
+
             frame++
         }
     }
@@ -153,6 +193,17 @@ fun SnowEffect(
                 center = Offset(x[index], y[index]),
                 alpha = alpha[index]
             )
+        }
+        if (clusterCount > 0) {
+            for (index in 0 until clusterCount) {
+                val pulse = 1f + sin(clusterPhase[index]) * 0.12f
+                drawCircle(
+                    color = Color.White,
+                    radius = clusterRadius[index] * pulse,
+                    center = Offset(clusterX[index], clusterY[index]),
+                    alpha = clusterAlpha[index]
+                )
+            }
         }
     }
 }

@@ -4,20 +4,25 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 /**
  * Детерминированное слайд-шоу:
@@ -90,7 +95,21 @@ fun SlideshowBackground(
         }
     }
 
-    Box(modifier.fillMaxSize()) {
+    val driftPhase = (nowMs % 16000L) / 16000f
+    val driftX = sin(driftPhase * 2f * PI).toFloat() * 12f
+    val driftY = cos(driftPhase * 2f * PI).toFloat() * 8f
+    val baseScale = 1.04f
+
+    val progress = (within / period).toFloat().coerceIn(0f, 1f)
+    val topAlpha = 0.06f + 0.06f * progress
+    val bottomAlpha = 0.18f + 0.06f * (1f - kotlin.math.abs(progress - 0.5f) * 2f)
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.1f)),
+        contentAlignment = Alignment.Center
+    ) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
         val imageModifier = Modifier
             .fillMaxSize()
@@ -101,8 +120,12 @@ fun SlideshowBackground(
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaPrev
+                    scaleX = baseScale
+                    scaleY = baseScale
+                    translationX = driftX
+                    translationY = driftY
                 },
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Fit
             )
         }
         Image(
@@ -110,8 +133,12 @@ fun SlideshowBackground(
             contentDescription = null,
             modifier = imageModifier.graphicsLayer {
                 alpha = alphaCurr
+                scaleX = baseScale
+                scaleY = baseScale
+                translationX = driftX
+                translationY = driftY
             },
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.Fit
         )
         if (alphaNext > 0f) {
             Image(
@@ -119,8 +146,12 @@ fun SlideshowBackground(
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaNext
+                    scaleX = baseScale
+                    scaleY = baseScale
+                    translationX = driftX
+                    translationY = driftY
                 },
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Fit
             )
         }
 
@@ -131,8 +162,9 @@ fun SlideshowBackground(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.Black.copy(alpha = 0.15f),
-                            Color.Black.copy(alpha = 0.45f)
+                            Color.Black.copy(alpha = topAlpha),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = bottomAlpha)
                         )
                     )
                 )
