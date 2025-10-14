@@ -16,16 +16,15 @@ data class UiTimings(
     val isha: String,
     val tz: ZoneId
 ) {
-    /** Возвращает Asr согласно выбранной школе: 0 — Standard, 1 — Hanafi */
-    fun asr(selectedSchool: Int): String =
-        if (selectedSchool == 1) asrHan else asrStd
+    /** Выбранный Asr по мазхабу: 0 = Standard, 1 = Hanafi */
+    fun asr(selectedSchool: Int): String = if (selectedSchool == 1) asrHan else asrStd
 
     /**
-     * Находит ближайший будущий намаз.
-     * @return Pair(название, время HH:mm) или первый намаз дня, если все прошли.
+     * Ближайший намаз от «сейчас».
+     * Возвращает Pair<название, время в "HH:mm"> или null (крайне маловероятно).
      */
     fun nextPrayer(selectedSchool: Int): Pair<String, String>? {
-        val ordered = listOf(
+        val order = listOf(
             "Fajr"    to fajr,
             "Shuruq"  to sunrise,
             "Dhuhr"   to dhuhr,
@@ -33,13 +32,13 @@ data class UiTimings(
             "Maghrib" to maghrib,
             "Isha"    to isha
         )
-
-        val now = TimeHelper.now(tz)                     // ZonedDateTime «сейчас»
-        for ((name, timeStr) in ordered) {
-            val tt = TimeHelper.parseHHmmLocal(timeStr, tz) ?: continue
-            if (now.isBefore(tt)) return name to timeStr // первый ещё не наступивший
-        }
-        return ordered.firstOrNull()                     // день уже прошёл ⇒ Fajr
+        val now = TimeHelper.now(tz)
+        order.firstOrNull { (_, t) ->
+            val tt = TimeHelper.parseHHmmLocal(t, tz) ?: return@firstOrNull false
+            now.isBefore(tt)
+        }?.let { return it }
+        // Если все времена уже прошли — следующий будет Fajr (следующего дня)
+        return order.firstOrNull()
     }
 
     /** Список пар “название – время” для отображения */
