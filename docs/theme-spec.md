@@ -27,7 +27,9 @@
   горизонтальный дрейф и диапазон радиусов.
 * `LightningParams(minDelayMs, maxDelayMs, flashAlpha, flashMs)` — задержка между вспышками,
   целевая яркость и длительность вспышки.
-* `WindParams(swayX, swayY, speed)` — амплитуда покачивания карточки по X/Y и скорость анимации.
+* `WindParams(speed, swayX, swayY, rotZDeg, parallaxBack, parallaxFront, gustBoost, gustPeriodSec)` —
+  базовая угловая скорость фазы, амплитуды покачивания, лёгкий наклон карточки, коэффициенты параллакса
+  для дальних/ближних слоёв и параметры порывов ветра.
 * `StormParams(rain, wind, lightning)` — комбинированный шторм (смеси параметров дождя, ветра и
   молнии с пониженными значениями).
 * `StarsParams(starsCount, twinklePeriodMs)` — количество звёзд и диапазон периода мерцания.

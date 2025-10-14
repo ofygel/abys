@@ -28,6 +28,10 @@ import com.example.abys.ui.effects.THEMES
 import com.example.abys.ui.effects.themeById
 import com.example.abys.ui.effects.StormParams
 import com.example.abys.ui.effects.WindParams
+import com.example.abys.ui.effects.WindState
+import com.example.abys.ui.effects.rememberWind
+import com.example.abys.ui.effects.windJitter
+import com.example.abys.ui.effects.windParallax
 import com.example.abys.ui.effects.windSway
 import com.example.abys.ui.screens.background.SlideshowBackground
 import com.example.abys.ui.screens.components.GlassCard
@@ -84,7 +88,6 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     var appliedTheme by remember { mutableStateOf(themeById("leaves")) }
     var focusedTheme by remember { mutableStateOf<ThemeSpec>(appliedTheme) }
     var carouselCollapsed by remember { mutableStateOf(false) }
-    var windPhase by remember { mutableStateOf(0f) }
     var applyFlash by remember { mutableStateOf(false) }
     val flashAlpha by animateFloatAsState(if (applyFlash) 0.3f else 0f, label = "applyFlash")
     val scope = rememberCoroutineScope()
@@ -99,17 +102,6 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         }
     }
 
-    LaunchedEffect(appliedTheme.id) {
-        windPhase = 0f
-        val windParams = appliedTheme.windParams()
-        if (windParams != null) {
-            while (true) {
-                windPhase += windParams.speed * 16f
-                delay(16)
-            }
-        }
-    }
-
     LaunchedEffect(applyFlash) {
         if (applyFlash) {
             delay(240)
@@ -117,20 +109,23 @@ fun HomeScreen(viewModel: PrayerViewModel) {
         }
     }
 
+    val backgrounds = appliedTheme.backgrounds.ifEmpty { STATIC_BACKGROUNDS }
+    val windConfig = appliedTheme.windParams()
+    val hasWind = windConfig != null && appliedTheme.supportsWindSway
+    val windParams = windConfig ?: WindParams()
+    val wind = if (hasWind) {
+        rememberWind(params = windParams, intensity = appliedTheme.defaultIntensity / 100f)
+    } else {
+        remember { WindState() }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         /* ---------- фон-слайдшоу ---------- */
         SlideshowBackground(
-            modifier = Modifier.fillMaxSize(),
-            images = STATIC_BACKGROUNDS
-        val backgrounds = appliedTheme.backgrounds.ifEmpty {
-            listOf(
-                R.drawable.slide_01, R.drawable.slide_02, R.drawable.slide_03, R.drawable.slide_04,
-                R.drawable.slide_05, R.drawable.slide_06, R.drawable.slide_07, R.drawable.slide_08
-            )
-        }
-        SlideshowBackground(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .let { base -> if (hasWind) base.windParallax(wind, depth = -1f, params = windParams) else base },
             images = backgrounds
         )
 
@@ -147,16 +142,14 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 modifier = Modifier
                     .fillMaxWidth(0.90f)
                     .fillMaxHeight(0.60f)
-                    .windSway(
-                        enabled = appliedTheme.supportsWindSway,
-                        t = windPhase,
-                        params = appliedTheme.windParams(),
-                        intensity = appliedTheme.defaultIntensity / 100f
-                    )
+                    .let { base -> if (hasWind) base.windSway(wind) else base }
             ) {
                 Text(
                     text = stringResource(id = R.string.today_prayers),
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.then(
+                        if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier
+                    )
                 )
                 Spacer(Modifier.height(12.dp))
 
@@ -180,13 +173,19 @@ fun HomeScreen(viewModel: PrayerViewModel) {
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = stringResource(id = R.string.theme_active_label, stringResource(id = appliedTheme.titleRes)),
-                    style = MaterialTheme.typography.labelLarge
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.then(
+                        if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.4f, seed = 2) else Modifier
+                    )
                 )
                 if (!carouselCollapsed && focusedTheme.id != appliedTheme.id) {
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = stringResource(id = R.string.theme_preview_label, stringResource(id = focusedTheme.titleRes)),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.then(
+                            if (hasWind) Modifier.windJitter(wind, amplitudePx = 0.35f, seed = 3) else Modifier
+                        )
                     )
                 }
             }

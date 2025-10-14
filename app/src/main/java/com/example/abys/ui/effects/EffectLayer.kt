@@ -18,11 +18,10 @@ fun EffectLayer(
             is RainParams -> RainEffect(modifier, params, intensity)
             is SnowParams -> SnowEffect(modifier, params, intensity)
             is LightningParams -> LightningOverlay(modifier, params, intensity)
-            is WindParams -> WindOverlay(modifier, params, intensity)
+            is WindParams -> Unit
             is StarsParams -> StarsEffect(modifier, params, intensity)
             is StormParams -> {
                 RainEffect(modifier, params.rain, intensity)
-                WindOverlay(modifier, params.wind, intensity)
                 LightningOverlay(modifier, params.lightning, intensity)
             }
         }
