@@ -23,7 +23,6 @@ import com.example.abys.ui.PrayerViewModel
 import com.example.abys.ui.components.EffectCarousel
 import com.example.abys.ui.components.PrayerTable
 import com.example.abys.ui.effects.EffectLayer
-import com.example.abys.ui.effects.EffectKind
 import com.example.abys.ui.effects.ThemeSpec
 import com.example.abys.ui.effects.THEMES
 import com.example.abys.ui.effects.themeById
@@ -238,9 +237,9 @@ fun HomeScreen(viewModel: PrayerViewModel) {
     }
 }
 
-private fun ThemeSpec.windParams(): WindParams? = when (effect) {
-    EffectKind.WIND -> params as? WindParams
-    EffectKind.STORM -> (params as? StormParams)?.wind
+private fun ThemeSpec.windParams(): WindParams? = when (val params = params) {
+    is WindParams -> params
+    is StormParams -> params.wind
     else -> null
 }
 

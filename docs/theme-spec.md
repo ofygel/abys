@@ -9,8 +9,7 @@
 | `titleRes` | `@StringRes Int` | Локализованное название для подписи плитки и статуса. |
 | `thumbRes` | `@DrawableRes Int` | Квадратное превью темы (см. [effect-assets](effect-assets.md)). |
 | `backgrounds` | `List<@DrawableRes Int>` | Набор фоновых слайдов (1–4 шт.), для `SlideshowBackground`. |
-| `effect` | `EffectKind` | Тип погодного эффекта (LEAVES, RAIN, SNOW, LIGHTNING, WIND, STORM, SUNSET_SNOW, NIGHT). |
-| `params` | `EffectParams` | Набор параметров, зависящий от типа эффекта (см. ниже). |
+| `params` | `EffectParams` | Набор параметров, зависящий от типа эффекта (см. ниже). Тип можно узнать через `params.kind`. |
 | `defaultIntensity` | `Int` (0..100) | Стандартная «сила» эффекта — влияет на плотность частиц, скорость и т.п. |
 | `supportsWindSway` | `Boolean` | Включает покачивание стеклянной карточки. |
 | `supportsFlash` | `Boolean` | Разрешает вспышки молнии поверх сцены. |
