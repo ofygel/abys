@@ -15,19 +15,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
-data class WindParams(
-    val speed: Float = 0.06f,                  // базовая угловая скорость фазы
-    val swayX: Float = 10f,                    // амплитуда сдвига X для карточки
-    val swayY: Float = 4f,                     // амплитуда сдвига Y для карточки
-    val rotZDeg: Float = 0.45f,                // лёгкий наклон карточки при ветре (в градусах)
-    val parallaxBack: Float = 0.25f,           // коэффициент параллакса для задних слоёв (фон)
-    val parallaxFront: Float = 0.10f,          // коэффициент параллакса для передних слоёв (например, снежинки)
-    val gustBoost: Float = 1.8f,               // насколько усиливается ветер при порыве
-    val gustPeriodSec: ClosedFloatingPointRange<Float> = 3f..7f  // длительность порыва
-): EffectParams {
-    override val kind: EffectKind = EffectKind.WIND
-}
-
 /** Текущее состояние ветра — читается UI-слоями. */
 @Stable
 data class WindState(
