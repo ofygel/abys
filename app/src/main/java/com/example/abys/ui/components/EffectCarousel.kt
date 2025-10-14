@@ -25,12 +25,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,19 +51,7 @@ import com.example.abys.ui.effects.ThemeSpec
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.snapshotFlow
-import androidx.compose.ui.unit.dp
-import com.example.abys.R
-import com.example.abys.ui.effects.ThemeSpec
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.snapshotFlow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.painterResource
-import com.example.abys.ui.effects.EFFECTS
-import com.example.abys.ui.effects.EffectSpec
-import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun EffectCarousel(
@@ -77,11 +65,14 @@ fun EffectCarousel(
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    val alpha by animateFloatAsState(if (collapsed) 0.35f else 1f, label = "carAlpha")
+    val alpha by animateFloatAsState(targetValue = if (collapsed) 0.35f else 1f, label = "carAlpha")
     val targetHeight = if (collapsed) 72.dp else 132.dp
-    val height by animateDpAsState(targetHeight, label = "carHeight")
+    val height by animateDpAsState(targetValue = targetHeight, label = "carHeight")
     val updatedOnSnapped by rememberUpdatedState(onThemeSnapped)
-    val height = if (collapsed) 72.dp else 132.dp
+
+    if (themes.isEmpty()) {
+        return
+    }
 
     Box(
         Modifier
@@ -94,7 +85,6 @@ fun EffectCarousel(
             }
     ) {
         if (collapsed) {
-            // маленькая «спящая» версия
             Box(
                 Modifier
                     .align(Alignment.Center)
@@ -124,7 +114,7 @@ fun EffectCarousel(
 
                     val scale = remember(itemCenter, listCenter) {
                         if (listCenter <= 0f) 0.92f else {
-                            val distancePx = kotlin.math.abs(itemCenter - listCenter)
+                            val distancePx = abs(itemCenter - listCenter)
                             val influence = 1f - (distancePx / (listCenter * 1.2f)).coerceIn(0f, 1f)
                             0.92f + influence * 0.48f
                         }
@@ -150,7 +140,6 @@ fun EffectCarousel(
                                 shape = RoundedCornerShape(20.dp)
                             )
                             .background(Color.Black.copy(alpha = 0.25f))
-                            .pointerInput(showHint) {
                             .pointerInput(Unit) {
                                 detectTapGestures(
                                     onDoubleTap = {
@@ -158,7 +147,6 @@ fun EffectCarousel(
                                         onCollapsedChange(true)
                                         showHint = false
                                         scope.launch {
-                                            // возвращаемся к выбранному элементу после сворачивания
                                             state.animateScrollToItem(idx)
                                         }
                                     }
@@ -180,7 +168,11 @@ fun EffectCarousel(
                                     .background(Color(0xAA1B5E20)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("✓", color = Color.White, style = MaterialTheme.typography.labelSmall)
+                                Text(
+                                    text = "\u2713",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
                             }
                         }
                         Box(
@@ -202,32 +194,7 @@ fun EffectCarousel(
             }
 
             LaunchedEffect(Unit) {
-                snapshotFlow { state.isScrollInProgress }
-                    .collectLatest { scrolling ->
-                        if (!scrolling) {
-                            delay(450)
-                            val layoutInfo = state.layoutInfo
-                            val center = listCenter.takeIf { it > 0f } ?: return@collectLatest
-                            val visible = layoutInfo.visibleItemsInfo
-                            val closest = visible.minByOrNull { info ->
-                                val itemCenterPx = info.offset + info.size / 2f
-                                kotlin.math.abs(itemCenterPx - center)
-                            }
-                            if (closest != null && closest.index != snappedIndex) {
-                                snappedIndex = closest.index
-                                updatedOnSnapped(themes[closest.index])
-                            }
-                            closest?.let { info ->
-                                val itemCenterPx = info.offset + info.size / 2f
-                                val delta = itemCenterPx - center
-                                if (kotlin.math.abs(delta) > 4f) {
-                                    scope.launch {
-                                        state.animateScrollBy(delta)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                updatedOnSnapped(themes.getOrNull(snappedIndex) ?: themes.first())
             }
 
             LaunchedEffect(selectedThemeId, collapsed) {
@@ -240,47 +207,16 @@ fun EffectCarousel(
             }
 
             LaunchedEffect(Unit) {
-                updatedOnSnapped(themes.getOrNull(snappedIndex) ?: themes.first())
-            }
-
-            AnimatedVisibility(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 8.dp),
-                visible = showHint
-            ) {
-                Surface(
-                    tonalElevation = 2.dp,
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.Black.copy(alpha = 0.6f)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.theme_apply_hint),
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.White
-                    )
-                }
-            }
-
-            LaunchedEffect(collapsed) {
-                if (!collapsed) {
-                    delay(3200)
-                    showHint = false
-                }
-            }
-
-            LaunchedEffect(Unit) {
                 snapshotFlow { state.isScrollInProgress }
                     .collectLatest { scrolling ->
                         if (!scrolling) {
                             delay(450)
+                            val center = listCenter.takeIf { it > 0f } ?: return@collect
                             val layoutInfo = state.layoutInfo
-                            val center = listCenter.takeIf { it > 0f } ?: return@collectLatest
                             val visible = layoutInfo.visibleItemsInfo
                             val closest = visible.minByOrNull { info ->
                                 val itemCenterPx = info.offset + info.size / 2f
-                                kotlin.math.abs(itemCenterPx - center)
+                                abs(itemCenterPx - center)
                             }
                             if (closest != null && closest.index != snappedIndex) {
                                 snappedIndex = closest.index
@@ -289,7 +225,7 @@ fun EffectCarousel(
                             closest?.let { info ->
                                 val itemCenterPx = info.offset + info.size / 2f
                                 val delta = itemCenterPx - center
-                                if (kotlin.math.abs(delta) > 4f) {
+                                if (abs(delta) > 4f) {
                                     scope.launch {
                                         state.animateScrollBy(delta)
                                     }
@@ -297,19 +233,6 @@ fun EffectCarousel(
                             }
                         }
                     }
-            }
-
-            LaunchedEffect(selectedThemeId, collapsed) {
-                if (!collapsed) {
-                    val index = themes.indexOfFirst { it.id == selectedThemeId }.takeIf { it >= 0 } ?: 0
-                    snappedIndex = index
-                    state.scrollToItem(index)
-                    updatedOnSnapped(themes[index])
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                updatedOnSnapped(themes.getOrNull(snappedIndex) ?: themes.first())
             }
 
             AnimatedVisibility(
