@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.delay
+import androidx.compose.runtime.withFrameNanos
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -98,26 +98,30 @@ fun RainEffect(
 
     // Физика (фикcированный шаг ~16мс). Никаких аллокаций в петле.
     LaunchedEffect(w, h, params.dropsCount, params.speed, params.angleDeg, intensityClamped) {
+        var last = 0L
         while (true) {
+            val now = withFrameNanos { it }
+            if (last == 0L) {
+                last = now
+                continue
+            }
+            val dt = ((now - last) / 1_000_000f).coerceAtMost(32f) / 16f // ~60fps-нормировка
+            last = now
+
             val margin = 32f
             drops.forEach { d ->
-                // мелкая «турбулентность» вокруг вектора движения
-                val sway = sin(d.phase) * (0.35f + 0.65f * intensityClamped) // 0..~1
-                d.x += d.vx + sway
-                d.y += d.vy
-                d.phase += d.freq
-
-                // респавн: вышли за низ ИЛИ далеко по X → возвращаем сверху с новым X
+                val sway = sin(d.phase) * (0.35f + 0.65f * intensityClamped)
+                d.x += (d.vx + sway) * dt
+                d.y += d.vy * dt
+                d.phase += d.freq * dt
                 if (d.y > h + d.len || d.x < -margin || d.x > w + margin) {
                     d.y = -d.len
                     d.x = rnd.nextFloat() * w
-                    // мелкая рандомизация ширины/фазы, чтобы не синхронизировались
                     d.phase = rnd.nextFloat() * (PI * 2).toFloat()
-                    d.width = d.width * (0.9f + rnd.nextFloat() * 0.2f)
+                    d.width *= (0.9f + rnd.nextFloat() * 0.2f)
                 }
             }
-            frame++      // один стейт, чтобы перерисовать Canvas
-            delay(16L)
+            frame++ // триггер перерисовки Canvas
         }
     }
 
