@@ -103,6 +103,7 @@ fun EffectCarousel(
                 themes.firstOrNull { it.id == selectedThemeId } ?: themes.first()
             }
             val expandDescription = stringResource(id = R.string.theme_carousel_expand)
+
             Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -435,6 +436,7 @@ fun EffectCarousel(
             }
 
             val collapseDescription = stringResource(id = R.string.theme_carousel_collapse)
+
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
