@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -92,13 +93,15 @@ class MainActivity : AppCompatActivity() {
 
         tvDate.text = TimeHelper.todayHuman()
 
-        vm.city.observe(this) { tvCity.text = it ?: "—" }
+        vm.city.observe(this) { tvCity.text = it ?: getString(R.string.placeholder_dash) }
 
         vm.timings.observe(this) { t ->
             val sel = vm.school.value ?: 0
             renderTimings(t?.toDisplayList(sel).orEmpty(), t?.nextPrayer(sel)?.first)
             val next = t?.nextPrayer(sel)
-            tvNextPrayer.text = next?.let { "Следующий намаз — ${it.first} в ${it.second}" } ?: "—"
+            tvNextPrayer.text = next?.let {
+                getString(R.string.next_prayer_time_format, it.first, it.second)
+            } ?: getString(R.string.next_prayer_placeholder)
             startTicker(next?.second, t?.tz)
         }
         vm.school.observe(this) { s ->
@@ -153,7 +156,7 @@ class MainActivity : AppCompatActivity() {
                             .heightIn(min = 180.dp),
                         contentPadding = PaddingValues(24.dp)
                     ) {
-                        Text("—", color = Color.White)
+                        Text(stringResource(R.string.placeholder_dash), color = Color.White)
                     }
                 }
             }
@@ -232,7 +235,7 @@ class MainActivity : AppCompatActivity() {
     private fun startTicker(nextTime: String?, zoneId: java.time.ZoneId?) {
         stopTicker()
         if (nextTime == null || zoneId == null) {
-            tvCountdown.text = "До начала: —"
+            tvCountdown.text = getString(R.string.countdown_placeholder)
             return
         }
         ticker = object : Runnable {
@@ -242,8 +245,8 @@ class MainActivity : AppCompatActivity() {
                     val h = it.toHours()
                     val m = (it.toMinutes() % 60)
                     val s = (it.seconds % 60)
-                    "До начала: %02d:%02d:%02d".format(h, m, s)
-                } ?: "До начала: —"
+                    getString(R.string.countdown_time_format, h, m, s)
+                } ?: getString(R.string.countdown_placeholder)
                 uiHandler.postDelayed(this, 1000)
             }
         }

@@ -39,6 +39,16 @@
     <string name="asr_school_label">Мазхаб Asr</string>
     <string name="asr_school_standard">Стандарт</string>
     <string name="asr_school_hanafi">Ханафи</string>
+    <string name="asr_standard_button">Asr: Standard</string>
+    <string name="asr_hanafi_button">Asr: Hanafi</string>
+    <string name="action_detect_location">Определить местоположение</string>
+    <string name="action_manual_city">Указать город</string>
+    <string name="placeholder_dash">—</string>
+    <string name="placeholder_time">—:—</string>
+    <string name="next_prayer_placeholder">Следующий намаз — — в —:—</string>
+    <string name="next_prayer_time_format">Следующий намаз — %1$s в %2$s</string>
+    <string name="countdown_placeholder">До начала: —</string>
+    <string name="countdown_time_format">До начала: %1$02d:%2$02d:%3$02d</string>
     <string name="next_prayer_label">Следующий намаз</string>
     <string name="prayer_loading_hint">Выберите город или разрешите геолокацию, чтобы увидеть расписание.</string>
     <string name="reminder_toggle_label">Напоминание перед намазом</string>
