@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -180,7 +181,7 @@ fun EffectCarousel(
             }
 
             val viewportCenter by remember {
-                derivedStateOf {
+                derivedStateOf<Float> {
                     val layoutInfo = state.layoutInfo
                     (layoutInfo.viewportStartOffset + layoutInfo.viewportEndOffset) / 2f
                 }
@@ -198,15 +199,15 @@ fun EffectCarousel(
                 ) {
                     itemsIndexed(
                         items = themes,
-                        key = { _, spec -> spec.id }
-                    ) { idx, spec ->
+                        key = { _: Int, spec: ThemeSpec -> spec.id }
+                    ) { idx: Int, spec: ThemeSpec ->
                         val itemInfo by remember {
-                            derivedStateOf {
+                            derivedStateOf<LazyListItemInfo?> {
                                 state.layoutInfo.visibleItemsInfo.firstOrNull { it.index == idx }
                             }
                         }
                         val scale by remember {
-                            derivedStateOf {
+                            derivedStateOf<Float> {
                                 val info = itemInfo
                                 val center = viewportCenter
                                 if (info == null || center <= 0f) {
@@ -224,7 +225,7 @@ fun EffectCarousel(
                             label = "borderWidth"
                         )
                         val isCentered by remember {
-                            derivedStateOf {
+                            derivedStateOf<Boolean> {
                                 val info = itemInfo
                                 val center = viewportCenter
                                 if (info == null) {
