@@ -16,8 +16,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -39,6 +37,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
 import java.time.Duration
+import java.time.ZoneId
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,6 +56,7 @@ class MainActivity : AppCompatActivity() {
 
     private val uiHandler = Handler(Looper.getMainLooper())
     private var ticker: Runnable? = null
+
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         tvDate.text = fallbackDate
         tvNextPrayer.text = initialNext?.let {
             getString(R.string.next_prayer_time_format, it.first, it.second)
-        } ?: ""
+        } ?: getString(R.string.next_prayer_placeholder)
         startTicker(initialNext?.second, FallbackContent.uiTimings.tz)
         renderTimings(
             FallbackContent.uiTimings.toDisplayList(initialSchool),
@@ -102,65 +102,65 @@ class MainActivity : AppCompatActivity() {
             fallback = true
         )
 
-        vm.city.observe(this) { tvCity.text = it ?: FallbackContent.cityLabel }
+        vm.city.observe(this) { city ->
+            tvCity.text = city ?: FallbackContent.cityLabel
+        }
 
-        vm.timings.observe(this) { t ->
-            val sel = vm.school.value ?: 0
-            val displayTimings = t?.toDisplayList(sel) ?: FallbackContent.uiTimings.toDisplayList(sel)
-            val fallbackNext = FallbackContent.nextPrayer(sel)
-            val next = t?.nextPrayer(sel) ?: fallbackNext
-            renderTimings(displayTimings, next?.first, fallback = t == null)
+        vm.timings.observe(this) { timings ->
+            val selectedSchool = vm.school.value ?: 0
+            val displayTimings = timings?.toDisplayList(selectedSchool)
+                ?: FallbackContent.uiTimings.toDisplayList(selectedSchool)
+            val fallbackNext = FallbackContent.nextPrayer(selectedSchool)
+            val next = timings?.nextPrayer(selectedSchool) ?: fallbackNext
+            renderTimings(displayTimings, next?.first, fallback = timings == null)
             tvNextPrayer.text = next?.let {
                 getString(R.string.next_prayer_time_format, it.first, it.second)
             } ?: fallbackNext?.let {
                 getString(R.string.next_prayer_time_format, it.first, it.second)
-            } ?: ""
-            tvDate.text = TimeHelper.todayHuman()
-            val zone = t?.tz ?: FallbackContent.uiTimings.tz
-            startTicker(next?.second ?: fallbackNext?.second, zone)
-        vm.city.observe(this) { tvCity.text = it ?: getString(R.string.placeholder_dash) }
-
-        vm.timings.observe(this) { t ->
-            val sel = vm.school.value ?: 0
-            renderTimings(t?.toDisplayList(sel).orEmpty(), t?.nextPrayer(sel)?.first)
-            val next = t?.nextPrayer(sel)
-            tvNextPrayer.text = next?.let {
-                getString(R.string.next_prayer_time_format, it.first, it.second)
             } ?: getString(R.string.next_prayer_placeholder)
-            startTicker(next?.second, t?.tz)
+            val zone = timings?.tz ?: FallbackContent.uiTimings.tz
+            tvDate.text = TimeHelper.todayHuman(zone)
+            startTicker(next?.second ?: fallbackNext?.second, zone)
         }
-        vm.school.observe(this) { s ->
-            when (s) {
-                0 -> toggleAsr.check(btnAsrStd.id)
-                else -> toggleAsr.check(btnAsrHan.id)
+
+        vm.school.observe(this) { school ->
+            if (school == 1) {
+                toggleAsr.check(btnAsrHan.id)
+            } else {
+                toggleAsr.check(btnAsrStd.id)
             }
-            if (vm.timings.value == null) {
-                val demoNext = FallbackContent.nextPrayer(s)
-                renderTimings(
-                    FallbackContent.uiTimings.toDisplayList(s),
-                    demoNext?.first,
-                    fallback = true
-                )
-                tvNextPrayer.text = demoNext?.let {
+
+            val timings = vm.timings.value
+            if (timings == null) {
+                val fallbackTimings = FallbackContent.uiTimings.toDisplayList(school)
+                val fallbackNext = FallbackContent.nextPrayer(school)
+                renderTimings(fallbackTimings, fallbackNext?.first, fallback = true)
+                tvNextPrayer.text = fallbackNext?.let {
                     getString(R.string.next_prayer_time_format, it.first, it.second)
-                } ?: tvNextPrayer.text
-                startTicker(demoNext?.second, FallbackContent.uiTimings.tz)
+                } ?: getString(R.string.next_prayer_placeholder)
+                startTicker(fallbackNext?.second, FallbackContent.uiTimings.tz)
+            } else {
+                val displayTimings = timings.toDisplayList(school)
+                val next = timings.nextPrayer(school)
+                renderTimings(displayTimings, next?.first, fallback = false)
+                tvNextPrayer.text = next?.let {
+                    getString(R.string.next_prayer_time_format, it.first, it.second)
+                } ?: getString(R.string.next_prayer_placeholder)
+                startTicker(next?.second, timings.tz)
             }
         }
 
         toggleAsr.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
-            val s = if (checkedId == btnAsrHan.id) 1 else 0
-            vm.setSchool(s, reload = true, ctx = this)
+            val school = if (checkedId == btnAsrHan.id) 1 else 0
+            vm.setSchool(school, reload = true, ctx = this)
         }
 
         btnRequestLocation.setOnClickListener { requestLocationPermissionOrLoad() }
         btnManualCity.setOnClickListener { showManualCityDialog() }
 
-        // Поднимем сохранённую школу и попробуем авто-загрузку
         vm.loadSavedSchool(this)
 
-        // --- ComposeView интеграция ---
         val composeBg = findViewById<ComposeView>(R.id.composeBg)
         composeBg.setContent {
             SlideshowBackground()
@@ -180,34 +180,20 @@ class MainActivity : AppCompatActivity() {
 
         val composeHero = findViewById<ComposeView>(R.id.composeHero)
         composeHero.setContent {
-            val t by vm.timings.observeAsState()
-            val sel by vm.school.observeAsState(0)
+            val timings by vm.timings.observeAsState()
+            val selectedSchool by vm.school.observeAsState(0)
             MaterialTheme {
-                val source = t ?: FallbackContent.uiTimings
-                PrayerBoard(source, selectedSchool = sel)
-                if (t != null) {
-                    PrayerBoard(t!!, selectedSchool = sel)
-                } else {
-                    FrostedGlassCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                            .heightIn(min = 180.dp),
-                        contentPadding = PaddingValues(24.dp)
-                    ) {
-                        Text(stringResource(R.string.placeholder_dash), color = Color.White)
-                    }
-                }
+                val source = timings ?: FallbackContent.uiTimings
+                PrayerBoard(source, selectedSchool = selectedSchool)
             }
         }
 
         val composeNight = findViewById<ComposeView>(R.id.composeNight)
         composeNight.setContent {
-            val t by vm.timings.observeAsState()
-            val source = t ?: FallbackContent.uiTimings
+            val timings by vm.timings.observeAsState()
+            val source = timings ?: FallbackContent.uiTimings
             NightTimeline(maghrib = source.maghrib, fajr = source.fajr, zone = source.tz)
         }
-        // --- конец блока ComposeView ---
     }
 
     private fun requestLocationPermissionOrLoad() {
@@ -229,10 +215,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun launchLocationPermissionRequest() {
-        permissionLauncher.launch(arrayOf(
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ))
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        )
     }
 
     private fun showManualCityDialog() {
@@ -243,7 +231,11 @@ class MainActivity : AppCompatActivity() {
                 CityPickerSheet(onPick = { picked ->
                     lifecycleScope.launch {
                         SettingsStore.setCity(this@MainActivity, picked.title)
-                        SettingsStore.setLastCoordinates(this@MainActivity, picked.latitude, picked.longitude)
+                        SettingsStore.setLastCoordinates(
+                            this@MainActivity,
+                            picked.latitude,
+                            picked.longitude
+                        )
                     }
                     vm.loadByCity(picked.title)
                     sheet.dismiss()
@@ -254,24 +246,37 @@ class MainActivity : AppCompatActivity() {
         sheet.show()
     }
 
-    private fun renderTimings(items: List<Pair<String, String>>, nextName: String?, fallback: Boolean) {
+    private fun renderTimings(
+        items: List<Pair<String, String>>,
+        nextName: String?,
+        fallback: Boolean
+    ) {
         listContainer.removeAllViews()
         val inflater = LayoutInflater.from(this)
         items.forEach { (name, time) ->
-            val card = inflater.inflate(R.layout.item_prayer_card, listContainer, false) as MaterialCardView
+            val card = inflater.inflate(
+                R.layout.item_prayer_card,
+                listContainer,
+                false
+            ) as MaterialCardView
             val tvName = card.findViewById<TextView>(R.id.tvName)
             val tvTime = card.findViewById<TextView>(R.id.tvTime)
             tvName.text = name
             tvTime.text = time
+            card.isChecked = name == nextName
             if (name == nextName) {
-                card.isChecked = true
                 card.strokeWidth = (2 * resources.displayMetrics.density).toInt()
             }
             listContainer.addView(card)
         }
+
         if (fallback) {
             FallbackContent.actionTips.forEach { tip ->
-                val tipCard = inflater.inflate(R.layout.item_action_tip, listContainer, false) as MaterialCardView
+                val tipCard = inflater.inflate(
+                    R.layout.item_action_tip,
+                    listContainer,
+                    false
+                ) as MaterialCardView
                 val tvTitle = tipCard.findViewById<TextView>(R.id.tvTipTitle)
                 val tvBody = tipCard.findViewById<TextView>(R.id.tvTipDescription)
                 val btn = tipCard.findViewById<MaterialButton>(R.id.btnTip)
@@ -292,52 +297,54 @@ class MainActivity : AppCompatActivity() {
                 listContainer.addView(tipCard)
             }
 
-            val inspirationCard = inflater.inflate(R.layout.item_inspiration_card, listContainer, false) as MaterialCardView
+            val inspirationCard = inflater.inflate(
+                R.layout.item_inspiration_card,
+                listContainer,
+                false
+            ) as MaterialCardView
             val container = inspirationCard.findViewById<LinearLayout>(R.id.tipContainer)
             FallbackContent.inspiration.forEach { line ->
-                val tv = inflater.inflate(R.layout.view_inspiration_row, container, false) as TextView
+                val tv = inflater.inflate(
+                    R.layout.view_inspiration_row,
+                    container,
+                    false
+                ) as TextView
                 tv.text = line
                 container.addView(tv)
             }
             listContainer.addView(inspirationCard)
         }
+
         listContainer.visibility = if (items.isEmpty() && !fallback) View.GONE else View.VISIBLE
     }
 
-    private fun startTicker(nextTime: String?, zoneId: java.time.ZoneId?) {
+    private fun startTicker(nextTime: String?, zoneId: ZoneId?) {
         stopTicker()
         val fallbackTime = FallbackContent.nextPrayer(vm.school.value ?: 0)?.second
             ?: FallbackContent.uiTimings.dhuhr
         val targetTime = nextTime ?: fallbackTime
         val targetZone = zoneId ?: FallbackContent.uiTimings.tz
-        fun formatDuration(d: Duration?): String = d?.let {
-            val h = it.toHours()
-            val m = (it.toMinutes() % 60)
-            val s = (it.seconds % 60)
-            getString(R.string.countdown_time_format, h, m, s)
-        } ?: getString(R.string.countdown_time_format, 0, 0, 0)
 
-        tvCountdown.text = formatDuration(TimeHelper.untilNowTo(targetTime, targetZone))
-        ticker = object : Runnable {
-            override fun run() {
-                tvCountdown.text = formatDuration(TimeHelper.untilNowTo(targetTime, targetZone))
-        if (nextTime == null || zoneId == null) {
-            tvCountdown.text = getString(R.string.countdown_placeholder)
-            return
+        fun Duration.format(): String {
+            val hours = toHours()
+            val minutes = (toMinutes() % 60)
+            val seconds = (seconds % 60)
+            return getString(R.string.countdown_time_format, hours, minutes, seconds)
         }
+
+        fun updateCountdown() {
+            val remaining = TimeHelper.untilNowTo(targetTime, targetZone)
+            tvCountdown.text = remaining?.format() ?: getString(R.string.countdown_placeholder)
+        }
+
+        updateCountdown()
         ticker = object : Runnable {
             override fun run() {
-                val d: Duration? = TimeHelper.untilNowTo(nextTime, zoneId)
-                tvCountdown.text = d?.let {
-                    val h = it.toHours()
-                    val m = (it.toMinutes() % 60)
-                    val s = (it.seconds % 60)
-                    getString(R.string.countdown_time_format, h, m, s)
-                } ?: getString(R.string.countdown_placeholder)
+                updateCountdown()
                 uiHandler.postDelayed(this, 1000)
             }
         }
-        uiHandler.postDelayed(ticker!!, 1000)
+        ticker?.let { uiHandler.postDelayed(it, 1000) }
     }
 
     private fun stopTicker() {
