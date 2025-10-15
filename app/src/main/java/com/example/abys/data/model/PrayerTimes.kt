@@ -1,46 +1,61 @@
 package com.example.abys.data.model
 
-import com.example.abys.util.TimeUtils          // ← правильный импорт
-import com.squareup.moshi.Json
+import com.example.abys.util.TimeUtils
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 data class PrayerTimes(
     val fajr: String,
+    val sunrise: String,
     val dhuhr: String,
-    val asr: String,
+    val asrStandard: String,
+    val asrHanafi: String,
     val maghrib: String,
-    val isha: String
+    val isha: String,
+    val imsak: String?,
+    val sunset: String?,
+    val midnight: String?,
+    val firstThird: String?,
+    val lastThird: String?,
+    val timezone: ZoneId,
+    val methodName: String?,
+    val readableDate: String?,
+    val hijriDate: String?,
+    val hijriMonth: String?,
+    val hijriYear: String?
 ) {
-    companion object {
-        /** конвертация из json-структуры AlAdhan */
-        fun fromApi(t: Timings): PrayerTimes = PrayerTimes(
-            fajr = t.fajr,
-            dhuhr = t.dhuhr,
-            asr = t.asr,
-            maghrib = t.maghrib,
-            isha = t.isha
-        )
-    }
 
-    /** Возвращает название и время ближайшего намаза */
-    fun next(nowSec: Int): Pair<String, String> =
-        listOf(
+    fun asr(school: Int): String = if (school == 1) asrHanafi else asrStandard
+
+    fun schedule(school: Int): List<Pair<String, String>> = listOfNotNull(
+        imsak?.let { "Imsak" to it },
+        "Fajr" to fajr,
+        "Sunrise" to sunrise,
+        "Dhuhr" to dhuhr,
+        "Asr" to asr(school),
+        sunset?.let { "Sunset" to it },
+        "Maghrib" to maghrib,
+        "Isha" to isha
+    )
+
+    fun next(now: ZonedDateTime = ZonedDateTime.now(timezone), school: Int): Pair<String, String>? {
+        val day = now.toLocalDate()
+        val entries = listOfNotNull(
+            imsak?.let { "Imsak" to it },
             "Fajr" to fajr,
+            "Sunrise" to sunrise,
             "Dhuhr" to dhuhr,
-            "Asr" to asr,
+            "Asr" to asr(school),
             "Maghrib" to maghrib,
             "Isha" to isha
-        ).first { TimeUtils.hmsToSec(it.second) > nowSec }
-}
+        )
+        val upcoming = entries.firstOrNull { (_, raw) ->
+            val time = runCatching { TimeUtils.parse(clean(raw)) }.getOrNull() ?: return@firstOrNull false
+            val zoned = time.atDate(day).atZone(timezone)
+            zoned.isAfter(now)
+        }
+        return upcoming ?: entries.firstOrNull()
+    }
 
-/* ===== Retrofit DTO ===== */
-data class ApiResponse(val data: Data?) {
-    data class Data(val timings: Timings)
+    private fun clean(value: String): String = value.substringBefore(" ").trim()
 }
-
-data class Timings(
-    @Json(name = "Fajr")    val fajr: String,
-    @Json(name = "Dhuhr")   val dhuhr: String,
-    @Json(name = "Asr")     val asr: String,
-    @Json(name = "Maghrib") val maghrib: String,
-    @Json(name = "Isha")    val isha: String
-)

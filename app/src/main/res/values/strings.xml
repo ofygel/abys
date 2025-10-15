@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Abys</string>
+    <string name="app_name">ABYS</string>
     <string name="today_prayers">Сегодняшние намазы</string>
 
     <!-- Темы оформления -->
@@ -14,6 +14,9 @@
     <string name="theme_active_label">Тема: %1$s</string>
     <string name="theme_preview_label">Предпросмотр: %1$s</string>
     <string name="theme_apply_hint">Двойной тап — применить тему</string>
+    <string name="theme_apply_talkback">Дважды коснитесь, чтобы применить тему %1$s</string>
+    <string name="theme_apply_action">Применить тему %1$s</string>
+    <string name="theme_apply_double_tap">Двойной тап — применить тему %1$s</string>
 
     <!-- Намазы -->
     <string name="prayer_fajr">Fajr</string>
@@ -23,4 +26,60 @@
     <string name="prayer_maghrib">Maghrib</string>
     <string name="prayer_isha">Isha</string>
     <string name="prayer_remaining">через %1$02d:%2$02d:%3$02d</string>
+    <string name="prayer_asr_alt_standard">Стандарт: %1$s</string>
+    <string name="prayer_asr_alt_hanafi">Ханафи: %1$s</string>
+
+    <!-- Экран Home -->
+    <string name="location_current">Текущее местоположение</string>
+    <string name="location_placeholder">Не выбран город</string>
+    <string name="action_change_city">Сменить город</string>
+    <string name="action_use_location">Определить автоматически</string>
+    <string name="action_use_location_loading">Определяем…</string>
+    <string name="location_permission_hint">Разрешите геолокацию, чтобы определить город автоматически.</string>
+    <string name="asr_school_label">Мазхаб Asr</string>
+    <string name="asr_school_standard">Стандарт</string>
+    <string name="asr_school_hanafi">Ханафи</string>
+    <string name="asr_standard_button">Asr: Standard</string>
+    <string name="asr_hanafi_button">Asr: Hanafi</string>
+    <string name="action_detect_location">Определить местоположение</string>
+    <string name="action_manual_city">Указать город</string>
+    <string name="placeholder_dash">—</string>
+    <string name="placeholder_time">—:—</string>
+    <string name="next_prayer_placeholder">Следующий намаз — — в —:—</string>
+    <string name="next_prayer_time_format">Следующий намаз — %1$s в %2$s</string>
+    <string name="countdown_placeholder">До начала: —</string>
+    <string name="countdown_time_format">До начала: %1$02d:%2$02d:%3$02d</string>
+    <string name="next_prayer_label">Следующий намаз</string>
+    <string name="prayer_loading_hint">Выберите город или разрешите геолокацию, чтобы увидеть расписание.</string>
+    <string name="reminder_toggle_label">Напоминание перед намазом</string>
+    <string name="reminder_enabled">Напоминания активны: за 15 минут до намаза.</string>
+    <string name="reminder_disabled">Напоминания выключены.</string>
+    <string name="countdown_toggle_label">Показывать отсчёт</string>
+    <string name="countdown_label_short">Осталось</string>
+    <string name="prayer_extras_title">Дополнительные времена</string>
+    <string name="prayer_meta_imsak">Имсак</string>
+    <string name="prayer_meta_sunset">Закат солнца</string>
+    <string name="prayer_meta_midnight">Исламская полночь</string>
+    <string name="prayer_meta_last_third">Последняя треть ночи</string>
+    <string name="prayer_meta_first_third">Первая треть ночи</string>
+    <string name="prayer_meta_method">Метод расчёта: %1$s</string>
+    <string name="prayer_meta_method_unknown">Метод расчёта</string>
+    <string name="prayer_meta_timezone">Часовой пояс: %1$s</string>
+    <string name="prayer_schedule_today">Намазы на сегодня</string>
+    <string name="prayer_load_error_cached">Не удалось обновить расписание. Показаны сохранённые данные.</string>
+    <string name="prayer_load_error_generic">Не удалось загрузить расписание. Попробуйте позже.</string>
+    <string name="prayer_empty_title">Здесь пока пусто</string>
+    <string name="prayer_empty_body">Выберите город или определите геолокацию, чтобы увидеть времена намазов.</string>
+    <string name="theme_carousel_handle">Темы</string>
+    <string name="theme_carousel_expand">Открыть подбор тем</string>
+    <string name="theme_carousel_collapse">Свернуть подбор тем</string>
+    <string name="fallback_inspiration_title">Вдохновение на сегодня</string>
+    <string name="fallback_reminder_toast">Скоро появится настройка напоминаний. Следите за обновлениями!</string>
+    <string name="fallback_banner_text">Мы показываем демо-расписание для Алматы. Разрешите доступ к геолокации или выберите город, чтобы увидеть точные времена намазов.</string>
+
+    <!-- Поиск города -->
+    <string name="city_search_title">Выбор города</string>
+    <string name="city_search_hint">Almaty / Astana / Shymkent …</string>
+    <string name="city_search_featured">Популярные города</string>
+    <string name="city_search_empty">Ничего не найдено</string>
 </resources>

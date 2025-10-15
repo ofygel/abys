@@ -1,22 +1,28 @@
 package com.example.abys.ui.background
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.compose.ui.res.painterResource
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.floor
-import kotlin.random.Random
+import kotlin.math.sin
 
 /**
  * Детерминированное слайд-шоу:
@@ -27,13 +33,17 @@ import kotlin.random.Random
  */
 @Composable
 fun SlideshowBackground(
+    modifier: Modifier = Modifier,
+    images: List<Int> = Slides.all,
     visibleMs: Long = 15_000L,
     fadeInMs: Long = 900L,
     fadeOutMs: Long = 500L,
     // фиксированная опорная точка (UTC). Можно поменять на «момент первого запуска», если захочешь.
     anchorMs: Long = 0L
 ) {
-    val slides = remember { Slides.all }
+    val slides = remember(images) {
+        images.takeIf { it.isNotEmpty() } ?: Slides.all
+    }
     val n = slides.size.coerceAtLeast(1)
     val period = visibleMs + fadeInMs + fadeOutMs
 
@@ -85,62 +95,79 @@ fun SlideshowBackground(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    val driftPhase = (nowMs % 16000L) / 16000f
+    val driftX = sin(driftPhase * 2f * PI).toFloat() * 12f
+    val driftY = cos(driftPhase * 2f * PI).toFloat() * 8f
+    val baseScale = 1.04f
+
+    val progress = (within / period).toFloat().coerceIn(0f, 1f)
+    val topAlpha = 0.06f + 0.06f * progress
+    val bottomAlpha = 0.18f + 0.06f * (1f - kotlin.math.abs(progress - 0.5f) * 2f)
+
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.1f)),
+        contentAlignment = Alignment.Center
+    ) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
         val imageModifier = Modifier
             .fillMaxSize()
-            .graphicsLayer { saturation = 0f }
-            .blur(2.dp)
 
         if (alphaPrev > 0f) {
-            AsyncImage(
-                model = slides[prevIdx],
+            Image(
+                painter = painterResource(id = slides[prevIdx]),
                 contentDescription = null,
-                modifier = imageModifier,
-                contentScale = ContentScale.Crop,
-                alpha = alphaPrev
+                modifier = imageModifier.graphicsLayer {
+                    alpha = alphaPrev
+                    scaleX = baseScale
+                    scaleY = baseScale
+                    translationX = driftX
+                    translationY = driftY
+                },
+                contentScale = ContentScale.Fit
             )
         }
-        AsyncImage(
-            model = slides[currIdx],
+        Image(
+            painter = painterResource(id = slides[currIdx]),
             contentDescription = null,
-            modifier = imageModifier,
-            contentScale = ContentScale.Crop,
-            alpha = alphaCurr
+            modifier = imageModifier.graphicsLayer {
+                alpha = alphaCurr
+                scaleX = baseScale
+                scaleY = baseScale
+                translationX = driftX
+                translationY = driftY
+            },
+            contentScale = ContentScale.Fit
         )
         if (alphaNext > 0f) {
-            AsyncImage(
-                model = slides[nextIdx],
+            Image(
+                painter = painterResource(id = slides[nextIdx]),
                 contentDescription = null,
-                modifier = imageModifier,
-                contentScale = ContentScale.Crop,
-                alpha = alphaNext
+                modifier = imageModifier.graphicsLayer {
+                    alpha = alphaNext
+                    scaleX = baseScale
+                    scaleY = baseScale
+                    translationX = driftX
+                    translationY = driftY
+                },
+                contentScale = ContentScale.Fit
             )
         }
 
-        // Лёгкий тёмный слой для читаемости текста
+        // Лёгкий градиент для читаемости текста, без «нуарного» эффекта
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color(0x80000000))
-        )
-
-        Canvas(Modifier.fillMaxSize()) {
-            val rnd = Random(42)
-            val step = 4.dp.toPx().coerceAtLeast(1f)
-            var x = 0f
-            while (x < size.width) {
-                var y = 0f
-                while (y < size.height) {
-                    drawRect(
-                        color = Color.White.copy(alpha = rnd.nextFloat() * 0.02f),
-                        topLeft = Offset(x, y),
-                        size = Size(step, step)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = topAlpha),
+                            Color.Transparent,
+                            Color.Black.copy(alpha = bottomAlpha)
+                        )
                     )
-                    y += step
-                }
-                x += step
-            }
-        }
+                )
+        )
     }
 }

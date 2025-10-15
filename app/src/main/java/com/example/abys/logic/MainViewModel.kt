@@ -1,10 +1,7 @@
 package com.example.abys.logic
 
 import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.example.abys.net.RetrofitProvider
 import com.example.abys.net.TimingsResponse
 import com.example.abys.util.LocationHelper
@@ -14,8 +11,11 @@ import kotlinx.coroutines.launch
 import retrofit2.Response
 import java.time.ZoneId
 
+/**
+ * Главная VM: грузит тайминги по гео или по городу, хранит выбранный мазхаб и заголовок (город/хиджра).
+ */
 class MainViewModel(
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val io: CoroutineDispatcher = Dispatchers.IO
 ) : ViewModel() {
 
     private val api = RetrofitProvider.aladhan
@@ -23,131 +23,107 @@ class MainViewModel(
     private val _city = MutableLiveData<String?>()
     val city: LiveData<String?> = _city
 
-    private val _timings = MutableLiveData<UiTimings?>()
-    val timings: LiveData<UiTimings?> = _timings
-
-    private val _school = MutableLiveData(0)
-    val school: LiveData<Int> = _school
-
     private val _hijri = MutableLiveData<String?>()
     val hijri: LiveData<String?> = _hijri
 
-    private val _error = MutableLiveData<String?>()
-    val error: LiveData<String?> = _error
+    private val _timings = MutableLiveData<UiTimings?>()
+    val timings: LiveData<UiTimings?> = _timings
 
-    private var lastLocation: Pair<Double, Double>? = null
-    private var lastCity: String? = null
+    private val _school = MutableLiveData(0) // 0=Standard,1=Hanafi
+    val school: LiveData<Int> = _school
+
+    fun setSchool(s: Int, reload: Boolean = true, ctx: Context? = null) {
+        val v = s.coerceIn(0, 1)
+        _school.value = v
+        if (ctx != null) viewModelScope.launch(io) { SettingsStore.setSchool(ctx, v) }
+        if (!reload) return
+
+        // Перезагружаем по тому источнику, что есть
+        val c = _city.value
+        if (!c.isNullOrBlank()) {
+            loadByCity(c)
+        } else if (ctx != null) {
+            loadByLocation(ctx)
+        }
+    }
 
     fun loadSavedSchool(ctx: Context) {
-        viewModelScope.launch(ioDispatcher) {
-            val savedSchool = SettingsStore.getSchool(ctx)
-            _school.postValue(savedSchool)
-
-            val savedCity = SettingsStore.getCity(ctx)
-            lastCity = savedCity
-            _city.postValue(savedCity)
+        viewModelScope.launch(io) {
+            val s = SettingsStore.getSchool(ctx)
+            _school.postValue(s)
         }
     }
 
-    fun setSchool(school: Int, reload: Boolean, ctx: Context) {
-        viewModelScope.launch(ioDispatcher) {
-            SettingsStore.setSchool(ctx, school)
-            _school.postValue(school)
-
-            if (reload) {
-                when {
-                    lastLocation != null -> {
-                        val (lat, lon) = lastLocation!!
-                        loadTimingsForLocation(lat, lon, null)
-                    }
-                    lastCity != null -> {
-                        val city = lastCity!!
-                        loadTimingsFromFetcher(city) { school ->
-                            api.timingsByCity(city, DEFAULT_COUNTRY, school = school)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    /** Геолокация → запрос по lat/lon (оба мазхаба). */
     fun loadByLocation(ctx: Context) {
-        viewModelScope.launch(ioDispatcher) {
-            val loc = LocationHelper.getLastBestLocation(ctx)
-            if (loc == null) {
-                _error.postValue("location_unavailable")
+        viewModelScope.launch(io) {
+            val last = LocationHelper.getLastBestLocation(ctx) ?: run {
+                // Гео нет — оставляем как есть; CityPicker на UI подстрахует
                 return@launch
             }
-            lastLocation = loc
-            lastCity = null
-            loadTimingsForLocation(loc.first, loc.second, null)
+            val lat = last.first
+            val lon = last.second
+
+            val std = runCatching {
+                api.timings(latitude = lat, longitude = lon, method = 2, school = 0)
+            }.getOrNull()
+            val han = runCatching {
+                api.timings(latitude = lat, longitude = lon, method = 2, school = 1)
+            }.getOrNull()
+
+            handlePairResponses(std, han, cityOverride = null)
         }
     }
 
-    fun loadByCity(cityName: String, country: String = DEFAULT_COUNTRY) {
-        viewModelScope.launch(ioDispatcher) {
-            lastCity = cityName
-            lastLocation = null
-            loadTimingsFromFetcher(cityName) { school ->
-                api.timingsByCity(cityName, country, school = school)
-            }
+    /** По названию города (оба мазхаба). */
+    fun loadByCity(city: String, country: String = DEFAULT_COUNTRY) {
+        viewModelScope.launch(io) {
+            val std = runCatching {
+                api.timingsByCity(city = city, country = country, method = 2, school = 0)
+            }.getOrNull()
+            val han = runCatching {
+                api.timingsByCity(city = city, country = country, method = 2, school = 1)
+            }.getOrNull()
+
+            handlePairResponses(std, han, cityOverride = city)
         }
     }
 
-    private suspend fun loadTimingsForLocation(
-        latitude: Double,
-        longitude: Double,
-        cityName: String?
+    private fun handlePairResponses(
+        std: Response<TimingsResponse>?,
+        han: Response<TimingsResponse>?,
+        cityOverride: String?
     ) {
-        loadTimingsFromFetcher(cityName) { school ->
-            api.timings(latitude, longitude, school = school)
+        if (std?.isSuccessful == true && han?.isSuccessful == true) {
+            val dStd = std.body()!!.data
+            val dHan = han.body()!!.data
+            val tz = ZoneId.of(dStd.meta.timezone)
+
+            val ui = UiTimings(
+                fajr    = dStd.timings.fajr,
+                sunrise = dStd.timings.sunrise,
+                dhuhr   = dStd.timings.dhuhr,
+                asrStd  = dStd.timings.asr,
+                asrHan  = dHan.timings.asr,
+                maghrib = dStd.timings.maghrib,
+                isha    = dStd.timings.isha,
+                tz      = tz
+            )
+            _timings.postValue(ui)
+
+            // Город: либо из аргумента, либо «подрезаем» timezone "Asia/Almaty" → "Almaty"
+            val cityName = cityOverride ?: dStd.meta.timezone.substringAfter('/', dStd.meta.timezone)
+            _city.postValue(cityName)
+
+            _hijri.postValue(hijriText(dStd))
         }
     }
 
-    private suspend fun loadTimingsFromFetcher(
-        cityName: String?,
-        fetcher: suspend (Int) -> Response<TimingsResponse>
-    ) {
-        val std = runCatching { fetcher(0) }.getOrElse { throwable ->
-            _error.postValue(throwable.message)
-            return
-        }
-        val han = runCatching { fetcher(1) }.getOrElse { throwable ->
-            _error.postValue(throwable.message)
-            return
-        }
-
-        val stdData = std.body()?.data
-        val hanData = han.body()?.data
-        if (!std.isSuccessful || !han.isSuccessful || stdData == null || hanData == null) {
-            _error.postValue("api_error")
-            return
-        }
-
-        val zoneId = runCatching { ZoneId.of(stdData.meta.timezone) }.getOrElse { ZoneId.systemDefault() }
-        val timings = UiTimings(
-            fajr = stdData.timings.Fajr,
-            sunrise = stdData.timings.Sunrise,
-            dhuhr = stdData.timings.Dhuhr,
-            asrStd = stdData.timings.Asr,
-            asrHan = hanData.timings.Asr,
-            maghrib = stdData.timings.Maghrib,
-            isha = stdData.timings.Isha,
-            tz = zoneId
-        )
-        _timings.postValue(timings)
-
-        val hijriInfo = stdData.date.hijri
-        _hijri.postValue(
-            hijriInfo?.let { info ->
-                listOfNotNull(info.date, info.month?.en, info.year)
-                    .joinToString(separator = " ")
-            }
-        )
-
-        cityName?.let { name ->
-            _city.postValue(name)
-        }
+    private fun hijriText(d: TimingsResponse.Data): String? {
+        val h = d.date.hijri
+        // аккуратно собираем: "Rabi' al-thani 1446"
+        val parts = listOfNotNull(h?.month?.en, h?.year)
+        return parts.joinToString(" ").ifBlank { null }
     }
 
     companion object {
