@@ -14,9 +14,9 @@ import java.time.ZoneId
 /**
  * Главная VM: грузит тайминги по гео или по городу, хранит выбранный мазхаб и заголовок (город/хиджра).
  */
-class MainViewModel(
+class MainViewModel : ViewModel() {
+
     private val io: CoroutineDispatcher = Dispatchers.IO
-) : ViewModel() {
 
     private val api = RetrofitProvider.aladhan
 
