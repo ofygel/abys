@@ -197,11 +197,14 @@ private fun PrayerRow(
             timeContent()
             if (isNext && countdown != null) {
                 Spacer(Modifier.height(2.dp))
+                val hours = countdown.toHours()
+                val minutes = Math.floorMod(countdown.toMinutes(), 60)
+                val seconds = Math.floorMod(countdown.seconds, 60)
                 Text(
                     "%02d:%02d:%02d".format(
-                        countdown.toHours(),
-                        countdown.toMinutesPart(),
-                        countdown.toSecondsPart()
+                        hours,
+                        minutes,
+                        seconds
                     ),
                     color = colorResource(R.color.bm_text).copy(alpha = 0.75f),
                     style = MaterialTheme.typography.labelLarge,
