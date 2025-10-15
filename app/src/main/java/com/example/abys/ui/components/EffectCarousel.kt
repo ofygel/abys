@@ -102,6 +102,8 @@ fun EffectCarousel(
             val selectedTheme = remember(selectedThemeId, themes) {
                 themes.firstOrNull { it.id == selectedThemeId } ?: themes.first()
             }
+            val expandDescription = stringResource(id = R.string.theme_carousel_expand)
+
             Surface(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -110,7 +112,7 @@ fun EffectCarousel(
                     .height(64.dp)
                     .semantics {
                         role = Role.Button
-                        contentDescription = stringResource(id = R.string.theme_carousel_expand)
+                        contentDescription = expandDescription
                     },
                 shape = RoundedCornerShape(28.dp),
                 color = Color.Black.copy(alpha = 0.58f),
@@ -433,13 +435,15 @@ fun EffectCarousel(
                 }
             }
 
+            val collapseDescription = stringResource(id = R.string.theme_carousel_collapse)
+
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 4.dp)
                     .semantics {
                         role = Role.Button
-                        contentDescription = stringResource(id = R.string.theme_carousel_collapse)
+                        contentDescription = collapseDescription
                     },
                 shape = RoundedCornerShape(18.dp),
                 color = Color.Black.copy(alpha = 0.42f),
