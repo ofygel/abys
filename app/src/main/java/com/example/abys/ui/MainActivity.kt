@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -116,6 +118,16 @@ class MainActivity : AppCompatActivity() {
             tvDate.text = TimeHelper.todayHuman()
             val zone = t?.tz ?: FallbackContent.uiTimings.tz
             startTicker(next?.second ?: fallbackNext?.second, zone)
+        vm.city.observe(this) { tvCity.text = it ?: getString(R.string.placeholder_dash) }
+
+        vm.timings.observe(this) { t ->
+            val sel = vm.school.value ?: 0
+            renderTimings(t?.toDisplayList(sel).orEmpty(), t?.nextPrayer(sel)?.first)
+            val next = t?.nextPrayer(sel)
+            tvNextPrayer.text = next?.let {
+                getString(R.string.next_prayer_time_format, it.first, it.second)
+            } ?: getString(R.string.next_prayer_placeholder)
+            startTicker(next?.second, t?.tz)
         }
         vm.school.observe(this) { s ->
             when (s) {
@@ -173,6 +185,19 @@ class MainActivity : AppCompatActivity() {
             MaterialTheme {
                 val source = t ?: FallbackContent.uiTimings
                 PrayerBoard(source, selectedSchool = sel)
+                if (t != null) {
+                    PrayerBoard(t!!, selectedSchool = sel)
+                } else {
+                    FrostedGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp)
+                            .heightIn(min = 180.dp),
+                        contentPadding = PaddingValues(24.dp)
+                    ) {
+                        Text(stringResource(R.string.placeholder_dash), color = Color.White)
+                    }
+                }
             }
         }
 
@@ -296,6 +321,19 @@ class MainActivity : AppCompatActivity() {
         ticker = object : Runnable {
             override fun run() {
                 tvCountdown.text = formatDuration(TimeHelper.untilNowTo(targetTime, targetZone))
+        if (nextTime == null || zoneId == null) {
+            tvCountdown.text = getString(R.string.countdown_placeholder)
+            return
+        }
+        ticker = object : Runnable {
+            override fun run() {
+                val d: Duration? = TimeHelper.untilNowTo(nextTime, zoneId)
+                tvCountdown.text = d?.let {
+                    val h = it.toHours()
+                    val m = (it.toMinutes() % 60)
+                    val s = (it.seconds % 60)
+                    getString(R.string.countdown_time_format, h, m, s)
+                } ?: getString(R.string.countdown_placeholder)
                 uiHandler.postDelayed(this, 1000)
             }
         }

@@ -107,6 +107,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""/>
+                android:text="@string/placeholder_dash"/>
 
             <TextView
                 android:id="@+id/tvDate"
@@ -115,6 +116,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=""/>
+                android:text="@string/placeholder_dash"/>
 
             <TextView
                 android:id="@+id/tvNextPrayer"
@@ -124,12 +126,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text=""/>
+                android:text="@string/next_prayer_placeholder"/>
 
             <TextView
                 android:id="@+id/tvCountdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text=""
+                android:text="@string/countdown_placeholder"
                 android:textSize="14sp"
                 android:layout_marginTop="4dp"/>
 
