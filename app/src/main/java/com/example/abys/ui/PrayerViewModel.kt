@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.abys.R
+import com.example.abys.data.FallbackContent
 import com.example.abys.data.PrayerTimesRepository
 import com.example.abys.data.PrayerTimesSerializer
 import com.example.abys.data.model.PrayerTimes
@@ -35,11 +36,12 @@ class PrayerViewModel(
             val cached = SettingsStore.getLastJson(context)?.let { PrayerTimesSerializer.decode(it) }
             val fallbackLabel = savedCity ?: cached?.timezone?.id?.substringAfterLast('/')
                 ?.replace('_', ' ')
+            val demoTimings = FallbackContent.prayerTimes
             _state.update {
                 it.copy(
                     selectedSchool = savedSchool,
-                    locationLabel = fallbackLabel ?: it.locationLabel,
-                    timings = cached ?: it.timings
+                    locationLabel = fallbackLabel ?: it.locationLabel ?: FallbackContent.cityLabel,
+                    timings = cached ?: it.timings ?: demoTimings
                 )
             }
         }
