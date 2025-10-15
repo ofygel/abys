@@ -3,6 +3,7 @@ package com.example.abys.ui.screens
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.compose.animation.AnimatedVisibility
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
@@ -46,7 +49,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -54,6 +56,7 @@ import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.abys.R
+import com.example.abys.data.FallbackContent
 import com.example.abys.logic.CitySearchViewModel
 import com.example.abys.logic.SettingsStore
 import com.example.abys.logic.TimeHelper
@@ -321,56 +324,60 @@ private fun prayerNameForKey(key: String): String? = when (key) {
 }
 
 @Composable
-private fun EmptyScheduleState(
+private fun FallbackBanner() {
+    OutlinedCard(border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))) {
+        Text(
+            text = stringResource(R.string.fallback_banner_text),
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun FallbackActionPanel(
     onUseLocation: () -> Unit,
     onCityChange: () -> Unit,
-    isLocationLoading: Boolean,
-    hasLocationPermission: Boolean
+    isLocationLoading: Boolean
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.prayer_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = stringResource(id = R.string.prayer_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        FilledTonalButton(onClick = onCityChange) {
-            Text(stringResource(id = R.string.action_change_city))
-        }
-        OutlinedButton(onClick = onUseLocation, enabled = !isLocationLoading) {
-            if (isLocationLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
-                Spacer(Modifier.width(8.dp))
-            }
-            Text(
-                text = if (isLocationLoading) {
-                    stringResource(id = R.string.action_use_location_loading)
-                } else {
-                    stringResource(id = R.string.action_use_location)
+    val context = LocalContext.current
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        FallbackContent.actionTips.forEach { tip ->
+            ElevatedCard {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(tip.title, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        tip.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FilledTonalButton(
+                        onClick = {
+                            when (tip.action) {
+                                FallbackContent.TipAction.LOCATION -> onUseLocation()
+                                FallbackContent.TipAction.CITY -> onCityChange()
+                                FallbackContent.TipAction.REMINDER -> Toast.makeText(
+                                    context,
+                                    context.getString(R.string.fallback_reminder_toast),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        enabled = !(tip.action == FallbackContent.TipAction.LOCATION && isLocationLoading)
+                    ) {
+                        if (tip.action == FallbackContent.TipAction.LOCATION && isLocationLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(tip.cta)
+                    }
                 }
-            )
-        }
-        if (!hasLocationPermission) {
-            Text(
-                text = stringResource(id = R.string.location_permission_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            }
         }
     }
 }
@@ -388,9 +395,10 @@ private fun HomeContent(
 ) {
     val wind = LocalWind.current
     val windEnabled = wind != null
-    val timings = state.timings
-    val zone = timings?.timezone ?: ZoneId.systemDefault()
-    val nextPrayer = timings?.next(school = state.selectedSchool)
+    val timings = state.timings ?: FallbackContent.prayerTimes
+    val usingFallback = state.timings == null
+    val zone = timings.timezone
+    val nextPrayer = timings.next(school = state.selectedSchool)
     val highlightKey = when (nextPrayer?.first) {
         "Sunrise" -> "Shuruq"
         else -> nextPrayer?.first
@@ -437,77 +445,75 @@ private fun HomeContent(
             }
         }
 
-        if (timings == null) {
-            if (state.isLoading) {
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                EmptyScheduleState(
-                    onUseLocation = onUseLocation,
-                    onCityChange = onCityChange,
-                    isLocationLoading = isLocationLoading,
-                    hasLocationPermission = hasLocationPermission
-                )
-            }
-        } else {
-            AnimatedVisibility(visible = countdownState.value && nextPrayer != null) {
-                val localizedNextName = nextPrayer?.first?.let { key -> prayerNameForKey(key) }
-                NextPrayerChip(
-                    title = stringResource(R.string.next_prayer_label),
-                    name = localizedNextName ?: (nextPrayer?.first ?: ""),
-                    time = nextPrayer?.second ?: "",
-                    remaining = remaining
-                )
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-
-            AsrSelector(
-                selected = state.selectedSchool,
-                onToggleSchool = onToggleSchool
-            )
-
-            ReminderToggleRow(remindersState = remindersState, countdownState = countdownState)
-
-            val uiTimings = UiTimings(
-                fajr = timings.fajr,
-                sunrise = timings.sunrise,
-                dhuhr = timings.dhuhr,
-                asrStd = timings.asrStandard,
-                asrHan = timings.asrHanafi,
-                maghrib = timings.maghrib,
-                isha = timings.isha,
-                tz = zone
-            )
-
-            Text(
-                text = stringResource(id = R.string.prayer_schedule_today),
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            PrayerTable(
-                t = uiTimings,
-                selectedSchool = state.selectedSchool,
-                highlightKey = highlightKey
-            )
-
-            FlowSection(timings = timings)
-
-            DayProgress(
-                fajr = timings.fajr,
-                sunrise = timings.sunrise,
-                dhuhr = timings.dhuhr,
-                asr = timings.asr(state.selectedSchool),
-                maghrib = timings.maghrib,
-                isha = timings.isha,
-                zone = zone
-            )
-
-            NightTimeline(maghrib = timings.maghrib, fajr = timings.fajr, zone = zone)
-
-            MethodSection(timings = timings)
+        if (state.isLoading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
+
+        if (usingFallback) {
+            FallbackBanner()
+            FallbackActionPanel(
+                onUseLocation = onUseLocation,
+                onCityChange = onCityChange,
+                isLocationLoading = isLocationLoading
+            )
+        }
+
+        AnimatedVisibility(visible = countdownState.value && nextPrayer != null) {
+            val localizedNextName = nextPrayer?.first?.let { key -> prayerNameForKey(key) }
+            NextPrayerChip(
+                title = stringResource(R.string.next_prayer_label),
+                name = localizedNextName ?: (nextPrayer?.first ?: ""),
+                time = nextPrayer?.second ?: "",
+                remaining = remaining
+            )
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+
+        AsrSelector(
+            selected = state.selectedSchool,
+            onToggleSchool = onToggleSchool
+        )
+
+        ReminderToggleRow(remindersState = remindersState, countdownState = countdownState)
+
+        val uiTimings = UiTimings(
+            fajr = timings.fajr,
+            sunrise = timings.sunrise,
+            dhuhr = timings.dhuhr,
+            asrStd = timings.asrStandard,
+            asrHan = timings.asrHanafi,
+            maghrib = timings.maghrib,
+            isha = timings.isha,
+            tz = zone
+        )
+
+        Text(
+            text = stringResource(id = R.string.prayer_schedule_today),
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        PrayerTable(
+            t = uiTimings,
+            selectedSchool = state.selectedSchool,
+            highlightKey = highlightKey
+        )
+
+        FlowSection(timings = timings)
+
+        DayProgress(
+            fajr = timings.fajr,
+            sunrise = timings.sunrise,
+            dhuhr = timings.dhuhr,
+            asr = timings.asr(state.selectedSchool),
+            maghrib = timings.maghrib,
+            isha = timings.isha,
+            zone = zone
+        )
+
+        NightTimeline(maghrib = timings.maghrib, fajr = timings.fajr, zone = zone)
+
+        MethodSection(timings = timings)
     }
 }
 
@@ -525,15 +531,17 @@ private fun HeaderSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        val locationLabel = state.locationLabel ?: FallbackContent.cityLabel
         Text(
-            text = state.locationLabel ?: stringResource(R.string.location_placeholder),
+            text = locationLabel,
             style = MaterialTheme.typography.titleLarge,
             modifier = if (windEnabled && wind != null) Modifier.windJitter(wind, amplitudePx = 0.5f, seed = 1) else Modifier,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        val gregorian = state.timings?.readableDate
-        val hijri = listOfNotNull(state.timings?.hijriMonth, state.timings?.hijriYear)
+        val baseTimings = state.timings ?: FallbackContent.prayerTimes
+        val gregorian = baseTimings.readableDate
+        val hijri = listOfNotNull(baseTimings.hijriMonth, baseTimings.hijriYear)
             .joinToString(" ").ifBlank { null }
         if (!gregorian.isNullOrBlank()) {
             Text(

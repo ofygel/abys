@@ -20,6 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:text=""
             android:text="@string/placeholder_dash"
             android:textSize="18sp"
             android:textStyle="bold"/>
@@ -28,6 +29,7 @@
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text=""
             android:text="@string/placeholder_time"
             android:textSize="18sp"/>
     </LinearLayout>

@@ -73,6 +73,9 @@
     <string name="theme_carousel_handle">Темы</string>
     <string name="theme_carousel_expand">Открыть подбор тем</string>
     <string name="theme_carousel_collapse">Свернуть подбор тем</string>
+    <string name="fallback_inspiration_title">Вдохновение на сегодня</string>
+    <string name="fallback_reminder_toast">Скоро появится настройка напоминаний. Следите за обновлениями!</string>
+    <string name="fallback_banner_text">Мы показываем демо-расписание для Алматы. Разрешите доступ к геолокации или выберите город, чтобы увидеть точные времена намазов.</string>
 
     <!-- Поиск города -->
     <string name="city_search_title">Выбор города</string>
