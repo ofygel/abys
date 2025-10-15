@@ -4,5 +4,5 @@
     android:layout_height="wrap_content"
     android:layout_marginTop="4dp"
     android:textSize="14sp"
-    android:textColor="?attr/colorOnSurfaceVariant"
+    android:textColor="?attr/colorOnSurface"
     android:text="" />
