@@ -98,16 +98,14 @@ fun SlideshowBackground(
     val driftPhase = (nowMs % 16000L) / 16000f
     val driftX = sin(driftPhase * 2f * PI).toFloat() * 12f
     val driftY = cos(driftPhase * 2f * PI).toFloat() * 8f
-    val baseScale = 1.04f
-
     val progress = (within / period).toFloat().coerceIn(0f, 1f)
-    val topAlpha = 0.06f + 0.06f * progress
-    val bottomAlpha = 0.18f + 0.06f * (1f - kotlin.math.abs(progress - 0.5f) * 2f)
+    val topAlpha = 0.08f + 0.04f * progress
+    val bottomAlpha = 0.12f + 0.05f * (1f - abs(progress - 0.5f) * 2f)
 
     Box(
         modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.1f)),
+            .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
         // Рисуем до трёх слоёв для аккуратного кросс-фейда
@@ -120,12 +118,10 @@ fun SlideshowBackground(
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaPrev
-                    scaleX = baseScale
-                    scaleY = baseScale
                     translationX = driftX
                     translationY = driftY
                 },
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Crop
             )
         }
         Image(
@@ -133,12 +129,10 @@ fun SlideshowBackground(
             contentDescription = null,
             modifier = imageModifier.graphicsLayer {
                 alpha = alphaCurr
-                scaleX = baseScale
-                scaleY = baseScale
                 translationX = driftX
                 translationY = driftY
             },
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Crop
         )
         if (alphaNext > 0f) {
             Image(
@@ -146,12 +140,10 @@ fun SlideshowBackground(
                 contentDescription = null,
                 modifier = imageModifier.graphicsLayer {
                     alpha = alphaNext
-                    scaleX = baseScale
-                    scaleY = baseScale
                     translationX = driftX
                     translationY = driftY
                 },
-                contentScale = ContentScale.Fit
+                contentScale = ContentScale.Crop
             )
         }
 

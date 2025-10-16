@@ -1,11 +1,14 @@
 package com.example.abys.ui.screen
 
+import androidx.compose.animation.core.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -16,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.border
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
@@ -63,10 +69,22 @@ fun CityPickerWheel(
     }
 
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
+    var hasAligned by remember { mutableStateOf(false) }
+    LaunchedEffect(cities) { hasAligned = false }
+
+    val flingBehavior = rememberSnapFlingBehavior(
+        lazyListState = listState,
+        decayAnimationSpec = rememberSplineBasedDecay<Float>(frictionMultiplier = 0.78f)
+    )
 
     LaunchedEffect(cities, currentCity) {
         val index = cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0
-        listState.animateScrollToItem(index)
+        if (!hasAligned) {
+            listState.scrollToItem(index)
+            hasAligned = true
+        } else if (!listState.isScrollInProgress) {
+            listState.animateScrollToItem(index)
+        }
     }
 
     LaunchedEffect(listState) {
@@ -94,8 +112,8 @@ fun CityPickerWheel(
                 .drawWithContent {
                     drawContent()
                     if (size.height <= 0f) return@drawWithContent
-                    val fadeHeight = with(density) { (160f * sy).dp.toPx() }
-                    val fraction = (fadeHeight / size.height).coerceIn(0f, 0.49f)
+                    val fadeHeight = with(density) { (140f * sy).dp.toPx() }
+                    val fraction = (fadeHeight / size.height).coerceIn(0f, 0.42f)
                     drawRect(
                         brush = Brush.verticalGradient(
                             colorStops = arrayOf(
@@ -117,12 +135,13 @@ fun CityPickerWheel(
                 .padding(horizontal = (32f * sx).dp),
             state = listState,
             contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = paddingDp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy((12f * sy).dp)
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy((12f * sy).dp),
+            flingBehavior = flingBehavior
         ) {
             itemsIndexed(cities) { index, city ->
                 val distance = abs(centerIndex - index)
                 val scale = 0.60f + 0.40f * (1f - (distance / (VISIBLE_AROUND + 1f))).coerceIn(0f, 1f)
-                val alpha = (1f - distance / (VISIBLE_AROUND + 1f)).coerceIn(0.2f, 1f)
+                val alpha = (1f - distance / (VISIBLE_AROUND + 1f)).coerceIn(0.35f, 1f)
                 val textSize = (42f * scale).coerceIn(22f, 42f)
 
                 BasicText(
@@ -150,12 +169,16 @@ fun CityPickerWheel(
             }
         }
 
+        val highlightShape = RoundedCornerShape((18f * s).dp)
+        val slotHeightDp = with(density) { itemHeight.toDp() }
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape((18f * s).dp))
-                .background(Tokens.Colors.tickDark.copy(alpha = 0.06f))
+                .height(slotHeightDp)
+                .clip(highlightShape)
+                .background(Tokens.Colors.tickDark.copy(alpha = 0.08f))
+                .border(2.dp, Tokens.Colors.chipStroke, highlightShape)
         )
     }
 }

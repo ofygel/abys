@@ -1,5 +1,6 @@
 package com.example.abys.data
 
+import com.example.abys.data.FallbackContent
 import com.example.abys.data.model.PrayerTimes
 import com.example.abys.net.AladhanApi
 import com.example.abys.net.RetrofitProvider
@@ -11,14 +12,19 @@ class PrayerTimesRepository(
     private val api: AladhanApi = RetrofitProvider.aladhan
 ) {
 
-    suspend fun fetch(lat: Double, lon: Double): PrayerTimes? = coroutineScope {
+    private var cache: PrayerTimes = FallbackContent.prayerTimes
+
+    suspend fun fetch(lat: Double, lon: Double): PrayerTimes = coroutineScope {
         val stdDeferred = async { api.timings(latitude = lat, longitude = lon, school = 0) }
         val hanDeferred = async { api.timings(latitude = lat, longitude = lon, school = 1) }
 
         val stdResp = runCatching { stdDeferred.await() }.getOrNull()
-        if (stdResp?.isSuccessful != true) return@coroutineScope null
+        val stdBody = if (stdResp?.isSuccessful == true) stdResp.body() else null
 
-        val stdBody = stdResp.body() ?: return@coroutineScope null
+        if (stdBody == null) {
+            return@coroutineScope cache
+        }
+
         val hanResp = runCatching { hanDeferred.await() }.getOrNull()
         val hanBody = if (hanResp?.isSuccessful == true) hanResp.body() else null
 
@@ -27,7 +33,7 @@ class PrayerTimesRepository(
 
         val zone = runCatching { ZoneId.of(stdBody.data.meta.timezone) }.getOrElse { ZoneId.systemDefault() }
 
-        PrayerTimes(
+        cache = PrayerTimes(
             fajr = stdTimings.fajr.clean(),
             sunrise = stdTimings.sunrise.clean(),
             dhuhr = stdTimings.dhuhr.clean(),
@@ -47,6 +53,8 @@ class PrayerTimesRepository(
             hijriMonth = stdBody.data.date.hijri?.month?.en,
             hijriYear = stdBody.data.date.hijri?.year
         )
+
+        cache
     }
 }
 
