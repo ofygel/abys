@@ -7,8 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -76,7 +77,7 @@ fun EffectCarousel(
         if (currentIndex == targetIndex) {
             val delta = listState.calculateCenteringDelta(viewportWidthPx)
             if (delta != null && abs(delta) > 0.5f) {
-                listState.scrollBy(delta)
+                listState.scrollByCompat(delta)
             }
         } else {
             listState.animateScrollToItem(targetIndex)
@@ -90,7 +91,7 @@ fun EffectCarousel(
             .collectLatest {
                 val delta = listState.calculateCenteringDelta(viewportWidthPx)
                 if (delta != null && abs(delta) > 0.5f) {
-                    listState.animateScrollBy(delta)
+                    listState.animateScrollByCompat(delta)
                     return@collectLatest
                 }
                 if (!enabled) return@collectLatest
@@ -217,4 +218,14 @@ private fun alphaForDistance(distance: Float): Float {
 
 private fun lerp(start: Float, end: Float, fraction: Float): Float {
     return start + (end - start) * fraction
+}
+
+private suspend fun LazyListState.scrollByCompat(distance: Float) {
+    if (distance == 0f) return
+    scroll { scrollBy(distance) }
+}
+
+private suspend fun LazyListState.animateScrollByCompat(distance: Float) {
+    if (distance == 0f) return
+    animateScroll { scrollBy(distance) }
 }
