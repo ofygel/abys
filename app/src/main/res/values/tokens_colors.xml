@@ -1,8 +1,8 @@
 <resources>
     <!-- Альфы в ARGB (#AARRGGBB) -->
     <color name="abys_fg">#FFFFFFFF</color>
-    <color name="abys_overlayTop">#73000000</color>
-    <color name="abys_overlayCard">#59000000</color>
+    <color name="abys_overlayTop">#42000000</color>
+    <color name="abys_overlayCard">#42000000</color>
     <color name="abys_tickFull">#FFFFFFFF</color>
     <color name="abys_separator50">#80FFFFFF</color>
     <color name="abys_chipStroke">#5CFFFFFF</color>

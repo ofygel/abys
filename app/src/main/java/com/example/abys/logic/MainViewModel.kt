@@ -2,6 +2,7 @@ package com.example.abys.logic
 
 import android.content.Context
 import androidx.lifecycle.*
+import com.example.abys.data.FallbackContent
 import com.example.abys.net.RetrofitProvider
 import com.example.abys.net.TimingsResponse
 import com.example.abys.util.LocationHelper
@@ -33,35 +34,53 @@ class MainViewModel : ViewModel() {
     )
     val hadithToday: LiveData<String> = _hadithToday
 
+    private val fallbackTimings = FallbackContent.uiTimings
+    private val fallbackPrayerMap = mapOf(
+        "Fajr" to fallbackTimings.fajr,
+        "Sunrise" to fallbackTimings.sunrise,
+        "Dhuhr" to fallbackTimings.dhuhr,
+        "AsrStd" to fallbackTimings.asrStd,
+        "AsrHana" to fallbackTimings.asrHan,
+        "Maghrib" to fallbackTimings.maghrib,
+        "Isha" to fallbackTimings.isha
+    )
+
+    private val fallbackThirds = Triple(
+        FallbackContent.prayerTimes.firstThird ?: "--:--",
+        FallbackContent.prayerTimes.midnight ?: "--:--",
+        FallbackContent.prayerTimes.lastThird ?: "--:--"
+    )
+
     private val _sheetVisible = MutableLiveData(false)
     val sheetVisible: LiveData<Boolean> = _sheetVisible
 
     private val _pickerVisible = MutableLiveData(false)
     val pickerVisible: LiveData<Boolean> = _pickerVisible
 
-    private val _city = MutableLiveData("Almaty")
+    private val _city = MutableLiveData(FallbackContent.cityLabel)
     val city: LiveData<String> = _city
 
-    private val _hijri = MutableLiveData<String?>()
+    private val _hijri = MutableLiveData<String?>(FallbackContent.hijriLabel)
     val hijri: LiveData<String?> = _hijri
 
-    private val _timings = MutableLiveData<UiTimings?>()
+    private val _timings = MutableLiveData<UiTimings?>(fallbackTimings)
     val timings: LiveData<UiTimings?> = _timings
 
     private val _school = MutableLiveData(0) // 0=Standard,1=Hanafi
     val school: LiveData<Int> = _school
 
-    private val _prayerTimes = MutableLiveData<Map<String, String>>(emptyMap())
+    private val _prayerTimes = MutableLiveData<Map<String, String>>(fallbackPrayerMap)
     val prayerTimes: LiveData<Map<String, String>> = _prayerTimes
 
-    private val _thirds = MutableLiveData(Triple("--:--", "--:--", "--:--"))
+    private val _thirds = MutableLiveData(fallbackThirds)
     val thirds: LiveData<Triple<String, String, String>> = _thirds
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    private val _clock = MutableLiveData(LocalTime.now().format(timeFormatter))
+    private val _clock = MutableLiveData(TimeHelper.now(fallbackTimings.tz).format(timeFormatter))
     val clock: LiveData<String> = _clock
 
     init {
+        updateDerived(fallbackTimings)
         viewModelScope.launch {
             while (true) {
                 val zone = _timings.value?.tz ?: ZoneId.systemDefault()
