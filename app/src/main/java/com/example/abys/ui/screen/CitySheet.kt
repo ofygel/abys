@@ -66,8 +66,8 @@ fun CitySheet(
 
     Box(
         modifier
-            .padding((28f * sx).dp, (28f * sy).dp)
             .fillMaxSize()
+            .padding((28f * sx).dp, (28f * sy).dp)
             .clip(RoundedCornerShape((32f * s).dp))
             .background(backgroundColor)
             .backdropBlur(8.dp)
