@@ -1,5 +1,5 @@
 <resources>
-    <!-- Фоновые слайды: алиасы на временные slide_XX -->
+    <!-- Фоновые слайды: алиасы на реальные изображения slide_XX -->
     <drawable name="theme_leaves_bg01">@drawable/slide_01</drawable>
     <drawable name="theme_rain_bg01">@drawable/slide_02</drawable>
     <drawable name="theme_snow_bg01">@drawable/slide_03</drawable>
