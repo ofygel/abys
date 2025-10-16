@@ -2,6 +2,7 @@
 
 package com.example.abys.ui.screen
 
+import android.os.Build
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
@@ -25,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,8 +60,14 @@ fun CitySheet(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val s = Dimens.s()
+    val blurSupported = remember { Build.VERSION.SDK_INT >= Build.VERSION_CODES.S }
+    val backgroundTarget = if (pickerVisible) {
+        if (blurSupported) Tokens.Colors.glassPickerBlur else Tokens.Colors.glassPickerOpaque
+    } else {
+        if (blurSupported) Tokens.Colors.glassSheetBlur else Tokens.Colors.glassSheetOpaque
+    }
     val backgroundColor by animateColorAsState(
-        targetValue = if (pickerVisible) Tokens.Colors.glassPicker else Tokens.Colors.glassSheet,
+        targetValue = backgroundTarget,
         animationSpec = tween(durationMillis = 220),
         label = "glassColor"
     )
