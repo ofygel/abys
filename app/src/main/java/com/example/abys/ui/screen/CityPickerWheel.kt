@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,7 +16,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -26,8 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.text.BasicText
+import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import kotlin.math.abs
 import kotlin.math.exp
@@ -35,8 +42,8 @@ import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
-private const val VISIBLE_AROUND = 6
-private val STEP: Dp = 92.dp
+private const val VISIBLE_AROUND = 4
+private val BASE_STEP: Dp = 92.dp
 
 @Composable
 fun CityPickerWheel(
@@ -48,8 +55,11 @@ fun CityPickerWheel(
     if (cities.isEmpty()) return
 
     val density = LocalDensity.current
+    val sx = Dimens.sx()
+    val sy = Dimens.sy()
+    val s = Dimens.s()
     val scope = rememberCoroutineScope()
-    val stepPx = with(density) { STEP.toPx() }
+    val stepPx = with(density) { (BASE_STEP.value * sy).dp.toPx() }
 
     var centerIndex by remember(cities, currentCity) {
         mutableStateOf(cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0)
@@ -85,16 +95,35 @@ fun CityPickerWheel(
                     offsetY.snapTo(offsetY.value + dragAmount)
                 }
             }
+            .drawWithContent {
+                drawContent()
+                if (size.height <= 0f) return@drawWithContent
+                val fadeHeight = with(density) { (160f * sy).dp.toPx() }
+                val fraction = (fadeHeight / size.height).coerceIn(0f, 0.49f)
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White,
+                            Color.White,
+                            Color.Transparent
+                        ),
+                        stops = listOf(0f, fraction, 1f - fraction, 1f)
+                    ),
+                    size = size,
+                    blendMode = BlendMode.DstIn
+                )
+            }
     ) {
         val centerY = constraints.maxHeight / 2f
 
         Canvas(Modifier.fillMaxSize()) {
             val y = size.height / 2f
             val stroke = 6.dp.toPx()
-            val leftStart = Offset(129.dp.toPx(), y)
-            val leftEnd = Offset(239.dp.toPx(), y)
-            val rightStart = Offset(403.dp.toPx(), y)
-            val rightEnd = Offset(513.dp.toPx(), y)
+            val leftStart = Offset(with(density) { (129f * sx).dp.toPx() }, y)
+            val leftEnd = Offset(with(density) { (239f * sx).dp.toPx() }, y)
+            val rightStart = Offset(with(density) { (403f * sx).dp.toPx() }, y)
+            val rightEnd = Offset(with(density) { (513f * sx).dp.toPx() }, y)
 
             drawLine(
                 color = Tokens.Colors.tickDark,
@@ -119,8 +148,9 @@ fun CityPickerWheel(
             val name = cities[actualIndex]
 
             val scaleFactor = 0.60f + 0.40f * exp(-(distance / 1.2f).pow(2))
-            val textSize = (42f * scaleFactor).sp
-            val alpha = exp(-(distance / 1.15f).pow(2)).toFloat()
+            val pxSize = (42f * scaleFactor).coerceIn(22f, 42f)
+            val textSize = (pxSize * s).sp
+            val alpha = exp(-(distance / 1.15f).pow(2)).toFloat().coerceIn(0.2f, 1f)
 
             val yPosition = centerY + relative * stepPx + offsetY.value
             val heightPx = with(density) { textSize.toPx() }
@@ -136,7 +166,13 @@ fun CityPickerWheel(
                     textAlign = TextAlign.Center,
                     fontSize = textSize,
                     fontWeight = if (distance == 0) FontWeight.ExtraBold else FontWeight.Bold,
-                    color = Tokens.Colors.text
+                    color = Tokens.Colors.text,
+                    lineHeight = (if (distance == 0) 1.10f else 1.05f).em,
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.35f),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 6f
+                    )
                 ),
                 maxLines = 1
             )
