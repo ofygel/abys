@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -31,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -55,6 +62,9 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val times     by vm.prayerTimes.observeAsState(emptyMap())      // Map<String,String>
     val thirds    by vm.thirds.observeAsState(Triple("21:12","00:59","4:50"))
     val now       by vm.clock.observeAsState(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")))
+    val showSheet by vm.sheetVisible.observeAsState(false)
+    val showPicker by vm.pickerVisible.observeAsState(false)
+    val hadith    by vm.hadithToday.observeAsState("")
     val effects   = listOf(                                         // превью из drawable-nodpi
         R.drawable.thumb_leaves,
         R.drawable.thumb_sunset_snow,
@@ -71,6 +81,13 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
             prayerTimes   = times,
             thirds        = thirds,
             effects       = effects,
+            showSheet     = showSheet,
+            showPicker    = showPicker,
+            hadith        = hadith,
+            cities        = vm.cities,
+            onCityClick   = vm::toggleSheet,
+            onCityChipTap = vm::togglePicker,
+            onCityChosen  = vm::setCity,
             onCityClick   = { /* открыть sheet с хадисами или picker – твоя логика */ },
             onEffectClick = vm::setEffect
         )
@@ -86,6 +103,13 @@ fun MainScreen(
     prayerTimes:    Map<String,String>,
     thirds:         Triple<String,String,String>,
     effects:        List<Int>,
+    showSheet:      Boolean,
+    showPicker:     Boolean,
+    hadith:         String,
+    cities:         List<String>,
+    onCityClick:    () -> Unit,
+    onCityChipTap:  () -> Unit,
+    onCityChosen:   (String) -> Unit,
     onCityClick:    () -> Unit,
     onEffectClick:  (Int) -> Unit
 ) {
@@ -100,6 +124,31 @@ fun MainScreen(
                 .height(102.dp)
         )
 
+        var exploded by remember { mutableStateOf(false) }
+        LaunchedEffect(showSheet) {
+            if (showSheet) exploded = false
+        }
+
+        /* --- карточка намазов --- */
+        if (!showSheet) {
+            PrayerCard(
+                times   = prayerTimes,
+                thirds  = thirds,
+                modifier = Modifier
+                    .padding(start = 64.dp, end = 64.dp, top = 226.dp)
+                    .height(611.dp)
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = { exploded = !exploded }
+                        )
+                    }
+                    .graphicsLayer {
+                        alpha = if (exploded) 0f else 1f
+                        scaleX = if (exploded) 1.1f else 1f
+                        scaleY = if (exploded) 1.1f else 1f
+                    }
+            )
+        }
         /* --- карточка намазов --- */
         PrayerCard(
             times   = prayerTimes,
@@ -117,6 +166,18 @@ fun MainScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 48.dp)
         )
+
+        if (showSheet) {
+            CitySheet(
+                city          = city,
+                hadith        = hadith,
+                cities        = cities,
+                pickerVisible = showPicker,
+                onCityChipTap = onCityChipTap,
+                onCityChosen  = onCityChosen,
+                modifier      = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
