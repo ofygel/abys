@@ -67,9 +67,6 @@ class MainViewModel : ViewModel() {
     private val _clock = MutableLiveData(LocalTime.now().format(timeFormatter))
     val clock: LiveData<String> = _clock
 
-    private val _selectedEffect = MutableLiveData<Int?>(null)
-    val selectedEffect: LiveData<Int?> = _selectedEffect
-
     init {
         viewModelScope.launch {
             while (true) {
@@ -113,10 +110,6 @@ class MainViewModel : ViewModel() {
         _pickerVisible.value = false
         _sheetVisible.value = false
         loadByCity(c)
-    }
-
-    fun setEffect(effectRes: Int) {
-        _selectedEffect.value = effectRes
     }
 
     fun loadSavedSchool(ctx: Context) {
