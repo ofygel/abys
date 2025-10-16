@@ -4,6 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.animateScrollBy
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +41,6 @@ import com.example.abys.ui.theme.Tokens
 import com.example.abys.data.EffectId
 import kotlin.math.abs
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.scrollBy
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
