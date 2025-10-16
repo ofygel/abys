@@ -6,34 +6,34 @@
         android:fontWeight="400"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=400"
+        app:fontProviderQuery="name=Inter&amp;weight=400"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
     <font
         android:fontStyle="normal"
         android:fontWeight="600"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=600"
+        app:fontProviderQuery="name=Inter&amp;weight=600"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
     <font
         android:fontStyle="normal"
         android:fontWeight="700"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=700"
+        app:fontProviderQuery="name=Inter&amp;weight=700"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
     <font
         android:fontStyle="italic"
         android:fontWeight="400"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=400&italic=1"
+        app:fontProviderQuery="name=Inter&amp;weight=400&amp;italic=1"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
     <font
         android:fontStyle="italic"
         android:fontWeight="700"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=700&italic=1"
+        app:fontProviderQuery="name=Inter&amp;weight=700&amp;italic=1"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
 </font-family>

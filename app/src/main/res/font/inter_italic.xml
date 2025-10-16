@@ -6,6 +6,6 @@
         android:fontWeight="400"
         app:fontProviderAuthority="com.google.android.gms.fonts"
         app:fontProviderPackage="com.google.android.gms"
-        app:fontProviderQuery="name=Inter&weight=400&italic=1"
+        app:fontProviderQuery="name=Inter&amp;weight=400&amp;italic=1"
         app:fontProviderCerts="@array/com_google_android_gms_fonts_certs" />
 </font-family>
