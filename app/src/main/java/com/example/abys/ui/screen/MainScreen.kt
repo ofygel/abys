@@ -5,6 +5,14 @@ package com.example.abys.ui.screen
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -260,6 +268,11 @@ fun MainScreen(
             }
 
         if (prayerAlpha > 0.01f) {
+        AnimatedVisibility(
+            visible = !showSheet,
+            enter = fadeIn(tween(220)) + scaleIn(initialScale = 0.96f, animationSpec = tween(220)),
+            exit = fadeOut(tween(180)) + scaleOut(targetScale = 0.96f, animationSpec = tween(180))
+        ) {
             PrayerCard(
                 times = prayerTimes,
                 thirds = thirds,
@@ -304,6 +317,11 @@ fun MainScreen(
         }
 
         if (sheetAlpha > 0.01f) {
+        AnimatedVisibility(
+            visible = showSheet,
+            enter = fadeIn(tween(220)) + slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(220)),
+            exit = fadeOut(tween(180)) + slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(180))
+        ) {
             CitySheet(
                 city = city,
                 hadith = hadith,
@@ -562,6 +580,7 @@ private fun EffectCarousel(
     modifier: Modifier = Modifier,
     interactionEnabled: Boolean = true,
     selected: Int? = null
+    interactionEnabled: Boolean = true
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
@@ -615,6 +634,26 @@ private fun EffectCarousel(
         }
     }
 
+    LaunchedEffect(state, items, interactionEnabled) {
+        if (!interactionEnabled) return@LaunchedEffect
+        snapshotFlow { state.isScrollInProgress }
+            .collectLatest { isScrolling ->
+                if (!isScrolling) {
+                    val layoutInfo = state.layoutInfo
+                    if (layoutInfo.totalItemsCount == 0 || layoutInfo.viewportSize.width == 0) return@collectLatest
+                    val viewportCenter = layoutInfo.viewportSize.width / 2f
+                    val closest = layoutInfo.visibleItemsInfo.minByOrNull { info ->
+                        abs(info.offset + info.size / 2f - viewportCenter)
+                    } ?: return@collectLatest
+                    val targetCenter = closest.offset + closest.size / 2f
+                    val delta = viewportCenter - targetCenter
+                    if (abs(delta) > 1f) {
+                        state.animateScrollBy(delta)
+                    }
+                }
+            }
+    }
+
     Box(modifier) {
         LazyRow(
             state = state,
@@ -633,6 +672,8 @@ private fun EffectCarousel(
                 val isSelected = selected == res
                 val displayScale = (baseScale + if (isSelected) 0.06f else 0f).coerceIn(0.7f, 1.12f)
                 val displayAlpha = if (isSelected) 1f else baseAlpha
+                val scale = 0.78f + 0.22f * exp(-(normalized * 2.4f))
+                val alpha = 0.45f + 0.55f * exp(-(normalized * 2.1f))
 
                 Box(
                     modifier = Modifier
@@ -643,6 +684,7 @@ private fun EffectCarousel(
                             this.alpha = displayAlpha
                         }
                         .clip(thumbShape)
+                        .clip(RoundedCornerShape(Tokens.Radii.chip()))
                         .clickable(enabled = interactionEnabled) {
                             info?.let {
                                 val target = center ?: return@let
