@@ -1,7 +1,6 @@
 package com.example.abys.ui
 
 import androidx.annotation.DrawableRes
-import androidx.compose.animation.core.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -80,10 +79,8 @@ fun EffectCarousel(
     var hasAligned by remember { mutableStateOf(false) }
     LaunchedEffect(items) { hasAligned = false }
 
-    val decay = rememberSplineBasedDecay<Float>(frictionMultiplier = 0.72f)
     val flingBehavior = rememberSnapFlingBehavior(
-        lazyListState = listState,
-        decayAnimationSpec = decay
+        lazyListState = listState
     )
     val scope = rememberCoroutineScope()
 
