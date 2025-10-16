@@ -1,6 +1,9 @@
 package com.example.abys.ui.screen
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationState
+import androidx.compose.animation.core.animateDecay
+import androidx.compose.animation.core.rememberSplineBasedDecay
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -24,7 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.consume
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +70,8 @@ fun CityPickerWheel(
         mutableStateOf(cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0)
     }
     val offsetY = remember { Animatable(0f) }
+    val decay = rememberSplineBasedDecay<Float>()
+    val velocityTracker = remember { VelocityTracker() }
 
     LaunchedEffect(currentCity, cities) {
         val idx = cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0
@@ -72,14 +79,36 @@ fun CityPickerWheel(
         offsetY.snapTo(0f)
     }
 
-    fun snap() {
+    suspend fun accumulate(delta: Float) {
+        val newOffset = offsetY.value + delta
+        val steps = (newOffset / stepPx).toInt()
+        if (steps != 0) {
+            centerIndex = (centerIndex - steps).floorMod(cities.size)
+        }
+        offsetY.snapTo(newOffset - steps * stepPx)
+    }
+
+    suspend fun snap() {
+        val deltaSteps = (offsetY.value / stepPx).roundToInt()
+        if (deltaSteps != 0) {
+            centerIndex = (centerIndex - deltaSteps).floorMod(cities.size)
+        }
+        offsetY.animateTo(0f)
+        onChosen(cities[centerIndex])
+    }
+
+    fun settle(velocity: Float) {
         scope.launch {
-            val deltaSteps = (offsetY.value / stepPx).roundToInt()
-            if (deltaSteps != 0) {
-                centerIndex = (centerIndex - deltaSteps).floorMod(cities.size)
+            offsetY.stop()
+            if (abs(velocity) > 50f) {
+                var lastValue = 0f
+                AnimationState(initialValue = 0f, initialVelocity = velocity).animateDecay(decay) {
+                    val delta = value - lastValue
+                    lastValue = value
+                    accumulate(delta)
+                }
             }
-            offsetY.animateTo(0f)
-            onChosen(cities[centerIndex])
+            snap()
         }
     }
 
@@ -87,13 +116,23 @@ fun CityPickerWheel(
         modifier
             .fillMaxSize()
             .clipToBounds()
-            .pointerInput(cities, centerIndex) {
+            .pointerInput(cities) {
                 detectVerticalDragGestures(
-                    onDragEnd = { snap() },
-                    onDragCancel = { snap() }
-                ) { _, dragAmount ->
-                    offsetY.snapTo(offsetY.value + dragAmount)
-                }
+                    onDragStart = {
+                        velocityTracker.reset()
+                        scope.launch { offsetY.stop() }
+                    },
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        velocityTracker.addPosition(change.uptimeMillis, change.position)
+                        accumulate(dragAmount)
+                    },
+                    onDragEnd = {
+                        val velocity = velocityTracker.calculateVelocity().y
+                        settle(velocity)
+                    },
+                    onDragCancel = { settle(0f) }
+                )
             }
             .drawWithContent {
                 drawContent()
