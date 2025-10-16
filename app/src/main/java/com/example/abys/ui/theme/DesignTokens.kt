@@ -7,12 +7,14 @@ import androidx.compose.ui.unit.sp
 
 object Tokens {
     object Colors {
-        val text          = Color(0xFFFFFFFF)
-        val overlayTop    = Color(0x73000000)   // 45 %
-        val overlayCard   = Color(0x59000000)   // 35 %
-        val glassSheet    = Color.White.copy(alpha = 0.14f)
-        val glassPicker   = Color.White.copy(alpha = 0.26f)
-        val tickDark      = Color(0xD9000000)   // 85 %
+        val text             = Color(0xFFFFFFFF)
+        val overlayTop       = Color(0x73000000)   // 45 %
+        val overlayCard      = Color(0x59000000)   // 35 %
+        val glassSheetBlur   = Color.White.copy(alpha = 0.14f)
+        val glassPickerBlur  = Color.White.copy(alpha = 0.26f)
+        val glassSheetOpaque = Color.White.copy(alpha = 0.35f)
+        val glassPickerOpaque = Color.White.copy(alpha = 0.26f)
+        val tickDark         = Color(0xD9000000)   // 85 %
     }
     object Radii {
         private const val pillPx  = 22f
