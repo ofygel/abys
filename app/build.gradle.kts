@@ -50,10 +50,12 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation("androidx.compose.runtime:runtime-saveable")
-    implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.foundation:foundation-layout")
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
 
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
