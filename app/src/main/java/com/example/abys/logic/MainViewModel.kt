@@ -111,6 +111,7 @@ class MainViewModel : ViewModel() {
         if (c.isBlank()) return
         _city.value = c
         _pickerVisible.value = false
+        _sheetVisible.value = false
         loadByCity(c)
     }
 

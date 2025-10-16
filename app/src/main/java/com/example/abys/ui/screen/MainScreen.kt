@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import com.example.abys.R
 import com.example.abys.logic.MainViewModel
 import com.example.abys.ui.background.SlideshowBackground
+import com.example.abys.ui.background.ThemeBackgrounds
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
@@ -91,21 +92,13 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val showPicker by vm.pickerVisible.observeAsState(false)
     val selectedEffect by vm.selectedEffect.observeAsState(null)
     val hadith by vm.hadithToday.observeAsState("")
-    val effects = remember {
-        listOf(
-            R.drawable.thumb_leaves,
-            R.drawable.thumb_lightning,
-            R.drawable.thumb_night,
-            R.drawable.thumb_rain,
-            R.drawable.thumb_snow,
-            R.drawable.thumb_storm,
-            R.drawable.thumb_sunset_snow,
-            R.drawable.thumb_wind
-        )
+    val effects = remember { ThemeBackgrounds.thumbnails }
+    val backgroundSlides = remember(selectedEffect) {
+        ThemeBackgrounds.backgroundsFor(selectedEffect)
     }
 
     Box(Modifier.fillMaxSize()) {
-        SlideshowBackground()
+        SlideshowBackground(images = backgroundSlides)
 
         MainScreen(
             city = city,
