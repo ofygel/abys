@@ -1,0 +1,14 @@
+<resources>
+    <!-- Альфы в ARGB (#AARRGGBB) -->
+    <color name="abys_fg">#FFFFFFFF</color>
+    <color name="abys_overlayTop">#73000000</color>
+    <color name="abys_overlayCard">#59000000</color>
+    <color name="abys_tickFull">#FFFFFFFF</color>
+    <color name="abys_separator50">#80FFFFFF</color>
+    <color name="abys_chipStroke">#5CFFFFFF</color>
+    <color name="abys_quoteStroke">#D9000000</color>
+    <color name="abys_glassSheetBlur">#24FFFFFF</color>
+    <color name="abys_glassPickerBlur">#42FFFFFF</color>
+    <color name="abys_glassSheetOpaque">#59FFFFFF</color>
+    <color name="abys_glassPickerOpaque">#42FFFFFF</color>
+</resources>

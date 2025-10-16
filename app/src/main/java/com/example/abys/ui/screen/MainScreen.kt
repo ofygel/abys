@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,23 +42,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.LocalTextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.abys.R
 import com.example.abys.data.EffectId
 import com.example.abys.logic.MainViewModel
 import com.example.abys.ui.background.BackgroundHost
-import com.example.abys.ui.background.ThemeBackgrounds
+import com.example.abys.ui.rememberEffectCatalogFromRes
+import com.example.abys.ui.rememberCitiesFromRes
 import com.example.abys.ui.EffectCarousel
 import com.example.abys.ui.EffectThumb
 import com.example.abys.ui.EffectViewModel
+import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
@@ -81,34 +85,37 @@ fun MainApp(
     val showPicker by vm.pickerVisible.observeAsState(false)
     val hadith by vm.hadithToday.observeAsState("")
     val selectedEffect by effectViewModel.effect.collectAsState()
-    val effects = remember { ThemeBackgrounds.thumbnails }
+    val effectThumbs = rememberEffectCatalogFromRes()
+    val cityOptions = rememberCitiesFromRes()
 
-    Box(Modifier.fillMaxSize()) {
-        Crossfade(
-            modifier = Modifier.fillMaxSize(),
-            targetState = selectedEffect,
-            animationSpec = tween(durationMillis = 180),
-            label = "effect-background"
-        ) { effect ->
-            BackgroundHost(effect = effect)
+    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
+        Box(Modifier.fillMaxSize()) {
+            Crossfade(
+                modifier = Modifier.fillMaxSize(),
+                targetState = selectedEffect,
+                animationSpec = tween(durationMillis = 180),
+                label = "effect-background"
+            ) { effect ->
+                BackgroundHost(effect = effect)
+            }
+
+            MainScreen(
+                city = city,
+                now = now,
+                prayerTimes = times,
+                thirds = thirds,
+                selectedEffect = selectedEffect,
+                effectThumbs = effectThumbs,
+                showSheet = showSheet,
+                showPicker = showPicker,
+                hadith = hadith,
+                cities = cityOptions,
+                onCityPillClick = vm::toggleSheet,
+                onCityChipTap = vm::togglePicker,
+                onCityChosen = vm::setCity,
+                onEffectSelected = effectViewModel::onEffectSelected
+            )
         }
-
-        MainScreen(
-            city = city,
-            now = now,
-            prayerTimes = times,
-            thirds = thirds,
-            selectedEffect = selectedEffect,
-            effectThumbs = effects,
-            showSheet = showSheet,
-            showPicker = showPicker,
-            hadith = hadith,
-            cities = vm.cities,
-            onCityPillClick = vm::toggleSheet,
-            onCityChipTap = vm::togglePicker,
-            onCityChosen = vm::setCity,
-            onEffectSelected = effectViewModel::onEffectSelected
-        )
     }
 }
 
@@ -295,7 +302,7 @@ fun MainScreen(
                 Modifier
                     .fillMaxSize()
                     .graphicsLayer { alpha = scrimAlpha }
-                    .background(Color.Black.copy(alpha = 0.5f))
+                    .background(Tokens.Colors.tickDark.copy(alpha = 0.5f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -340,6 +347,8 @@ private fun HeaderPill(
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
+    val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
+    val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
     Box(
         modifier
             .fillMaxWidth()
@@ -348,8 +357,8 @@ private fun HeaderPill(
             .backdropBlur(6.dp)
             .clickable(onClick = onTap)
             .padding(
-                horizontal = (24f * sx).dp,
-                vertical = (18f * sy).dp
+                horizontal = horizontalPadding,
+                vertical = verticalPadding
             ),
         contentAlignment = Alignment.CenterStart
     ) {
@@ -391,8 +400,11 @@ private fun PrayerCard(
     val sy = Dimens.sy()
     val s = Dimens.s()
 
-    val rowSpacing = ((73f - Tokens.TypographyPx.label) * sy).dp
-    val subSpacing = ((73f - Tokens.TypographyPx.subLabel) * sy).dp
+    val rowStep = Dimens.scaledY(R.dimen.abys_row_step)
+    val labelHeight = (Tokens.TypographyPx.label * sy).dp
+    val subLabelHeight = (Tokens.TypographyPx.subLabel * sy).dp
+    val rowSpacing = (rowStep - labelHeight).coerceAtLeast(0.dp)
+    val subSpacing = (rowStep - subLabelHeight).coerceAtLeast(0.dp)
 
     Column(
         modifier
@@ -401,10 +413,10 @@ private fun PrayerCard(
             .background(Tokens.Colors.overlayCard)
             .backdropBlur(6.dp)
             .padding(
-                start = (44f * sx).dp,
-                end = (44f * sx).dp,
-                top = (45f * sy).dp,
-                bottom = (40f * sy).dp
+                start = Dimens.scaledX(R.dimen.abys_card_pad_h),
+                end = Dimens.scaledX(R.dimen.abys_card_pad_h),
+                top = Dimens.scaledY(R.dimen.abys_card_pad_top),
+                bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
             )
     ) {
         RowItem("Фаджр", times["Fajr"] ?: "--:--")
@@ -500,7 +512,7 @@ private fun AsrSub(
                 .width(indicatorWidth)
                 .height(indicatorHeight)
                 .clip(RoundedCornerShape(indicatorRadius))
-                .background(Tokens.Colors.text)
+                .background(Tokens.Colors.tickFull)
         )
         Spacer(Modifier.width((12f * sx).dp))
         Text(
@@ -557,7 +569,7 @@ private fun Tick(height: Dp) {
         Modifier
             .width(3.dp)
             .height(height)
-            .background(Tokens.Colors.text)
+            .background(Tokens.Colors.tickFull)
     )
 }
 
