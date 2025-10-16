@@ -4,52 +4,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.res.use
 import com.example.abys.R
 import com.example.abys.data.EffectId
 import com.example.abys.ui.background.Slides
 
-@Composable
-fun rememberEffectCatalogFromRes(): List<EffectThumb> {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(configuration) {
-        val resources = context.resources
-        val ids = resources.getStringArray(R.array.abys_effect_ids)
-        resources.obtainTypedArray(R.array.abys_effect_thumbs).use { thumbs ->
-            buildList {
-                for (index in ids.indices) {
-                    val id = runCatching { EffectId.valueOf(ids[index]) }.getOrNull() ?: continue
-                    val thumbRes = thumbs.getResourceId(index, 0)
-                    if (thumbRes != 0) {
-                        add(EffectThumb(id, thumbRes))
-                    }
-                }
-            }
-        }
-    }
-}
+private val effectCatalog = listOf(
+    EffectThumb(EffectId.leaves, R.drawable.slide_01),
+    EffectThumb(EffectId.lightning, R.drawable.slide_02),
+    EffectThumb(EffectId.night, R.drawable.slide_03),
+    EffectThumb(EffectId.rain, R.drawable.slide_04),
+    EffectThumb(EffectId.snow, R.drawable.slide_05),
+    EffectThumb(EffectId.storm, R.drawable.slide_06),
+    EffectThumb(EffectId.sunset_snow, R.drawable.slide_07),
+    EffectThumb(EffectId.wind, R.drawable.slide_08),
+)
+
+private val effectBackgrounds = mapOf(
+    EffectId.leaves to listOf(R.drawable.slide_01),
+    EffectId.lightning to listOf(R.drawable.slide_02),
+    EffectId.night to listOf(R.drawable.slide_03),
+    EffectId.rain to listOf(R.drawable.slide_04),
+    EffectId.snow to listOf(R.drawable.slide_05),
+    EffectId.storm to listOf(R.drawable.slide_06),
+    EffectId.sunset_snow to listOf(R.drawable.slide_07),
+    EffectId.wind to listOf(R.drawable.slide_08),
+)
 
 @Composable
-fun rememberEffectBackgrounds(effect: EffectId): List<Int> {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(effect, configuration) {
-        val resources = context.resources
-        val ids = resources.getStringArray(R.array.abys_effect_ids)
-        val index = ids.indexOf(effect.name)
-        val backgrounds = resources.obtainTypedArray(R.array.abys_effect_backgrounds)
-        val result = backgrounds.use { array ->
-            if (index in 0 until array.length()) {
-                val resId = array.getResourceId(index, 0)
-                if (resId != 0) listOf(resId) else emptyList()
-            } else {
-                emptyList()
-            }
-        }
-        if (result.isEmpty()) Slides.all else result
-    }
-}
+fun rememberEffectCatalogFromRes(): List<EffectThumb> = remember { effectCatalog }
+
+@Composable
+fun rememberEffectBackgrounds(effect: EffectId): List<Int> =
+    remember(effect) { effectBackgrounds[effect] ?: Slides.all }
 
 @Composable
 fun rememberCitiesFromRes(): List<String> {
