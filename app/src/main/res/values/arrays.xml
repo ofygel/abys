@@ -1,40 +1,4 @@
 <resources>
-    <!-- Порядок важен: ids, thumbs, backgrounds должны быть одной длины -->
-    <string-array name="abys_effect_ids">
-        <item>leaves</item>
-        <item>lightning</item>
-        <item>night</item>
-        <item>rain</item>
-        <item>snow</item>
-        <item>storm</item>
-        <item>sunset_snow</item>
-        <item>wind</item>
-    </string-array>
-
-    <!-- Превью (нижняя карусель) -->
-    <array name="abys_effect_thumbs">
-        <item>@drawable/thumb_leaves</item>
-        <item>@drawable/thumb_lightning</item>
-        <item>@drawable/thumb_night</item>
-        <item>@drawable/thumb_rain</item>
-        <item>@drawable/thumb_snow</item>
-        <item>@drawable/thumb_storm</item>
-        <item>@drawable/thumb_sunset_snow</item>
-        <item>@drawable/thumb_wind</item>
-    </array>
-
-    <!-- Фоны (или placeholderы под шейдер/видео) -->
-    <array name="abys_effect_backgrounds">
-        <item>@drawable/bg_leaves</item>
-        <item>@drawable/bg_lightning</item>
-        <item>@drawable/bg_night</item>
-        <item>@drawable/bg_rain</item>
-        <item>@drawable/bg_snow</item>
-        <item>@drawable/bg_storm</item>
-        <item>@drawable/bg_sunset_snow</item>
-        <item>@drawable/bg_wind</item>
-    </array>
-
     <!-- Города для пикера -->
     <string-array name="abys_cities_kz">
         <item>Almaty</item>
