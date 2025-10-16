@@ -15,6 +15,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -86,6 +88,7 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     )
     val showSheet by vm.sheetVisible.observeAsState(false)
     val showPicker by vm.pickerVisible.observeAsState(false)
+    val selectedEffect by vm.selectedEffect.observeAsState(null)
     val hadith by vm.hadithToday.observeAsState("")
     val effects = remember {
         listOf(
@@ -109,6 +112,7 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
             prayerTimes = times,
             thirds = thirds,
             effects = effects,
+            selectedEffect = selectedEffect,
             showSheet = showSheet,
             showPicker = showPicker,
             hadith = hadith,
@@ -128,6 +132,7 @@ fun MainScreen(
     prayerTimes: Map<String, String>,
     thirds: Triple<String, String, String>,
     effects: List<Int>,
+    selectedEffect: Int?,
     showSheet: Boolean,
     showPicker: Boolean,
     hadith: String,
@@ -293,6 +298,7 @@ fun MainScreen(
                     scaleY = carouselScale
                     translationY = carouselTranslation
                 },
+            selected = selectedEffect,
             interactionEnabled = stage == SurfaceStage.Dashboard
         )
 
@@ -572,6 +578,8 @@ private fun EffectCarousel(
     items: List<Int>,
     onTap: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    interactionEnabled: Boolean = true,
+    selected: Int? = null
     interactionEnabled: Boolean = true
 ) {
     val sx = Dimens.sx()
@@ -579,6 +587,52 @@ private fun EffectCarousel(
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val spacing = (40f * sx).dp
+    val borderWidth = (3f * Dimens.s()).dp
+    val thumbShape = RoundedCornerShape(Tokens.Radii.chip())
+
+    LaunchedEffect(state, items, interactionEnabled) {
+        if (!interactionEnabled) return@LaunchedEffect
+        snapshotFlow { state.isScrollInProgress }
+            .collectLatest { isScrolling ->
+                if (!isScrolling) {
+                    val layoutInfo = state.layoutInfo
+                    if (layoutInfo.totalItemsCount == 0 || layoutInfo.viewportSize.width == 0) return@collectLatest
+                    val viewportCenter = layoutInfo.viewportSize.width / 2f
+                    val closest = layoutInfo.visibleItemsInfo.minByOrNull { info ->
+                        abs(info.offset + info.size / 2f - viewportCenter)
+                    } ?: return@collectLatest
+                    val targetCenter = closest.offset + closest.size / 2f
+                    val delta = viewportCenter - targetCenter
+                    if (abs(delta) > 1f) {
+                        state.animateScrollBy(delta)
+                    }
+                }
+            }
+    }
+
+    LaunchedEffect(selected, interactionEnabled, items) {
+        if (!interactionEnabled) return@LaunchedEffect
+        val targetIndex = selected?.let(items::indexOf) ?: -1
+        if (targetIndex < 0) return@LaunchedEffect
+        val layoutInfo = state.layoutInfo
+        if (layoutInfo.totalItemsCount == 0 || layoutInfo.viewportSize.width == 0) return@LaunchedEffect
+        val viewportCenter = layoutInfo.viewportSize.width / 2f
+        val closest = layoutInfo.visibleItemsInfo.minByOrNull { info ->
+            abs(info.offset + info.size / 2f - viewportCenter)
+        }
+        if (closest?.index == targetIndex && abs(viewportCenter - (closest.offset + closest.size / 2f)) <= 1f) {
+            return@LaunchedEffect
+        }
+        val targetVisible = layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIndex }
+        if (targetVisible != null) {
+            val delta = viewportCenter - (targetVisible.offset + targetVisible.size / 2f)
+            if (abs(delta) > 1f) {
+                state.animateScrollBy(delta)
+            }
+        } else {
+            state.animateScrollToItem(targetIndex)
+        }
+    }
 
     LaunchedEffect(state, items, interactionEnabled) {
         if (!interactionEnabled) return@LaunchedEffect
@@ -613,20 +667,23 @@ private fun EffectCarousel(
                 val viewportCenter = state.layoutInfo.viewportSize.width / 2f
                 val distance = if (center != null) abs(center - viewportCenter) else Float.MAX_VALUE
                 val normalized = if (viewportCenter <= 0f || center == null) 1f else (distance / viewportCenter).coerceIn(0f, 1.35f)
+                val baseScale = 0.78f + 0.22f * exp(-(normalized * 2.4f))
+                val baseAlpha = 0.45f + 0.55f * exp(-(normalized * 2.1f))
+                val isSelected = selected == res
+                val displayScale = (baseScale + if (isSelected) 0.06f else 0f).coerceIn(0.7f, 1.12f)
+                val displayAlpha = if (isSelected) 1f else baseAlpha
                 val scale = 0.78f + 0.22f * exp(-(normalized * 2.4f))
                 val alpha = 0.45f + 0.55f * exp(-(normalized * 2.1f))
 
-                Image(
-                    painter = painterResource(res),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
+                Box(
                     modifier = Modifier
                         .size(width = (121f * sx).dp, height = (153f * sy).dp)
                         .graphicsLayer {
-                            this.scaleX = scale
-                            this.scaleY = scale
-                            this.alpha = alpha
+                            this.scaleX = displayScale
+                            this.scaleY = displayScale
+                            this.alpha = displayAlpha
                         }
+                        .clip(thumbShape)
                         .clip(RoundedCornerShape(Tokens.Radii.chip()))
                         .clickable(enabled = interactionEnabled) {
                             info?.let {
@@ -637,7 +694,22 @@ private fun EffectCarousel(
                             }
                             onTap(res)
                         }
-                )
+                ) {
+                    Image(
+                        painter = painterResource(res),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    if (isSelected) {
+                        Box(
+                            Modifier
+                                .matchParentSize()
+                                .border(borderWidth, Color.White.copy(alpha = 0.9f), thumbShape)
+                        )
+                    }
+                }
             }
         }
     }
