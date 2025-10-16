@@ -314,8 +314,10 @@ fun MainScreen(
         if (sheetAlpha > 0.01f) {
             AnimatedVisibility(
                 visible = showSheet,
-                enter = fadeIn(tween(220)) + slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(220)),
-                exit = fadeOut(tween(180)) + slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(180))
+                enter = fadeIn(tween(220)) +
+                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(220)),
+                exit = fadeOut(tween(180)) +
+                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(180))
             ) {
                 CitySheet(
                     city = city,

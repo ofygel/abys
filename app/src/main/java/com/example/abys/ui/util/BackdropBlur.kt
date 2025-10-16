@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -23,11 +24,12 @@ fun Modifier.backdropBlur(radius: Dp): Modifier = composed {
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         this.graphicsLayer {
-            renderEffect = RenderEffect.createBlurEffect(radiusPx, radiusPx, Shader.TileMode.CLAMP)
+            renderEffect = RenderEffect
+                .createBlurEffect(radiusPx, radiusPx, Shader.TileMode.CLAMP)
+                .asComposeRenderEffect()
             compositingStrategy = CompositingStrategy.Offscreen
         }
     } else {
         this
     }
 }
-
