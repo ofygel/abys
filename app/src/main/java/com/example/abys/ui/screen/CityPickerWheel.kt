@@ -1,6 +1,5 @@
 package com.example.abys.ui.screen
 
-import androidx.compose.animation.core.rememberSplineBasedDecay
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
@@ -73,8 +72,7 @@ fun CityPickerWheel(
     LaunchedEffect(cities) { hasAligned = false }
 
     val flingBehavior = rememberSnapFlingBehavior(
-        lazyListState = listState,
-        decayAnimationSpec = rememberSplineBasedDecay<Float>(frictionMultiplier = 0.78f)
+        lazyListState = listState
     )
 
     LaunchedEffect(cities, currentCity) {
