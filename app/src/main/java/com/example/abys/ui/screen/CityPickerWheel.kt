@@ -116,7 +116,7 @@ fun CityPickerWheel(
         modifier
             .fillMaxSize()
             .clipToBounds()
-            .pointerInput(cities, centerIndex) {
+            .pointerInput(cities) {
                 detectVerticalDragGestures(
                     onDragStart = {
                         velocityTracker.reset()
