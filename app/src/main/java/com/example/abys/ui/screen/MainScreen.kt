@@ -2,11 +2,15 @@
 
 package com.example.abys.ui.screen
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,13 +36,16 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,7 +62,11 @@ import com.example.abys.ui.util.backdropBlur
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+
+private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 @Composable
 fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
@@ -120,6 +131,89 @@ fun MainScreen(
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
+    val density = LocalDensity.current
+
+    val stage = when {
+        !showSheet -> SurfaceStage.Dashboard
+        showPicker -> SurfaceStage.CityPicker
+        else -> SurfaceStage.CitySheet
+    }
+
+    val transition = updateTransition(stage, label = "surface")
+    val sheetHiddenOffset = with(density) { (236f * sx).dp.toPx() }
+    val sheetLift = with(density) { (18f * sy).dp.toPx() }
+    val cardLift = with(density) { (42f * sy).dp.toPx() }
+    val carouselDrop = with(density) { (36f * sy).dp.toPx() }
+    val headerLift = with(density) { (14f * sy).dp.toPx() }
+
+    val prayerAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) 200 else 240) },
+        label = "prayerAlpha"
+    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0f }
+    val prayerScale by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 260) },
+        label = "prayerScale"
+    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
+    val prayerTranslation by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 240) },
+        label = "prayerTranslation"
+    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
+
+    val headerAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 220) },
+        label = "headerAlpha"
+    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
+    val headerTranslation by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 220) },
+        label = "headerTranslation"
+    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
+
+    val carouselAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 220) },
+        label = "carouselAlpha"
+    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
+    val carouselScale by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 240) },
+        label = "carouselScale"
+    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
+    val carouselTranslation by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 240) },
+        label = "carouselTranslation"
+    ) { st -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
+
+    val scrimAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 220) },
+        label = "scrimAlpha"
+    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+
+    val sheetAlpha by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 240) },
+        label = "sheetAlpha"
+    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+    val sheetTranslationX by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 260) },
+        label = "sheetTranslationX"
+    ) { st -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
+    val sheetTranslationY by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 260) },
+        label = "sheetTranslationY"
+    ) { st ->
+        when (st) {
+            SurfaceStage.Dashboard -> sheetLift
+            SurfaceStage.CitySheet -> 0f
+            SurfaceStage.CityPicker -> -sheetLift / 2f
+        }
+    }
+    val sheetScale by transition.animateFloat(
+        transitionSpec = { tween(durationMillis = 260) },
+        label = "sheetScale"
+    ) { st ->
+        when (st) {
+            SurfaceStage.Dashboard -> 0.9f
+            SurfaceStage.CitySheet -> 1f
+            SurfaceStage.CityPicker -> 1.04f
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         HeaderPill(
@@ -131,34 +225,46 @@ fun MainScreen(
                     top = (79f * sy).dp,
                     end = (51f * sx).dp
                 )
-                .height((102f * sy).dp),
+                .height((102f * sy).dp)
+                .graphicsLayer {
+                    alpha = headerAlpha
+                    translationY = headerTranslation
+                },
             onTap = onCityPillClick
         )
 
         var exploded by remember { mutableStateOf(false) }
-        LaunchedEffect(showSheet) {
-            if (showSheet) exploded = false
+        LaunchedEffect(stage) {
+            if (stage != SurfaceStage.Dashboard) exploded = false
         }
 
-        if (!showSheet) {
+        val prayerModifier = Modifier
+            .padding(
+                start = (64f * sx).dp,
+                end = (64f * sx).dp,
+                top = (226f * sy).dp
+            )
+            .height((611f * sy).dp)
+            .graphicsLayer {
+                val explodedAlpha = if (exploded) 0f else 1f
+                val explodedScale = if (exploded) 1.08f else 1f
+                alpha = prayerAlpha * explodedAlpha
+                scaleX = prayerScale * explodedScale
+                scaleY = prayerScale * explodedScale
+                translationY = prayerTranslation
+            }
+
+        if (prayerAlpha > 0.01f) {
             PrayerCard(
                 times = prayerTimes,
                 thirds = thirds,
-                modifier = Modifier
-                    .padding(
-                        start = (64f * sx).dp,
-                        end = (64f * sx).dp,
-                        top = (226f * sy).dp
-                    )
-                    .height((611f * sy).dp)
-                    .pointerInput(Unit) {
+                modifier = if (stage == SurfaceStage.Dashboard) {
+                    prayerModifier.pointerInput(Unit) {
                         detectTapGestures(onDoubleTap = { exploded = !exploded })
                     }
-                    .graphicsLayer {
-                        alpha = if (exploded) 0f else 1f
-                        scaleX = if (exploded) 1.1f else 1f
-                        scaleY = if (exploded) 1.1f else 1f
-                    }
+                } else {
+                    prayerModifier
+                }
             )
         }
 
@@ -168,9 +274,30 @@ fun MainScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = (48f * sy).dp)
+                .graphicsLayer {
+                    alpha = carouselAlpha
+                    scaleX = carouselScale
+                    scaleY = carouselScale
+                    translationY = carouselTranslation
+                },
+            interactionEnabled = stage == SurfaceStage.Dashboard
         )
 
-        if (showSheet) {
+        if (scrimAlpha > 0.01f) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = scrimAlpha }
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCityPillClick
+                    )
+            )
+        }
+
+        if (sheetAlpha > 0.01f) {
             CitySheet(
                 city = city,
                 hadith = hadith,
@@ -178,7 +305,15 @@ fun MainScreen(
                 pickerVisible = showPicker,
                 onCityChipTap = onCityChipTap,
                 onCityChosen = onCityChosen,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = sheetAlpha
+                        translationX = sheetTranslationX
+                        translationY = sheetTranslationY
+                        scaleX = sheetScale
+                        scaleY = sheetScale
+                    }
             )
         }
     }
@@ -418,7 +553,8 @@ private fun Tick(height: Dp) {
 private fun EffectCarousel(
     items: List<Int>,
     onTap: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    interactionEnabled: Boolean = true
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
@@ -426,9 +562,30 @@ private fun EffectCarousel(
     val scope = rememberCoroutineScope()
     val spacing = (40f * sx).dp
 
+    LaunchedEffect(state, items, interactionEnabled) {
+        if (!interactionEnabled) return@LaunchedEffect
+        snapshotFlow { state.isScrollInProgress }
+            .collectLatest { isScrolling ->
+                if (!isScrolling) {
+                    val layoutInfo = state.layoutInfo
+                    if (layoutInfo.totalItemsCount == 0 || layoutInfo.viewportSize.width == 0) return@collectLatest
+                    val viewportCenter = layoutInfo.viewportSize.width / 2f
+                    val closest = layoutInfo.visibleItemsInfo.minByOrNull { info ->
+                        abs(info.offset + info.size / 2f - viewportCenter)
+                    } ?: return@collectLatest
+                    val targetCenter = closest.offset + closest.size / 2f
+                    val delta = viewportCenter - targetCenter
+                    if (abs(delta) > 1f) {
+                        state.animateScrollBy(delta)
+                    }
+                }
+            }
+    }
+
     Box(modifier) {
         LazyRow(
             state = state,
+            userScrollEnabled = interactionEnabled,
             horizontalArrangement = Arrangement.spacedBy(spacing),
             contentPadding = PaddingValues(horizontal = spacing)
         ) {
@@ -437,11 +594,9 @@ private fun EffectCarousel(
                 val center = info?.let { it.offset + it.size / 2f }
                 val viewportCenter = state.layoutInfo.viewportSize.width / 2f
                 val distance = if (center != null) abs(center - viewportCenter) else Float.MAX_VALUE
-                val (scale, alpha) = when {
-                    distance < 40f -> 1f to 1f
-                    distance < 150f -> 0.85f to 0.7f
-                    else -> 0.75f to 0.5f
-                }
+                val normalized = if (viewportCenter <= 0f || center == null) 1f else (distance / viewportCenter).coerceIn(0f, 1.35f)
+                val scale = 0.78f + 0.22f * exp(-(normalized * 2.4f))
+                val alpha = 0.45f + 0.55f * exp(-(normalized * 2.1f))
 
                 Image(
                     painter = painterResource(res),
@@ -455,7 +610,7 @@ private fun EffectCarousel(
                             this.alpha = alpha
                         }
                         .clip(RoundedCornerShape(Tokens.Radii.chip()))
-                        .clickable {
+                        .clickable(enabled = interactionEnabled) {
                             info?.let {
                                 val target = center ?: return@let
                                 scope.launch {
