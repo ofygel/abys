@@ -74,6 +74,7 @@ import java.time.format.DateTimeFormatter
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
@@ -592,6 +593,26 @@ private fun EffectCarousel(
 
     LaunchedEffect(state, items, interactionEnabled) {
         if (!interactionEnabled) return@LaunchedEffect
+        snapshotFlow {
+            Triple(
+                state.layoutInfo.viewportSize.width,
+                state.layoutInfo.totalItemsCount,
+                state.isScrollInProgress
+            )
+        }.collectLatest { (viewportWidth, totalCount, isScrolling) ->
+            if (!interactionEnabled || isScrolling || totalCount == 0 || viewportWidth == 0) return@collectLatest
+
+            val layoutInfo = state.layoutInfo
+            val viewportCenter = viewportWidth / 2f
+            val closest = layoutInfo.visibleItemsInfo.minByOrNull { info ->
+                abs(info.offset + info.size / 2f - viewportCenter)
+            } ?: return@collectLatest
+            val targetCenter = closest.offset + closest.size / 2f
+            val delta = viewportCenter - targetCenter
+            if (abs(delta) > 1f) {
+                state.animateScrollBy(delta)
+            }
+        }
         snapshotFlow { state.isScrollInProgress }
             .collectLatest { isScrolling ->
                 if (!isScrolling) {
@@ -614,6 +635,13 @@ private fun EffectCarousel(
         if (!interactionEnabled) return@LaunchedEffect
         val targetIndex = selected?.let(items::indexOf) ?: -1
         if (targetIndex < 0) return@LaunchedEffect
+
+        snapshotFlow {
+            val info = state.layoutInfo
+            info.viewportSize.width to info.totalItemsCount
+        }.first { (width, count) -> interactionEnabled && count > 0 && width > 0 }
+
+        val layoutInfo = state.layoutInfo
         val layoutInfo = state.layoutInfo
         if (layoutInfo.totalItemsCount == 0 || layoutInfo.viewportSize.width == 0) return@LaunchedEffect
         val viewportCenter = layoutInfo.viewportSize.width / 2f
