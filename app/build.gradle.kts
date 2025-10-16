@@ -70,6 +70,9 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.compose.foundation:foundation:1.6.8")
 
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.compose.foundation:foundation:1.6.8")
+
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
