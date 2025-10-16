@@ -30,6 +30,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +88,7 @@ fun MainApp(vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
             onCityClick   = vm::toggleSheet,
             onCityChipTap = vm::togglePicker,
             onCityChosen  = vm::setCity,
+            onCityClick   = { /* открыть sheet с хадисами или picker – твоя логика */ },
             onEffectClick = vm::setEffect
         )
     }
@@ -107,6 +110,7 @@ fun MainScreen(
     onCityClick:    () -> Unit,
     onCityChipTap:  () -> Unit,
     onCityChosen:   (String) -> Unit,
+    onCityClick:    () -> Unit,
     onEffectClick:  (Int) -> Unit
 ) {
     Box(Modifier.fillMaxSize()) {
@@ -145,6 +149,14 @@ fun MainScreen(
                     }
             )
         }
+        /* --- карточка намазов --- */
+        PrayerCard(
+            times   = prayerTimes,
+            thirds  = thirds,
+            modifier = Modifier
+                .padding(start = 64.dp, end = 64.dp, top = 226.dp)
+                .height(611.dp)
+        )
 
         /* --- нижняя карусель эффектов --- */
         EffectCarousel(
