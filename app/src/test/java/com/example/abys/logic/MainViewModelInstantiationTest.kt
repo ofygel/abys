@@ -12,3 +12,4 @@ class MainViewModelInstantiationTest {
         provider[MainViewModel::class.java]
     }
 }
+
