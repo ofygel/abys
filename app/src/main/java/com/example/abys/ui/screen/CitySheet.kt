@@ -30,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontStyle
@@ -42,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.em
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
@@ -93,7 +93,7 @@ fun CitySheet(
                 .fillMaxWidth()
                 .border(
                     width = 3.dp,
-                    color = Color.White.copy(alpha = 0.36f),
+                    color = Tokens.Colors.chipStroke,
                     shape = RoundedCornerShape((24f * s).dp)
                 )
                 .pointerInput(Unit) { detectTapGestures { onCityChipTap() } },
@@ -102,11 +102,12 @@ fun CitySheet(
             BasicText(
                 city,
                 style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = AbysFonts.inter,
                     fontSize   = chipSize,
                     fontStyle  = FontStyle.Italic,
                     fontWeight = FontWeight.Bold,
                     color      = Tokens.Colors.text,
-                    shadow     = Shadow(Color.Black.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 4f)
+                    shadow     = Shadow(Tokens.Colors.tickDark.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 4f)
                 ),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -157,7 +158,7 @@ private fun HadithFrame(
     Box(
         modifier
             .clip(shape)
-            .border(5.dp, Color.Black.copy(alpha = 0.85f), shape)
+            .border(5.dp, Tokens.Colors.tickDark, shape)
             .padding(horizontal = (36f * sx).dp, vertical = (32f * sy).dp)
     ) {
         val scrollState = rememberScrollState()
@@ -166,11 +167,12 @@ private fun HadithFrame(
             BasicText(
                 text,
                 style = MaterialTheme.typography.bodyLarge.copy(
+                    fontFamily = AbysFonts.inter,
                     fontSize   = textSize,
                     fontWeight = FontWeight.Bold,
                     color      = Tokens.Colors.text,
                     lineHeight = 1.42.em,
-                    shadow     = Shadow(Color.Black.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 6f)
+                    shadow     = Shadow(Tokens.Colors.tickDark.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 6f)
                 ),
                 textAlign = TextAlign.Start
             )

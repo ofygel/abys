@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,13 +26,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.abys.R
+import com.example.abys.ui.theme.Dimens
+import com.example.abys.ui.theme.Tokens
 import com.example.abys.data.EffectId
 import kotlin.math.abs
 import androidx.compose.foundation.lazy.LazyListState
@@ -54,9 +55,9 @@ fun EffectCarousel(
     onSelected: (EffectId) -> Unit,
     enabled: Boolean = true
 ) {
-    val cardWidth: Dp = 121.dp
-    val cardHeight: Dp = 153.dp
-    val cardRadius = 22.dp
+    val cardWidth: Dp = Dimens.scaledX(R.dimen.abys_thumb_w)
+    val cardHeight: Dp = Dimens.scaledY(R.dimen.abys_thumb_h)
+    val cardRadius = Tokens.Radii.chip()
     val itemSpacing = 40.dp
 
     val listState = rememberLazyListState()
@@ -150,7 +151,7 @@ fun EffectCarousel(
                                 .matchParentSize()
                                 .border(
                                     width = 2.dp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
+                                    color = Tokens.Colors.separator,
                                     shape = RoundedCornerShape(cardRadius)
                                 )
                         )

@@ -24,12 +24,6 @@ class MainViewModel : ViewModel() {
 
     private val api = RetrofitProvider.aladhan
 
-    val cities = listOf(
-        "Almaty", "Astana", "Shymkent", "Karaganda", "Pavlodar", "Aktobe", "Taraz",
-        "Oskemen", "Semey", "Kostanay", "Kyzylorda", "Atyrau", "Uralsk",
-        "Taldykorgan", "Petropavl", "Ekibastuz", "Temirtau", "Aktau", "Kokshetau"
-    )
-
     private val hadiths = listOf(
         "Поистине, дела оцениваются по намерениям, …",
         "Лучшим из вас является тот, кто изучает Коран …"

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import kotlin.math.abs
@@ -143,8 +144,8 @@ fun CityPickerWheel(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            Color.White,
-                            Color.White,
+                            Tokens.Colors.tickFull,
+                            Tokens.Colors.tickFull,
                             Color.Transparent
                         ),
                         stops = listOf(0f, fraction, 1f - fraction, 1f)
@@ -202,13 +203,14 @@ fun CityPickerWheel(
                     .graphicsLayer { this.alpha = alpha }
                     .offset { IntOffset(0, yOffset) },
                 style = TextStyle(
+                    fontFamily = AbysFonts.inter,
                     textAlign = TextAlign.Center,
                     fontSize = textSize,
                     fontWeight = if (distance == 0) FontWeight.ExtraBold else FontWeight.Bold,
                     color = Tokens.Colors.text,
                     lineHeight = (if (distance == 0) 1.10f else 1.05f).em,
                     shadow = Shadow(
-                        color = Color.Black.copy(alpha = 0.35f),
+                        color = Tokens.Colors.tickDark.copy(alpha = 0.35f),
                         offset = Offset(0f, 2f),
                         blurRadius = 6f
                     )

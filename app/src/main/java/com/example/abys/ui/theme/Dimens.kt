@@ -1,7 +1,10 @@
 package com.example.abys.ui.theme
 
+import androidx.annotation.DimenRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -20,4 +23,22 @@ object Dimens {
 
     @Composable
     fun scaled(px: Int) = (px * s()).dp
+
+    @Composable
+    fun scaledX(@DimenRes resId: Int): Dp {
+        val base = dimensionResource(resId)
+        return (base.value * sx()).dp
+    }
+
+    @Composable
+    fun scaledY(@DimenRes resId: Int): Dp {
+        val base = dimensionResource(resId)
+        return (base.value * sy()).dp
+    }
+
+    @Composable
+    fun scaledRadius(@DimenRes resId: Int): Dp {
+        val base = dimensionResource(resId)
+        return (base.value * s()).dp
+    }
 }

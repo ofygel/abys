@@ -1,40 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- фиксированная тёмная тема без ActionBar -->
-    <style name="Theme.Abys" parent="Theme.MaterialComponents.NoActionBar">
-        <item name="android:windowNoTitle">true</item>
-        <item name="windowActionBar">false</item>
-
-        <!-- делаем статус-бар прозрачным, нав-бар чёрным -->
-        <item name="android:statusBarColor">@color/bm_status_bar</item>
-        <item name="android:navigationBarColor">@android:color/black</item>
-
-        <!-- нейтральная палитра вместо стандартного фиолетового -->
-        <item name="colorPrimary">@color/bm_button_light</item>
-        <item name="colorPrimaryVariant">@color/bm_button_light</item>
-        <item name="colorSecondary">@color/bm_button_light</item>
-        <item name="colorSecondaryVariant">@color/bm_button_light</item>
-        <item name="colorOnPrimary">@android:color/black</item>
-        <item name="colorOnSecondary">@android:color/black</item>
-        <item name="android:colorButtonNormal">@color/bm_button_light</item>
-        <item name="android:buttonStyle">@style/Widget.Abys.Button.Compat</item>
-        <item name="materialButtonStyle">@style/Widget.Abys.Button</item>
+    <style name="Theme.Abys" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
-
-    <!-- Splash: тот же набор + полноэкран -->
-    <style name="Theme.Abys.NoActionBar" parent="Theme.Abys">
-        <item name="android:windowFullscreen">true</item>
-    </style>
-
-    <style name="Widget.Abys.Button" parent="@style/Widget.MaterialComponents.Button">
-        <item name="backgroundTint">@color/bm_button_light</item>
-        <item name="android:textColor">@android:color/black</item>
-    </style>
-
-    <style name="Widget.Abys.Button.Compat" parent="@style/Widget.AppCompat.Button">
-        <item name="android:backgroundTint">@color/bm_button_light</item>
-        <item name="android:textColor">@android:color/black</item>
-    </style>
-
 </resources>
