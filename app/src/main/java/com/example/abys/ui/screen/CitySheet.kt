@@ -106,7 +106,11 @@ fun CitySheet(
                     fontStyle  = FontStyle.Italic,
                     fontWeight = FontWeight.Bold,
                     color      = Tokens.Colors.text,
-                    shadow     = Shadow(Tokens.Colors.tickDark.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 4f)
+                    shadow     = Shadow(
+                        Tokens.Colors.tickDark.copy(alpha = 0.35f),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 4f
+                    )
                 ),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -168,9 +172,13 @@ private fun HadithFrame(
                     fontWeight = FontWeight.Bold,
                     color      = Tokens.Colors.text,
                     lineHeight = 1.42.em,
-                    shadow     = Shadow(Tokens.Colors.tickDark.copy(alpha = 0.35f), offset = Offset(0f, 2f), blurRadius = 6f)
-                ),
-                textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    shadow     = Shadow(
+                        Tokens.Colors.tickDark.copy(alpha = 0.35f),
+                        offset = Offset(0f, 2f),
+                        blurRadius = 6f
+                    )
+                )
             )
         }
     }
