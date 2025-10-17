@@ -80,10 +80,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -178,16 +174,6 @@ private fun TabularText(
         style = LocalTextStyle.current.merge(TabularFeatureStyle)
     )
 }
-
-private const val TABULAR_FEATURE = "tnum"
-
-private fun tabularFigures(value: String) = buildAnnotatedString {
-    withStyle(SpanStyle(fontFeatureSettings = TABULAR_FEATURE)) {
-        append(value)
-    }
-}
-
-private const val TABULAR_FEATURE = "tnum"
 
 @Composable
 private fun ThinDivider(modifier: Modifier = Modifier) {
@@ -626,17 +612,13 @@ private fun HeaderPill(
                     Spacer(Modifier.width((12f * Dimens.sx()).dp))
                     TabularText(
                         text = now,
-                    Text(
-                        text = tabularFigures(now),
                         fontSize = TypeScale.timeNow,
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
                         textAlign = TextAlign.Right,
-                        fontFeatureSettings = TABULAR_FEATURE,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
-                        modifier = Modifier.wrapContentWidth(Alignment.End),
-                        style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+                        modifier = Modifier.wrapContentWidth(Alignment.End)
                     )
                 }
             }
@@ -757,17 +739,13 @@ private fun PrayerRow(label: String, value: String) {
         )
         TabularText(
             text = value,
-        Text(
-            text = tabularFigures(value),
             fontSize = TypeScale.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             lineHeight = TypeScale.label,
-            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1,
-            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            maxLines = 1
         )
     }
 }
@@ -810,16 +788,11 @@ private fun AsrVariantRow(
         Spacer(Modifier.width(gap))
         TabularText(
             text = value,
-        Text(
-            text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
-            modifier = Modifier.wrapContentWidth(Alignment.End),
-            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
-            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
@@ -914,16 +887,12 @@ private fun RowItem(label: String, value: String) {
         Spacer(Modifier.width(spacing))
         TabularText(
             text = value,
-        Text(
-            text = tabularFigures(value),
             fontSize = TypeScale.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
-            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1,
-            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            maxLines = 1
         )
     }
 }
@@ -969,16 +938,11 @@ private fun AsrSub(
         Spacer(Modifier.width(spacing))
         TabularText(
             text = value,
-        Text(
-            text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
-            modifier = Modifier.wrapContentWidth(Alignment.End),
-            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
-            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
@@ -1020,18 +984,10 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
         ) {
             labels.forEach { value ->
                 TabularText(
-                Text(
-                    text = tabularFigures(value),
-                    fontSize = TypeScale.timeline,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TypeTone.primary,
                     text = value,
                     fontSize = TypeScale.timeline,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.primary,
-                    maxLines = 1,
-                    style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
-                    fontFeatureSettings = TABULAR_FEATURE,
                     maxLines = 1
                 )
             }
