@@ -701,6 +701,37 @@ private fun PrayerCard(
             }
 
             Spacer(Modifier.height(sectionSpacing))
+                label = "стандарт",
+                value = times["AsrStd"] ?: "--:--",
+                gap = asrGap,
+                lineHeight = asrLineHeight
+            )
+            Spacer(Modifier.height(asrSpacing))
+            AsrVariantRow(
+                label = "ханафи",
+                value = times["AsrHana"] ?: "--:--",
+                gap = asrGap,
+                lineHeight = asrLineHeight
+            )
+
+            Spacer(Modifier.height(sectionSpacing))
+            ThinDivider()
+            Spacer(Modifier.height(sectionSpacing))
+
+            val evening = listOf(
+                "Магриб" to (times["Maghrib"] ?: "--:--"),
+                "Иша" to (times["Isha"] ?: "--:--")
+            )
+            evening.forEachIndexed { index, (label, value) ->
+                PrayerRow(label, value)
+                if (index != evening.lastIndex) {
+                    Spacer(Modifier.height(rowSpacing))
+                    ThinDivider()
+                    Spacer(Modifier.height(rowSpacing))
+                }
+            }
+
+            Spacer(Modifier.height(sectionSpacing))
             RowItem("Фаджр", times["Fajr"] ?: "--:--")
             Spacer(Modifier.height(rowSpacing))
             ThinDivider(Modifier.padding(vertical = dividerPadding))
