@@ -4,6 +4,8 @@ import android.os.SystemClock
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollScope
@@ -31,6 +33,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -38,12 +42,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.abys.R
 import com.example.abys.data.EffectId
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
+import com.example.abys.ui.util.backdropBlur
 import kotlin.math.abs
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
@@ -68,7 +74,8 @@ fun EffectCarousel(
     val cardWidth: Dp = Dimens.scaledX(R.dimen.abys_thumb_w)
     val cardHeight: Dp = Dimens.scaledY(R.dimen.abys_thumb_h)
     val cardRadius = Tokens.Radii.chip()
-    val itemSpacing = 40.dp
+    val cardElevation = (18f * Dimens.s()).dp
+    val itemSpacing = (28f * Dimens.sx()).dp
 
     val repeatedItems = remember(items) {
         val source = items.ifEmpty { return@remember emptyList() }
@@ -189,9 +196,11 @@ fun EffectCarousel(
                 val distance = distanceToCenter(index, listState, viewportWidthPx)
                 val scale = scaleForDistance(distance)
                 val alpha = alphaForDistance(distance)
+                val shadowElevation = cardElevation * alpha
 
                 Card(
                     modifier = Modifier
+                        .shadow(shadowElevation, RoundedCornerShape(cardRadius), clip = false)
                         .size(cardWidth, cardHeight)
                         .graphicsLayer {
                             scaleX = scale
@@ -210,23 +219,54 @@ fun EffectCarousel(
                         }
                     }
                 ) {
-                    Image(
-                        painter = painterResource(item.resId),
-                        contentDescription = item.id.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    if (item.id == selected) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(cardRadius))
+                    ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
+                            Modifier
+                                .matchParentSize()
+                                .backdropBlur((6f * Dimens.s()).dp)
                                 .border(
-                                    width = 2.dp,
-                                    color = Tokens.Colors.separator,
+                                    BorderStroke(
+                                        width = 1.dp,
+                                        brush = Brush.verticalGradient(
+                                            0f to Color.White.copy(alpha = 0.12f),
+                                            1f to Color.White.copy(alpha = 0.08f)
+                                        )
+                                    ),
                                     shape = RoundedCornerShape(cardRadius)
                                 )
                         )
+
+                        Image(
+                            painter = painterResource(item.resId),
+                            contentDescription = item.id.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        val selectionStroke = BorderStroke(
+                            width = 1.5.dp,
+                            brush = Brush.verticalGradient(
+                                0f to Tokens.Colors.separator,
+                                1f to Color.White.copy(alpha = 0.4f)
+                            )
+                        )
+                        if (item.id == selected) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .border(selectionStroke, RoundedCornerShape(cardRadius))
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(Color.Black.copy(alpha = 0.08f))
+                            )
+                        }
                     }
                 }
             }

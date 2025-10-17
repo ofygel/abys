@@ -51,7 +51,10 @@ import com.example.abys.data.CityEntry
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
+import com.example.abys.ui.util.backdropBlur
 import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.pow
 import kotlinx.coroutines.flow.filter
 
 private const val VISIBLE_AROUND = 4
@@ -151,8 +154,9 @@ fun CityPickerWheel(
         ) {
             itemsIndexed(cities, key = { index, entry -> entry.id + index }) { index, city ->
                 val distance = abs(centerIndex - index)
-                val scale = 0.60f + 0.40f * (1f - (distance / (VISIBLE_AROUND + 1f))).coerceIn(0f, 1f)
-                val alpha = (1f - distance / (VISIBLE_AROUND + 1f)).coerceIn(0.35f, 1f)
+                val distanceF = distance.toFloat()
+                val scale = 0.60f + 0.40f * exp(-((distanceF / 1.2f).pow(2)))
+                val alpha = exp(-((distanceF / 1.1f).pow(2))).coerceIn(0.28f, 1f)
                 val textSize = (42f * scale).coerceIn(22f, 42f)
 
                 BasicText(
@@ -190,19 +194,22 @@ fun CityPickerWheel(
                 .height(slotHeightDp)
                 .clip(highlightShape)
                 .border(1.dp, Tokens.Colors.chipStroke, highlightShape)
+                .backdropBlur((8f * s).dp)
+                .background(Color.White.copy(alpha = 0.04f))
         ) {
             Row(
                 Modifier
                     .align(Alignment.Center)
-                    .fillMaxWidth(0.74f),
+                    .fillMaxWidth(0.76f),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 repeat(2) {
                     Box(
                         Modifier
-                            .height(1.dp)
-                            .width((48f * sx).dp)
+                            .height((6f * sy).dp)
+                            .width((110f * sx).dp)
+                            .clip(RoundedCornerShape((3f * sy).dp))
                             .background(Tokens.Colors.text.copy(alpha = 0.6f))
                     )
                 }
