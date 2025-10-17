@@ -2,6 +2,10 @@
 
 package com.example.abys.ui.screen
 
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.RenderEffect
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -10,37 +14,40 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,8 +62,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -67,12 +75,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ExpandMore
+import androidx.compose.material.icons.outlined.ExpandMore
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -95,6 +103,15 @@ import java.time.format.DateTimeFormatter
 
 private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
+// Тоны серого стекла и параметры блюра — под эталонный макет
+private object GlassDefaults {
+    val top = Color(0x59131618)
+    val bottom = Color(0x66131618)
+    val stroke = Color(0x14FFFFFF)
+    val blur = 18.dp
+    val bgScrim = Color(0x33101518)
+}
+
 // Единая шкала таймингов — чтобы анимации были согласованы
 private object Dur {
     const val XShort = 180
@@ -102,6 +119,55 @@ private object Dur {
     const val Base = 220
     const val Med = 240
     const val Long = 260
+}
+
+// Палитра и типографика под «серый» макет
+private object TypeTone {
+    val primary = Tokens.Colors.text.copy(alpha = 0.92f)
+    val secondary = Tokens.Colors.text.copy(alpha = 0.78f)
+    val dim = Tokens.Colors.text.copy(alpha = 0.62f)
+    val divider = Color.White.copy(alpha = 0.08f)
+}
+
+@Composable
+private fun ThinDivider(modifier: Modifier = Modifier) {
+    Divider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
+}
+
+@Composable
+private fun MutedBackgroundCrossfade(effect: EffectId) {
+    Crossfade(
+        modifier = Modifier.fillMaxSize(),
+        targetState = effect,
+        animationSpec = tween(durationMillis = Dur.XShort),
+        label = "muted-effect-background"
+    ) { target ->
+        Box(Modifier.fillMaxSize()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val matrix = remember {
+                    ColorMatrix().apply { setSaturation(0.35f) }
+                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            renderEffect = RenderEffect.createColorFilterEffect(
+                                ColorMatrixColorFilter(matrix)
+                            )
+                        }
+                ) {
+                    BackgroundHost(effect = target)
+                }
+            } else {
+                BackgroundHost(effect = target)
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(GlassDefaults.bgScrim)
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -129,14 +195,7 @@ fun MainApp(
 
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
         Box(Modifier.fillMaxSize()) {
-            Crossfade(
-                modifier = Modifier.fillMaxSize(),
-                targetState = selectedEffect,
-                animationSpec = tween(durationMillis = Dur.XShort),
-                label = "effect-background"
-            ) { effect ->
-                BackgroundHost(effect = effect)
-            }
+            MutedBackgroundCrossfade(selectedEffect)
 
             MainScreen(
                 city = city,
@@ -382,14 +441,7 @@ fun MainScreen(
                 exit = fadeOut(tween(Dur.XShort)) +
                     slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.XShort))
             ) {
-                CitySheet(
-                    city = city,
-                    hadith = hadith,
-                    cities = cities,
-                    activeTab = sheetTab,
-                    onCityChipTap = onShowWheel,
-                    onTabSelected = onTabSelected,
-                    onCityChosen = onCityChosen,
+                GlassSheetContainer(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
@@ -399,7 +451,20 @@ fun MainScreen(
                             scaleX = sheetScale
                             scaleY = sheetScale
                         }
-                )
+                ) {
+                    CitySheet(
+                        city = city,
+                        hadith = hadith,
+                        cities = cities,
+                        activeTab = sheetTab,
+                        onCityChipTap = onShowWheel,
+                        onTabSelected = onTabSelected,
+                        onCityChosen = onCityChosen,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = (18f * sy).dp, vertical = (16f * sy).dp)
+                    )
+                }
             }
         }
     }
@@ -417,17 +482,6 @@ private fun HeaderPill(
     val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
     val shape = RoundedCornerShape(Tokens.Radii.pill())
-    val labelStyle = MaterialTheme.typography.labelMedium.copy(
-        fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.Medium,
-        color = Tokens.Colors.text.copy(alpha = 0.72f)
-    )
-    val valueStyle = MaterialTheme.typography.titleMedium.copy(
-        fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = Tokens.TypographySp.label,
-        color = Tokens.Colors.text
-    )
 
     Box(
         modifier
@@ -439,8 +493,12 @@ private fun HeaderPill(
         Box(
             Modifier
                 .matchParentSize()
-                .backdropBlur(6.dp)
-                .background(Tokens.Colors.overlayTop)
+                .clip(shape)
+                .backdropBlur(GlassDefaults.blur)
+                .background(
+                    Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
+                )
+                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
         )
         Box(
             Modifier
@@ -450,10 +508,7 @@ private fun HeaderPill(
                     role = Role.Button
                 }
                 .clickable(onClick = onTap)
-                .padding(
-                    horizontal = horizontalPadding,
-                    vertical = verticalPadding
-                ),
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             contentAlignment = Alignment.CenterStart
         ) {
             Row(
@@ -461,27 +516,25 @@ private fun HeaderPill(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Город", style = labelStyle, maxLines = 1)
-                    Spacer(Modifier.height((6f * sy).dp))
-                    Text(
-                        text = city,
-                        style = valueStyle,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "Сейчас", style = labelStyle, maxLines = 1)
-                    Spacer(Modifier.height((6f * sy).dp))
-                    Text(
-                        text = now,
-                        style = valueStyle,
-                        textAlign = TextAlign.Right,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = city,
+                    fontSize = Tokens.TypographySp.city,
+                    fontWeight = FontWeight.Medium,
+                    color = TypeTone.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = now,
+                    fontSize = Tokens.TypographySp.timeNow,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TypeTone.secondary,
+                    textAlign = TextAlign.Right,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.wrapContentWidth(Alignment.End)
+                )
             }
         }
     }
@@ -493,26 +546,15 @@ private fun PrayerCard(
     thirds: NightIntervals,
     modifier: Modifier = Modifier
 ) {
+    val sx = Dimens.sx()
     val sy = Dimens.sy()
+    val s = Dimens.s()
     val shape = RoundedCornerShape(Tokens.Radii.card())
-    val contentPadding = Modifier.padding(
-        start = Dimens.scaledX(R.dimen.abys_card_pad_h),
-        end = Dimens.scaledX(R.dimen.abys_card_pad_h),
-        top = Dimens.scaledY(R.dimen.abys_card_pad_top),
-        bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
-    )
-    val labelStyle = MaterialTheme.typography.bodyMedium.copy(
-        fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = Tokens.TypographySp.timeline,
-        color = Tokens.Colors.text
-    )
-    val valueStyle = labelStyle.copy(
-        fontWeight = FontWeight.SemiBold,
-        textAlign = TextAlign.Right
-    )
-    val sectionSpacing = (28f * sy).dp
-    val dividerColor = Tokens.Colors.separator.copy(alpha = 0.6f)
+    val rowStep = Dimens.scaledY(R.dimen.abys_row_step)
+    val labelHeight = (Tokens.TypographyPx.label * sy).dp
+    val subLabelHeight = (Tokens.TypographyPx.subLabel * sy).dp
+    val rowSpacing = ((rowStep - labelHeight) * 0.6f).coerceAtLeast(6.dp)
+    val subSpacing = ((rowStep - subLabelHeight) * 0.6f).coerceAtLeast(4.dp)
     var thirdsExpanded by rememberSaveable { mutableStateOf(true) }
     val rotation by animateFloatAsState(
         targetValue = if (thirdsExpanded) 180f else 0f,
@@ -529,62 +571,84 @@ private fun PrayerCard(
         Box(
             Modifier
                 .matchParentSize()
-                .backdropBlur(6.dp)
-                .background(Tokens.Colors.overlayCard)
+                .clip(shape)
+                .backdropBlur(GlassDefaults.blur)
+                .background(
+                    Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
+                )
+                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
         )
         Column(
             Modifier
                 .matchParentSize()
-                .then(contentPadding)
+                .padding(
+                    start = Dimens.scaledX(R.dimen.abys_card_pad_h),
+                    end = Dimens.scaledX(R.dimen.abys_card_pad_h),
+                    top = Dimens.scaledY(R.dimen.abys_card_pad_top),
+                    bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
+                )
                 .animateContentSize(animationSpec = tween(Dur.Base))
         ) {
-            val rows = listOf(
-                "Фаджр" to times["Fajr"].orPlaceholder(),
-                "Восход" to times["Sunrise"].orPlaceholder(),
-                "Зухр" to times["Dhuhr"].orPlaceholder(),
-                "Аср (Стандарт)" to times["AsrStd"].orPlaceholder(),
-                "Аср (Ханафитский)" to times["AsrHana"].orPlaceholder(),
-                "Магриб" to times["Maghrib"].orPlaceholder(),
-                "Иша" to times["Isha"].orPlaceholder()
+            RowItem("Фаджр", times["Fajr"] ?: "--:--")
+            ThinDivider(Modifier.padding(vertical = (6f * sy).dp))
+            Spacer(Modifier.height(rowSpacing))
+            RowItem("Восход", times["Sunrise"] ?: "--:--")
+            ThinDivider(Modifier.padding(vertical = (6f * sy).dp))
+            Spacer(Modifier.height(rowSpacing))
+            RowItem("Зухр", times["Dhuhr"] ?: "--:--")
+            ThinDivider(Modifier.padding(vertical = (6f * sy).dp))
+            Spacer(Modifier.height(rowSpacing))
+
+            Text(
+                text = "Аср:",
+                fontSize = Tokens.TypographySp.label,
+                fontWeight = FontWeight.SemiBold,
+                color = TypeTone.primary
             )
+            Spacer(Modifier.height((4f * sy).dp))
+            AsrSub(
+                label = "стандарт",
+                value = times["AsrStd"] ?: "--:--",
+                indicatorWidth = (64f * sx).dp,
+                indicatorHeight = (4f * sy).dp,
+                indicatorRadius = (2f * s).dp,
+                spacing = (12f * sx).dp
+            )
+            Spacer(Modifier.height(subSpacing))
+            AsrSub(
+                label = "Ханафи",
+                value = times["AsrHana"] ?: "--:--",
+                indicatorWidth = (64f * sx).dp,
+                indicatorHeight = (4f * sy).dp,
+                indicatorRadius = (2f * s).dp,
+                spacing = (12f * sx).dp
+            )
+            ThinDivider(Modifier.padding(vertical = (8f * sy).dp))
+            Spacer(Modifier.height(rowSpacing))
 
-            rows.forEachIndexed { index, (label, value) ->
-                PrayerRow(
-                    label = label,
-                    value = value,
-                    labelStyle = labelStyle,
-                    valueStyle = valueStyle
-                )
-                if (index != rows.lastIndex) {
-                    Spacer(Modifier.height((12f * sy).dp))
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = (1f * sy).dp.coerceAtLeast(1.dp),
-                        color = dividerColor
-                    )
-                    Spacer(Modifier.height((12f * sy).dp))
-                }
-            }
+            RowItem("Магриб", times["Maghrib"] ?: "--:--")
+            ThinDivider(Modifier.padding(vertical = (6f * sy).dp))
+            Spacer(Modifier.height(rowSpacing))
+            RowItem("Иша", times["Isha"] ?: "--:--")
 
-            Spacer(Modifier.height(sectionSpacing))
+            Spacer(Modifier.height((24f * sy).dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { thirdsExpanded = !thirdsExpanded },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            OutlinedButton(
+                onClick = { thirdsExpanded = !thirdsExpanded },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "Ночь (3 части)",
-                    style = labelStyle.copy(fontWeight = FontWeight.SemiBold),
+                    fontSize = Tokens.TypographySp.label,
+                    fontWeight = FontWeight.Medium,
+                    color = TypeTone.primary,
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
-                    imageVector = Icons.Rounded.ExpandMore,
-                    contentDescription = "Переключить отображение ночных частей",
-                    modifier = Modifier.rotate(rotation),
-                    tint = Tokens.Colors.text
+                    imageVector = Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = TypeTone.primary,
+                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
                 )
             }
             AnimatedVisibility(
@@ -602,12 +666,7 @@ private fun PrayerCard(
 }
 
 @Composable
-private fun PrayerRow(
-    label: String,
-    value: String,
-    labelStyle: TextStyle,
-    valueStyle: TextStyle
-) {
+private fun RowItem(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -615,14 +674,59 @@ private fun PrayerRow(
     ) {
         Text(
             text = label,
-            style = labelStyle,
+            fontSize = Tokens.TypographySp.label,
+            fontWeight = FontWeight.Medium,
+            color = TypeTone.secondary,
             modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            maxLines = 1
         )
         Text(
             text = value,
-            style = valueStyle,
+            fontSize = Tokens.TypographySp.label,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.primary,
+            textAlign = TextAlign.Right,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun AsrSub(
+    label: String,
+    value: String,
+    indicatorWidth: Dp,
+    indicatorHeight: Dp,
+    indicatorRadius: Dp,
+    spacing: Dp
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = Tokens.TypographySp.subLabel,
+            fontWeight = FontWeight.Medium,
+            color = TypeTone.dim,
+            modifier = Modifier.weight(1f),
+            maxLines = 1
+        )
+        Box(
+            Modifier
+                .width(indicatorWidth)
+                .height(indicatorHeight)
+                .clip(RoundedCornerShape(indicatorRadius))
+                .background(Tokens.Colors.tickFull)
+        )
+        Spacer(Modifier.width(spacing))
+        Text(
+            text = value,
+            fontSize = Tokens.TypographySp.subLabel,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.secondary,
+            textAlign = TextAlign.Right,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
         )
@@ -659,15 +763,15 @@ private fun NightThirdCard(
     val shape = RoundedCornerShape(Tokens.Radii.card())
     val timeStyle = MaterialTheme.typography.bodyMedium.copy(
         fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Medium,
         fontSize = Tokens.TypographySp.timeline,
-        color = Tokens.Colors.text,
+        color = TypeTone.primary,
         textAlign = TextAlign.Center
     )
     val numeralStyle = MaterialTheme.typography.titleMedium.copy(
         fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.Bold,
-        color = Tokens.Colors.text
+        fontWeight = FontWeight.SemiBold,
+        color = TypeTone.secondary
     )
 
     Box(
@@ -679,13 +783,15 @@ private fun NightThirdCard(
             Modifier
                 .matchParentSize()
                 .clip(shape)
-                .backdropBlur(6.dp)
-                .background(Tokens.Colors.overlayCard)
+                .backdropBlur(GlassDefaults.blur)
+                .background(
+                    Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
+                )
+                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
         )
         Column(
             modifier = Modifier
                 .matchParentSize()
-                .clip(shape)
                 .padding(vertical = (16f * sy).dp)
                 .padding(horizontal = (12f * sy).dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -700,5 +806,20 @@ private fun NightThirdCard(
     }
 }
 
-private fun String?.orPlaceholder() = this?.takeIf { it.isNotBlank() } ?: "--:--"
+@Composable
+private fun GlassSheetContainer(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(Tokens.Radii.card())
+    Box(
+        modifier
+            .clip(shape)
+            .backdropBlur(GlassDefaults.blur)
+            .background(Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom)))
+            .border(1.dp, GlassDefaults.stroke, shape)
+    ) {
+        Box(Modifier.matchParentSize(), content = content)
+    }
+}
 
