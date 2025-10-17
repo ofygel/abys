@@ -11,12 +11,13 @@ import com.example.abys.net.TimingsResponse
 import com.example.abys.util.LocationHelper
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.Response
+import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -27,9 +28,9 @@ enum class CitySheetTab { Wheel, Search }
 /**
  * Главная VM: грузит тайминги по гео или по городу, хранит выбранный мазхаб и заголовок (город/хиджра).
  */
-class MainViewModel : ViewModel() {
-
+class MainViewModel(
     private val io: CoroutineDispatcher = Dispatchers.IO
+) : ViewModel() {
 
     private val api = RetrofitProvider.aladhan
     private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -63,6 +64,8 @@ class MainViewModel : ViewModel() {
 
     private val _sheetTab = MutableLiveData(CitySheetTab.Wheel)
     val sheetTab: LiveData<CitySheetTab> = _sheetTab
+
+    private val shouldKeepSheetHidden = AtomicBoolean(false)
 
     private val _city = MutableLiveData(FallbackContent.cityLabel)
     val city: LiveData<String> = _city
@@ -120,9 +123,13 @@ class MainViewModel : ViewModel() {
         } else {
             _sheetTab.value = CitySheetTab.Wheel
         }
+        if (newValue) {
+            shouldKeepSheetHidden.set(false)
+        }
     }
 
     fun hideSheet() {
+        shouldKeepSheetHidden.set(true)
         _sheetVisible.value = false
         _sheetTab.value = CitySheetTab.Wheel
     }
@@ -136,6 +143,7 @@ class MainViewModel : ViewModel() {
         _city.value = c
         _sheetTab.value = CitySheetTab.Wheel
         _sheetVisible.value = false
+        shouldKeepSheetHidden.set(true)
         if (ctx != null) {
             lastPersistContext = WeakReference(ctx.applicationContext)
             viewModelScope.launch(io) { SettingsStore.setCity(ctx, c) }
@@ -153,6 +161,7 @@ class MainViewModel : ViewModel() {
     fun restorePersisted(ctx: Context) {
         // Гарантируем, что главный экран стартует в режиме Dashboard,
         // даже если сохранённое состояние когда-то открыло city sheet.
+        shouldKeepSheetHidden.set(true)
         _sheetVisible.value = false
         _sheetTab.value = CitySheetTab.Wheel
         lastPersistContext = WeakReference(ctx.applicationContext)
@@ -191,9 +200,12 @@ class MainViewModel : ViewModel() {
                 else -> loadByLocation(ctx)
             }
 
-            // Перестраховываемся на случай фоновых обновлений.
-            _sheetVisible.postValue(false)
-            _sheetTab.postValue(CitySheetTab.Wheel)
+            // Перестраховываемся на случай фоновых обновлений, но не мешаем
+            // пользователю, если он успел открыть шит вручную.
+            if (shouldKeepSheetHidden.compareAndSet(true, false)) {
+                _sheetVisible.postValue(false)
+                _sheetTab.postValue(CitySheetTab.Wheel)
+            }
         }
     }
 
