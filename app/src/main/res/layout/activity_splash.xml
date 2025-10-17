@@ -24,3 +24,4 @@
         android:src="@drawable/thumb_sunset_snow"
         android:visibility="gone" />
 </FrameLayout>
+

@@ -514,6 +514,9 @@ fun MainScreen(
                     AnimatedVisibility(
                         visible = showSheet,
                         enter = fadeIn(tween(Dur.BASE)) +
+                                slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
+                        exit = fadeOut(tween(Dur.X_SHORT)) +
+                                slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
                             slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
                         exit = fadeOut(tween(Dur.X_SHORT)) +
                             slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
@@ -1087,4 +1090,5 @@ private fun GlassSheetContainer(
         Box(Modifier.matchParentSize(), content = content)
     }
 }
+
 
