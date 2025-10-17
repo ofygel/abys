@@ -5,7 +5,9 @@ package com.example.abys.ui.screen
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
@@ -14,6 +16,8 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -34,6 +38,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,21 +50,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ExpandMore
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -81,6 +94,15 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
+
+// Единая шкала таймингов — чтобы анимации были согласованы
+private object Dur {
+    const val XShort = 180
+    const val Short = 200
+    const val Base = 220
+    const val Med = 240
+    const val Long = 260
+}
 
 @Composable
 fun MainApp(
@@ -110,7 +132,7 @@ fun MainApp(
             Crossfade(
                 modifier = Modifier.fillMaxSize(),
                 targetState = selectedEffect,
-                animationSpec = tween(durationMillis = 180),
+                animationSpec = tween(durationMillis = Dur.XShort),
                 label = "effect-background"
             ) { effect ->
                 BackgroundHost(effect = effect)
@@ -169,62 +191,63 @@ fun MainScreen(
     }
 
     val transition = updateTransition(stage, label = "surface")
-    val sheetHiddenOffset = with(density) { (236f * sx).dp.toPx() }
-    val sheetLift = with(density) { (18f * sy).dp.toPx() }
-    val cardLift = with(density) { (42f * sy).dp.toPx() }
-    val carouselDrop = with(density) { (36f * sy).dp.toPx() }
-    val headerLift = with(density) { (14f * sy).dp.toPx() }
+    // Предвычисляем px-значения, чтобы не трогать layout на каждую рекомпозицию
+    val sheetHiddenOffset = remember(density, sx) { with(density) { (236f * sx).dp.toPx() } }
+    val sheetLift = remember(density, sy) { with(density) { (18f * sy).dp.toPx() } }
+    val cardLift = remember(density, sy) { with(density) { (42f * sy).dp.toPx() } }
+    val carouselDrop = remember(density, sy) { with(density) { (36f * sy).dp.toPx() } }
+    val headerLift = remember(density, sy) { with(density) { (14f * sy).dp.toPx() } }
 
     val prayerAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) 200 else 240) },
+        transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.Short else Dur.Med) },
         label = "prayerAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0f }
     val prayerScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 260) },
+        transitionSpec = { tween(durationMillis = Dur.Long) },
         label = "prayerScale"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
     val prayerTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 240) },
+        transitionSpec = { tween(durationMillis = Dur.Med) },
         label = "prayerTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
 
     val headerAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 220) },
+        transitionSpec = { tween(durationMillis = Dur.Base) },
         label = "headerAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
     val headerTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 220) },
+        transitionSpec = { tween(durationMillis = Dur.Base) },
         label = "headerTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
 
     val carouselAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 220) },
+        transitionSpec = { tween(durationMillis = Dur.Base) },
         label = "carouselAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
     val carouselScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 240) },
+        transitionSpec = { tween(durationMillis = Dur.Med) },
         label = "carouselScale"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
     val carouselTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 240) },
+        transitionSpec = { tween(durationMillis = Dur.Med) },
         label = "carouselTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
 
     val scrimAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 220) },
+        transitionSpec = { tween(durationMillis = Dur.Base) },
         label = "scrimAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
 
     val sheetAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 240) },
+        transitionSpec = { tween(durationMillis = Dur.Med) },
         label = "sheetAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
     val sheetTranslationX by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 260) },
+        transitionSpec = { tween(durationMillis = Dur.Long) },
         label = "sheetTranslationX"
     ) { st -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
     val sheetTranslationY by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 260) },
+        transitionSpec = { tween(durationMillis = Dur.Long) },
         label = "sheetTranslationY"
     ) { st ->
         when (st) {
@@ -234,7 +257,7 @@ fun MainScreen(
         }
     }
     val sheetScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = 260) },
+        transitionSpec = { tween(durationMillis = Dur.Long) },
         label = "sheetScale"
     ) { st ->
         when (st) {
@@ -243,6 +266,9 @@ fun MainScreen(
             SurfaceStage.CityPicker -> 1.04f
         }
     }
+
+    // Блокируем взаимодействия на время перехода
+    val isTransitioning = transition.isRunning
 
     BackHandler(enabled = showSheet) {
         if (sheetTab != CitySheetTab.Wheel) {
@@ -267,10 +293,12 @@ fun MainScreen(
                     alpha = headerAlpha
                     translationY = headerTranslation
                 },
-            onTap = onCityPillClick
+            onTap = {
+                if (!isTransitioning) onCityPillClick()
+            }
         )
 
-        var exploded by remember { mutableStateOf(false) }
+        var exploded by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(stage) {
             if (stage != SurfaceStage.Dashboard) exploded = false
         }
@@ -294,15 +322,19 @@ fun MainScreen(
         if (prayerAlpha > 0.01f) {
             AnimatedVisibility(
                 visible = !showSheet,
-                enter = fadeIn(tween(220)) + scaleIn(initialScale = 0.96f, animationSpec = tween(220)),
-                exit = fadeOut(tween(180)) + scaleOut(targetScale = 0.96f, animationSpec = tween(180))
+                enter = fadeIn(tween(Dur.Base)) + scaleIn(initialScale = 0.96f, animationSpec = tween(Dur.Base)),
+                exit = fadeOut(tween(Dur.XShort)) + scaleOut(targetScale = 0.96f, animationSpec = tween(Dur.XShort))
             ) {
                 PrayerCard(
                     times = prayerTimes,
                     thirds = thirds,
                     modifier = if (stage == SurfaceStage.Dashboard) {
                         prayerModifier.pointerInput(Unit) {
-                            detectTapGestures(onDoubleTap = { exploded = !exploded })
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    if (!isTransitioning) exploded = !exploded
+                                }
+                            )
                         }
                     } else {
                         prayerModifier
@@ -315,7 +347,7 @@ fun MainScreen(
             items = effectThumbs,
             selected = selectedEffect,
             onSelected = onEffectSelected,
-            enabled = stage == SurfaceStage.Dashboard,
+            enabled = stage == SurfaceStage.Dashboard && !isTransitioning,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = navPadding.calculateBottomPadding() + (48f * sy).dp)
@@ -334,9 +366,10 @@ fun MainScreen(
                     .graphicsLayer { alpha = scrimAlpha }
                     .background(Tokens.Colors.tickDark.copy(alpha = 0.5f))
                     .clickable(
+                        enabled = !isTransitioning,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onCityPillClick
+                        onClick = onSheetDismiss
                     )
             )
         }
@@ -344,10 +377,10 @@ fun MainScreen(
         if (sheetAlpha > 0.01f) {
             AnimatedVisibility(
                 visible = showSheet,
-                enter = fadeIn(tween(220)) +
-                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(220)),
-                exit = fadeOut(tween(180)) +
-                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(180))
+                enter = fadeIn(tween(Dur.Base)) +
+                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.Base)),
+                exit = fadeOut(tween(Dur.XShort)) +
+                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.XShort))
             ) {
                 CitySheet(
                     city = city,
@@ -406,14 +439,16 @@ private fun HeaderPill(
         Box(
             Modifier
                 .matchParentSize()
-                .clip(shape)
                 .backdropBlur(6.dp)
                 .background(Tokens.Colors.overlayTop)
         )
         Box(
             Modifier
                 .matchParentSize()
-                .clip(shape)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = "Открыть выбор города"
+                    role = Role.Button
+                }
                 .clickable(onClick = onTap)
                 .padding(
                     horizontal = horizontalPadding,
@@ -478,6 +513,12 @@ private fun PrayerCard(
     )
     val sectionSpacing = (28f * sy).dp
     val dividerColor = Tokens.Colors.separator.copy(alpha = 0.6f)
+    var thirdsExpanded by rememberSaveable { mutableStateOf(true) }
+    val rotation by animateFloatAsState(
+        targetValue = if (thirdsExpanded) 180f else 0f,
+        animationSpec = tween(durationMillis = Dur.Short),
+        label = "night-toggle"
+    )
 
     Box(
         modifier
@@ -488,15 +529,14 @@ private fun PrayerCard(
         Box(
             Modifier
                 .matchParentSize()
-                .clip(shape)
                 .backdropBlur(6.dp)
                 .background(Tokens.Colors.overlayCard)
         )
         Column(
             Modifier
                 .matchParentSize()
-                .clip(shape)
                 .then(contentPadding)
+                .animateContentSize(animationSpec = tween(Dur.Base))
         ) {
             val rows = listOf(
                 "Фаджр" to times["Fajr"].orPlaceholder(),
@@ -528,12 +568,35 @@ private fun PrayerCard(
 
             Spacer(Modifier.height(sectionSpacing))
 
-            Text(
-                text = "Ночь (3 части)",
-                style = labelStyle.copy(fontWeight = FontWeight.SemiBold)
-            )
-            Spacer(Modifier.height((16f * sy).dp))
-            NightThirdsRow(thirds)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { thirdsExpanded = !thirdsExpanded },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Ночь (3 части)",
+                    style = labelStyle.copy(fontWeight = FontWeight.SemiBold),
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = Icons.Rounded.ExpandMore,
+                    contentDescription = "Переключить отображение ночных частей",
+                    modifier = Modifier.rotate(rotation),
+                    tint = Tokens.Colors.text
+                )
+            }
+            AnimatedVisibility(
+                visible = thirdsExpanded,
+                enter = expandVertically(animationSpec = tween(Dur.Base)) + fadeIn(tween(Dur.XShort)),
+                exit = shrinkVertically(animationSpec = tween(Dur.Base)) + fadeOut(tween(Dur.XShort))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height((16f * sy).dp))
+                    NightThirdsRow(thirds)
+                }
+            }
         }
     }
 }
