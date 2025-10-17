@@ -11,7 +11,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.expandVertically
@@ -22,7 +21,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,12 +49,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -91,8 +87,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ExpandMore
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -118,11 +112,11 @@ private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
-    val top = Color(0x59131618)
-    val bottom = Color(0x66131618)
-    val stroke = Color(0x14FFFFFF)
-    val blur = 18.dp
-    val bgScrim = Color(0x33101518)
+    val top = Color.White.copy(alpha = 0.26f)
+    val bottom = Color.White.copy(alpha = 0.22f)
+    val stroke = Color.White.copy(alpha = 0.18f)
+    val blur = 8.dp
+    val bgScrim = Color.Black.copy(alpha = 0.25f)
 }
 
 // Единая шкала таймингов — чтобы анимации были согласованы
@@ -143,12 +137,14 @@ private object TypeTone {
     val dim: Color
         @Composable get() = Tokens.Colors.text.copy(alpha = 0.62f)
     val divider: Color
-        @Composable get() = Color.White.copy(alpha = 0.08f)
+        @Composable get() = Color.White.copy(alpha = 0.06f)
 }
+
+private const val TABULAR_FEATURE = "tnum"
 
 @Composable
 private fun ThinDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
+    HorizontalDivider(modifier = modifier, color = TypeTone.divider, thickness = 0.75.dp)
 }
 
 @Composable
@@ -443,7 +439,7 @@ fun MainScreen(
             enabled = stage == SurfaceStage.Dashboard && !isTransitioning,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = navPadding.calculateBottomPadding() + (48f * sy).dp)
+                .padding(bottom = navPadding.calculateBottomPadding() + (56f * sy).dp)
                 .graphicsLayer {
                     alpha = carouselAlpha
                     if (stage == SurfaceStage.Dashboard) {
@@ -458,52 +454,56 @@ fun MainScreen(
                 }
         )
 
-        if (scrimAlpha > 0.01f) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .graphicsLayer { alpha = scrimAlpha }
-                    .background(Tokens.Colors.tickDark.copy(alpha = 0.5f))
-                    .clickable(
-                        enabled = !isTransitioning,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onSheetDismiss
+        if (scrimAlpha > 0.01f || sheetAlpha > 0.01f) {
+            Box(Modifier.fillMaxSize()) {
+                if (scrimAlpha > 0.01f) {
+                    Box(
+                        Modifier
+                            .matchParentSize()
+                            .graphicsLayer { alpha = scrimAlpha }
+                            .background(GlassDefaults.bgScrim)
+                            .clickable(
+                                enabled = !isTransitioning,
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onSheetDismiss
+                            )
                     )
-            )
-        }
+                }
 
-        if (sheetAlpha > 0.01f) {
-            AnimatedVisibility(
-                visible = showSheet,
-                enter = fadeIn(tween(Dur.BASE)) +
-                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
-                exit = fadeOut(tween(Dur.X_SHORT)) +
-                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
-            ) {
-                GlassSheetContainer(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha = sheetAlpha
-                            translationX = sheetTranslationX
-                            translationY = sheetTranslationY
-                            scaleX = sheetScale
-                            scaleY = sheetScale
+                if (sheetAlpha > 0.01f) {
+                    AnimatedVisibility(
+                        visible = showSheet,
+                        enter = fadeIn(tween(Dur.BASE)) +
+                            slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
+                        exit = fadeOut(tween(Dur.X_SHORT)) +
+                            slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
+                    ) {
+                        GlassSheetContainer(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    alpha = sheetAlpha
+                                    translationX = sheetTranslationX
+                                    translationY = sheetTranslationY
+                                    scaleX = sheetScale
+                                    scaleY = sheetScale
+                                }
+                        ) {
+                            CitySheet(
+                                city = city,
+                                hadith = hadith,
+                                cities = cities,
+                                activeTab = sheetTab,
+                                onCityChipTap = onShowWheel,
+                                onTabSelected = onTabSelected,
+                                onCityChosen = onCityChosen,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = (18f * sy).dp, vertical = (16f * sy).dp)
+                            )
                         }
-                ) {
-                    CitySheet(
-                        city = city,
-                        hadith = hadith,
-                        cities = cities,
-                        activeTab = sheetTab,
-                        onCityChipTap = onShowWheel,
-                        onTabSelected = onTabSelected,
-                        onCityChosen = onCityChosen,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = (18f * sy).dp, vertical = (16f * sy).dp)
-                    )
+                    }
                 }
             }
         }
@@ -583,6 +583,7 @@ private fun HeaderPill(
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
                         textAlign = TextAlign.Right,
+                        fontFeatureSettings = TABULAR_FEATURE,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                         modifier = Modifier.wrapContentWidth(Alignment.End)
@@ -607,18 +608,6 @@ private fun PrayerCard(
     val asrSpacing = (8f * sy).dp
     val asrLineHeight = (1.2f * sy).dp
     val asrGap = (10f * sx).dp
-    val blockSpacing = (18f * sy).dp
-    val togglePadding = PaddingValues(
-        vertical = (10f * sy).dp,
-        horizontal = (18f * sx).dp
-    )
-    var thirdsExpanded by rememberSaveable { mutableStateOf(true) }
-    val rotation by animateFloatAsState(
-        targetValue = if (thirdsExpanded) 180f else 0f,
-        animationSpec = tween(durationMillis = Dur.SHORT),
-        label = "night-toggle"
-    )
-
     Box(
         modifier
             .fillMaxWidth()
@@ -695,43 +684,7 @@ private fun PrayerCard(
             }
 
             Spacer(Modifier.height(sectionSpacing))
-            PrayerTimeline(times)
-            Spacer(Modifier.height(blockSpacing))
-
-            OutlinedButton(
-                onClick = { thirdsExpanded = !thirdsExpanded },
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = togglePadding,
-                border = BorderStroke(1.dp, TypeTone.divider),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = TypeTone.primary
-                )
-            ) {
-                Text(
-                    text = "Ночь (3 части)",
-                    fontSize = TypeScale.label,
-                    fontWeight = FontWeight.Medium,
-                    color = TypeTone.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = TypeTone.primary,
-                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
-                )
-            }
-            AnimatedVisibility(
-                visible = thirdsExpanded,
-                enter = expandVertically(animationSpec = tween(Dur.BASE)) + fadeIn(tween(Dur.X_SHORT)),
-                exit = shrinkVertically(animationSpec = tween(Dur.BASE)) + fadeOut(tween(Dur.X_SHORT))
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Spacer(Modifier.height((16f * sy).dp))
-                    NightThirdsRow(thirds)
-                }
-            }
+            PrayerTimeline(times, thirds)
         }
     }
 }
@@ -759,6 +712,7 @@ private fun PrayerRow(label: String, value: String) {
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             lineHeight = TypeScale.label,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
         )
@@ -808,13 +762,14 @@ private fun AsrVariantRow(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
 }
 
 @Composable
-private fun PrayerTimeline(times: Map<String, String>) {
+private fun PrayerTimeline(times: Map<String, String>, thirds: NightIntervals) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val rowSpacing = (10f * sy).dp
@@ -869,6 +824,8 @@ private fun PrayerTimeline(times: Map<String, String>) {
         Spacer(Modifier.height(rowSpacing))
 
         RowItem("Иша", times["Isha"] ?: "--:--")
+        Spacer(Modifier.height(rowSpacing))
+        NightThirdsTimeline(thirds)
     }
 }
 
@@ -904,6 +861,7 @@ private fun RowItem(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
         )
@@ -956,6 +914,7 @@ private fun AsrSub(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
@@ -972,75 +931,95 @@ private fun SectionHeading(text: String) {
 }
 
 @Composable
-private fun NightThirdsRow(thirds: NightIntervals) {
+private fun NightThirdsTimeline(thirds: NightIntervals) {
     val sy = Dimens.sy()
-    val numerals = listOf("I", "II", "III")
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy((16f * sy).dp)
-    ) {
-        thirds.asList().forEachIndexed { index, (start, end) ->
-            NightThirdCard(
-                numeral = numerals.getOrElse(index) { "" },
-                start = start,
-                end = end,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun NightThirdCard(
-    numeral: String,
-    start: String,
-    end: String,
-    modifier: Modifier = Modifier
-) {
-    val sy = Dimens.sy()
-    val shape = RoundedCornerShape(Tokens.Radii.card())
-    val timeStyle = MaterialTheme.typography.bodyMedium.copy(
-        fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.Medium,
-        fontSize = TypeScale.timeline,
-        color = TypeTone.primary,
-        textAlign = TextAlign.Center
-    )
-    val numeralStyle = MaterialTheme.typography.titleMedium.copy(
-        fontFamily = AbysFonts.inter,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = TypeScale.label,
-        color = TypeTone.secondary
+    val density = LocalDensity.current
+    val lineHeight = (3f * sy).dp
+    val tickHeight = (18f * sy).dp
+    val spacing = (12f * sy).dp
+    val timelineColor = TypeTone.divider.copy(alpha = 0.9f)
+    val tickColor = Tokens.Colors.tickFull.copy(alpha = 0.75f)
+    val thicknessPx = with(density) { lineHeight.toPx() }
+    val tickStrokePx = with(density) { 1.5.dp.toPx() }
+    val fractions = listOf(0f, 1f / 3f, 2f / 3f, 1f)
+    val labels = listOf(
+        thirds.first.first.ifBlank { "--:--" },
+        thirds.first.second.ifBlank { "--:--" },
+        thirds.second.second.ifBlank { "--:--" },
+        thirds.third.second.ifBlank { "--:--" }
     )
 
-    Box(
-        modifier
-            .clip(shape)
-            .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
-    ) {
-        Box(
-            Modifier
-                .matchParentSize()
-                .clip(shape)
-                .backdropBlur(GlassDefaults.blur)
-                .background(
-                    Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
-                )
-                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
-        )
-        Column(
-            modifier = Modifier
-                .matchParentSize()
-                .padding(vertical = (16f * sy).dp)
-                .padding(horizontal = (12f * sy).dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = start, style = timeStyle, maxLines = 1)
-            Spacer(Modifier.height((10f * sy).dp))
-            Text(text = numeral, style = numeralStyle)
-            Spacer(Modifier.height((10f * sy).dp))
-            Text(text = end, style = timeStyle, maxLines = 1)
+            labels.forEach { value ->
+                Text(
+                    text = value,
+                    fontSize = TypeScale.timeline,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TypeTone.primary,
+                    fontFeatureSettings = TABULAR_FEATURE,
+                    maxLines = 1
+                )
+            }
+        }
+
+        Spacer(Modifier.height(spacing / 2))
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(tickHeight)
+        ) {
+            val centerY = size.height / 2f
+            drawLine(
+                color = timelineColor,
+                start = Offset(0f, centerY),
+                end = Offset(size.width, centerY),
+                strokeWidth = thicknessPx
+            )
+            fractions.forEach { fraction ->
+                val x = size.width * fraction
+                drawLine(
+                    color = tickColor,
+                    start = Offset(x, 0f),
+                    end = Offset(x, size.height),
+                    strokeWidth = tickStrokePx
+                )
+            }
+        }
+
+        Spacer(Modifier.height(spacing / 2))
+
+        Row(Modifier.fillMaxWidth()) {
+            Text(
+                text = "начало ночи",
+                fontSize = TypeScale.subLabel,
+                fontWeight = FontWeight.Medium,
+                color = TypeTone.dim,
+                modifier = Modifier.weight(1f),
+                maxLines = 1
+            )
+            Text(
+                text = "середина ночи",
+                fontSize = TypeScale.subLabel,
+                fontWeight = FontWeight.Medium,
+                color = TypeTone.dim,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+                maxLines = 1
+            )
+            Text(
+                text = "конец ночи",
+                fontSize = TypeScale.subLabel,
+                fontWeight = FontWeight.Medium,
+                color = TypeTone.dim,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f),
+                maxLines = 1
+            )
         }
     }
 }
