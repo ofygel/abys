@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -90,7 +91,6 @@ fun CitySheet(
                 horizontal = (28f * sx).dp,
                 vertical = (28f * sy).dp
             )
-            .padding((28f * sx).dp, (28f * sy).dp)
     ) {
         Box(
             Modifier
@@ -151,23 +151,28 @@ fun CitySheet(
                 ) { showPicker ->
                     if (showPicker) {
                         CityPickerWheel(
-                            cities      = cities,
+                            cities = cities,
                             currentCity = city,
-                            onChosen    = onCityChosen,
-                            modifier    = Modifier.fillMaxSize()
+                            onChosen = onCityChosen,
+                            modifier = Modifier.fillMaxSize()
                         )
                     } else {
-                        HadithFrame(
-                            text = hadith,
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(
-                                    start  = (100f * sx).dp,
-                                    end    = (100f * sx).dp,
-                                    top    = (292f * sy).dp,
-                                    bottom = (120f * sy).dp
-                                )
-                        )
+                                    horizontal = (72f * sx).dp,
+                                    vertical = (120f * sy).dp
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HadithFrame(
+                                text = hadith,
+                                modifier = Modifier
+                                    .fillMaxWidth(0.74f)
+                                    .defaultMinSize(minHeight = (220f * sy).dp)
+                            )
+                        }
                     }
                 }
             }
@@ -183,12 +188,14 @@ private fun HadithFrame(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val s = Dimens.s()
-    val shape = RoundedCornerShape((56f * s).dp)
+    val shape = RoundedCornerShape((46f * s).dp)
+    val borderColor = Color.White.copy(alpha = 0.12f)
     Box(
         modifier
             .clip(shape)
-            .border(5.dp, Tokens.Colors.tickDark, shape)
-            .padding(horizontal = (36f * sx).dp, vertical = (32f * sy).dp)
+            .border(1.dp, borderColor, shape)
+            .background(Tokens.Colors.tickDark.copy(alpha = 0.08f))
+            .padding(horizontal = (32f * sx).dp, vertical = (28f * sy).dp)
     ) {
         val scrollState = rememberScrollState()
         Column(Modifier.verticalScroll(scrollState)) {

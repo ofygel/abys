@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,6 +47,7 @@ import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import kotlin.math.abs
+import kotlinx.coroutines.flow.filter
 
 private const val VISIBLE_AROUND = 4
 
@@ -75,6 +78,8 @@ fun CityPickerWheel(
         lazyListState = listState
     )
 
+    val haptics = LocalHapticFeedback.current
+
     LaunchedEffect(cities, currentCity) {
         val index = cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0
         if (!hasAligned) {
@@ -85,14 +90,17 @@ fun CityPickerWheel(
         }
     }
 
+    var lastSnapped by remember { mutableStateOf(initialIndex.coerceIn(cities.indices)) }
+
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
-            .collect { inProgress ->
-                if (!inProgress) {
-                    val centerIndex = listState.closestCenterItem()
-                    if (centerIndex in cities.indices) {
-                        onChosen(cities[centerIndex])
-                    }
+            .filter { !it }
+            .collect {
+                val centerIndex = listState.closestCenterItem()
+                if (centerIndex in cities.indices && centerIndex != lastSnapped) {
+                    lastSnapped = centerIndex
+                    onChosen(cities[centerIndex])
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
     }

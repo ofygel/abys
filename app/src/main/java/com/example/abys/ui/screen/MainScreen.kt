@@ -392,6 +392,7 @@ private fun HeaderPill(
                     color = Tokens.Colors.text,
                     textDecoration = TextDecoration.Underline,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -401,6 +402,7 @@ private fun HeaderPill(
                     color = Tokens.Colors.text,
                     textAlign = TextAlign.Right,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.wrapContentWidth(Alignment.End)
                 )
             }
