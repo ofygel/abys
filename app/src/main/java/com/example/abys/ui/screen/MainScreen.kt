@@ -91,6 +91,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.abys.R
@@ -144,6 +145,38 @@ private object TypeTone {
         @Composable get() = Tokens.Colors.text.copy(alpha = 0.62f)
     val divider: Color
         @Composable get() = Color.White.copy(alpha = 0.06f)
+}
+
+private const val TABULAR_FEATURE = "'tnum'"
+
+private val TabularFeatureStyle = TextStyle(fontFeatureSettings = TABULAR_FEATURE)
+
+@Composable
+private fun TabularText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = Color.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    fontStyle: FontStyle? = null,
+    fontWeight: FontWeight? = null,
+    textAlign: TextAlign? = null,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        color = color,
+        fontSize = fontSize,
+        fontStyle = fontStyle,
+        fontWeight = fontWeight,
+        textAlign = textAlign,
+        lineHeight = lineHeight,
+        maxLines = maxLines,
+        overflow = overflow,
+        style = LocalTextStyle.current.merge(TabularFeatureStyle)
+    )
 }
 
 private const val TABULAR_FEATURE = "tnum"
@@ -591,6 +624,8 @@ private fun HeaderPill(
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(Modifier.width((12f * Dimens.sx()).dp))
+                    TabularText(
+                        text = now,
                     Text(
                         text = tabularFigures(now),
                         fontSize = TypeScale.timeNow,
@@ -720,6 +755,8 @@ private fun PrayerRow(label: String, value: String) {
             modifier = Modifier.weight(1f),
             maxLines = 1
         )
+        TabularText(
+            text = value,
         Text(
             text = tabularFigures(value),
             fontSize = TypeScale.label,
@@ -771,6 +808,8 @@ private fun AsrVariantRow(
                 .background(Tokens.Colors.tickFull.copy(alpha = 0.75f))
         )
         Spacer(Modifier.width(gap))
+        TabularText(
+            text = value,
         Text(
             text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
@@ -873,6 +912,8 @@ private fun RowItem(label: String, value: String) {
             maxLines = 1
         )
         Spacer(Modifier.width(spacing))
+        TabularText(
+            text = value,
         Text(
             text = tabularFigures(value),
             fontSize = TypeScale.label,
@@ -926,6 +967,8 @@ private fun AsrSub(
             }
         }
         Spacer(Modifier.width(spacing))
+        TabularText(
+            text = value,
         Text(
             text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
@@ -976,6 +1019,7 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             labels.forEach { value ->
+                TabularText(
                 Text(
                     text = tabularFigures(value),
                     fontSize = TypeScale.timeline,
