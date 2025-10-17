@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ListenableWorker.Result as WorkResult
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -20,10 +21,10 @@ class BackgroundRefreshWorker(
     params: WorkerParameters
 ) : CoroutineWorker(appContext, params) {
 
-    override suspend fun doWork(): Result {
+    override suspend fun doWork(): WorkResult {
         // Future hook: refresh cached hadiths / themes. For now we just acknowledge the tick
         // so WorkManager keeps the cadence alive.
-        return Result.success()
+        return WorkResult.success()
     }
 
     companion object {
