@@ -116,11 +116,3 @@ private fun resolveDrawableId(context: Context, name: String): Int? {
     return id.takeIf { it != 0 }
 }
 
-@Composable
-fun rememberCitiesFromRes(): List<String> {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(configuration) {
-        context.resources.getStringArray(R.array.abys_cities_kz).toList()
-    }
-}

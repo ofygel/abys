@@ -2,6 +2,7 @@
 
 package com.example.abys.ui.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloat
@@ -22,13 +23,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
@@ -44,9 +48,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,14 +61,16 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.abys.R
+import com.example.abys.data.CityEntry
 import com.example.abys.data.EffectId
+import com.example.abys.logic.CitySheetTab
 import com.example.abys.logic.MainViewModel
-import com.example.abys.ui.background.BackgroundHost
-import com.example.abys.ui.rememberEffectCatalogFromRes
-import com.example.abys.ui.rememberCitiesFromRes
 import com.example.abys.ui.EffectCarousel
 import com.example.abys.ui.EffectThumb
 import com.example.abys.ui.EffectViewModel
+import com.example.abys.ui.background.BackgroundHost
+import com.example.abys.ui.rememberCityDirectory
+import com.example.abys.ui.rememberEffectCatalogFromRes
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
@@ -84,11 +92,16 @@ fun MainApp(
         LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
     )
     val showSheet by vm.sheetVisible.observeAsState(false)
-    val showPicker by vm.pickerVisible.observeAsState(false)
+    val sheetTab by vm.sheetTab.observeAsState(CitySheetTab.Wheel)
     val hadith by vm.hadithToday.observeAsState("")
     val selectedEffect by effectViewModel.effect.collectAsState()
     val effectThumbs = rememberEffectCatalogFromRes()
-    val cityOptions = rememberCitiesFromRes()
+    val cityOptions = rememberCityDirectory()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        vm.restorePersisted(context.applicationContext)
+    }
 
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
         Box(Modifier.fillMaxSize()) {
@@ -109,12 +122,14 @@ fun MainApp(
                 selectedEffect = selectedEffect,
                 effectThumbs = effectThumbs,
                 showSheet = showSheet,
-                showPicker = showPicker,
+                sheetTab = sheetTab,
                 hadith = hadith,
                 cities = cityOptions,
                 onCityPillClick = vm::toggleSheet,
-                onCityChipTap = vm::togglePicker,
-                onCityChosen = vm::setCity,
+                onShowWheel = { vm.setSheetTab(CitySheetTab.Wheel) },
+                onTabSelected = vm::setSheetTab,
+                onSheetDismiss = vm::toggleSheet,
+                onCityChosen = { vm.setCity(it, context.applicationContext) },
                 onEffectSelected = effectViewModel::onEffectSelected
             )
         }
@@ -130,21 +145,24 @@ fun MainScreen(
     selectedEffect: EffectId,
     effectThumbs: List<EffectThumb>,
     showSheet: Boolean,
-    showPicker: Boolean,
+    sheetTab: CitySheetTab,
     hadith: String,
-    cities: List<String>,
+    cities: List<CityEntry>,
     onCityPillClick: () -> Unit,
-    onCityChipTap: () -> Unit,
+    onShowWheel: () -> Unit,
+    onTabSelected: (CitySheetTab) -> Unit,
+    onSheetDismiss: () -> Unit,
     onCityChosen: (String) -> Unit,
     onEffectSelected: (EffectId) -> Unit
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val density = LocalDensity.current
+    val navPadding = WindowInsets.navigationBars.asPaddingValues()
 
     val stage = when {
         !showSheet -> SurfaceStage.Dashboard
-        showPicker -> SurfaceStage.CityPicker
+        sheetTab == CitySheetTab.Wheel -> SurfaceStage.CityPicker
         else -> SurfaceStage.CitySheet
     }
 
@@ -224,6 +242,14 @@ fun MainScreen(
         }
     }
 
+    BackHandler(enabled = showSheet) {
+        if (sheetTab != CitySheetTab.Wheel) {
+            onShowWheel()
+        } else {
+            onSheetDismiss()
+        }
+    }
+
     Box(Modifier.fillMaxSize()) {
         HeaderPill(
             city = city,
@@ -290,7 +316,7 @@ fun MainScreen(
             enabled = stage == SurfaceStage.Dashboard,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = (48f * sy).dp)
+                .padding(bottom = navPadding.calculateBottomPadding() + (48f * sy).dp)
                 .graphicsLayer {
                     alpha = carouselAlpha
                     scaleX = carouselScale
@@ -325,8 +351,9 @@ fun MainScreen(
                     city = city,
                     hadith = hadith,
                     cities = cities,
-                    pickerVisible = showPicker,
-                    onCityChipTap = onCityChipTap,
+                    activeTab = sheetTab,
+                    onCityChipTap = onShowWheel,
+                    onTabSelected = onTabSelected,
                     onCityChosen = onCityChosen,
                     modifier = Modifier
                         .fillMaxSize()
@@ -358,6 +385,7 @@ private fun HeaderPill(
     Box(
         modifier
             .fillMaxWidth()
+            .shadow(elevation = (36f * sy).dp, shape = shape, clip = false)
             .clip(shape)
             .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
     ) {
@@ -392,6 +420,7 @@ private fun HeaderPill(
                     color = Tokens.Colors.text,
                     textDecoration = TextDecoration.Underline,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -401,6 +430,7 @@ private fun HeaderPill(
                     color = Tokens.Colors.text,
                     textAlign = TextAlign.Right,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.wrapContentWidth(Alignment.End)
                 )
             }
