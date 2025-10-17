@@ -122,6 +122,11 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun hideSheet() {
+        _sheetVisible.value = false
+        _sheetTab.value = CitySheetTab.Wheel
+    }
+
     fun setSheetTab(tab: CitySheetTab) {
         _sheetTab.value = tab
     }
