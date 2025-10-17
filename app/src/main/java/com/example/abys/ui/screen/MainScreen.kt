@@ -81,8 +81,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -539,6 +541,26 @@ private fun HeaderPill(
                 verticalArrangement = Arrangement.spacedBy(eyebrowSpacing)
             ) {
                 Text(
+                    text = city,
+                    fontSize = TypeScale.city,
+                    fontWeight = FontWeight.SemiBold,
+                    fontStyle = FontStyle.Italic,
+                    textDecoration = TextDecoration.Underline,
+                    color = TypeTone.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width((12f * Dimens.sx()).dp))
+                Text(
+                    text = now,
+                    fontSize = TypeScale.timeNow,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TypeTone.secondary,
+                    textAlign = TextAlign.Right,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier.wrapContentWidth(Alignment.End)
                     text = "Город",
                     fontSize = TypeScale.eyebrow,
                     fontWeight = FontWeight.Medium,
@@ -582,8 +604,12 @@ private fun PrayerCard(
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val s = Dimens.s()
     val shape = RoundedCornerShape(Tokens.Radii.card())
+    val rowSpacing = (12f * sy).dp
+    val sectionSpacing = (22f * sy).dp
+    val asrSpacing = (8f * sy).dp
+    val asrLineHeight = (1.2f * sy).dp
+    val asrGap = (10f * sx).dp
     val rowSpacing = (10f * sy).dp
     val subSpacing = (6f * sy).dp
     val dividerPadding = (5f * sy).dp
@@ -626,6 +652,55 @@ private fun PrayerCard(
                 )
                 .animateContentSize(animationSpec = tween(Dur.BASE))
         ) {
+            val ordered = listOf(
+                "Фаджр" to (times["Fajr"] ?: "--:--"),
+                "Восход" to (times["Sunrise"] ?: "--:--"),
+                "Зухр" to (times["Dhuhr"] ?: "--:--")
+            )
+            ordered.forEachIndexed { index, (label, value) ->
+                PrayerRow(label, value)
+                if (index != ordered.lastIndex) {
+                    Spacer(Modifier.height(rowSpacing))
+                    ThinDivider()
+                    Spacer(Modifier.height(rowSpacing))
+                }
+            }
+
+            Spacer(Modifier.height(sectionSpacing))
+            SectionHeading("Аср")
+            Spacer(Modifier.height(asrSpacing))
+            AsrVariantRow(
+                label = "стандарт",
+                value = times["AsrStd"] ?: "--:--",
+                gap = asrGap,
+                lineHeight = asrLineHeight
+            )
+            Spacer(Modifier.height(asrSpacing))
+            AsrVariantRow(
+                label = "ханафи",
+                value = times["AsrHana"] ?: "--:--",
+                gap = asrGap,
+                lineHeight = asrLineHeight
+            )
+
+            Spacer(Modifier.height(sectionSpacing))
+            ThinDivider()
+            Spacer(Modifier.height(sectionSpacing))
+
+            val evening = listOf(
+                "Магриб" to (times["Maghrib"] ?: "--:--"),
+                "Иша" to (times["Isha"] ?: "--:--")
+            )
+            evening.forEachIndexed { index, (label, value) ->
+                PrayerRow(label, value)
+                if (index != evening.lastIndex) {
+                    Spacer(Modifier.height(rowSpacing))
+                    ThinDivider()
+                    Spacer(Modifier.height(rowSpacing))
+                }
+            }
+
+            Spacer(Modifier.height(sectionSpacing))
             RowItem("Фаджр", times["Fajr"] ?: "--:--")
             Spacer(Modifier.height(rowSpacing))
             ThinDivider(Modifier.padding(vertical = dividerPadding))
@@ -712,7 +787,7 @@ private fun PrayerCard(
 }
 
 @Composable
-private fun RowItem(label: String, value: String) {
+private fun PrayerRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -741,13 +816,11 @@ private fun RowItem(label: String, value: String) {
 }
 
 @Composable
-private fun AsrSub(
+private fun AsrVariantRow(
     label: String,
     value: String,
-    indicatorWidth: Dp,
-    indicatorHeight: Dp,
-    indicatorRadius: Dp,
-    spacing: Dp
+    gap: Dp,
+    lineHeight: Dp
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -758,6 +831,18 @@ private fun AsrSub(
             fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.Medium,
             color = TypeTone.dim,
+            maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.Start)
+        )
+        Spacer(Modifier.width(gap))
+        Box(
+            Modifier
+                .weight(1f)
+                .height(lineHeight)
+                .clip(RoundedCornerShape(lineHeight / 2))
+                .background(TypeTone.divider)
+        )
+        Spacer(Modifier.width(gap))
             lineHeight = TypeScale.subLabel,
             modifier = Modifier.weight(1f),
             maxLines = 1
@@ -783,6 +868,8 @@ private fun AsrSub(
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
+            maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.End)
             lineHeight = TypeScale.subLabel,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
