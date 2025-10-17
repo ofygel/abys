@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,17 +43,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.border
+import com.example.abys.data.CityEntry
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import kotlin.math.abs
+import kotlinx.coroutines.flow.filter
 
 private const val VISIBLE_AROUND = 4
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CityPickerWheel(
-    cities: List<String>,
+    cities: List<CityEntry>,
     currentCity: String,
     onChosen: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -64,7 +68,7 @@ fun CityPickerWheel(
     val density = LocalDensity.current
 
     val initialIndex = remember(cities, currentCity) {
-        cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0
+        cities.indexOfFirst { it.display == currentCity }.takeIf { it >= 0 } ?: 0
     }
 
     val listState = rememberLazyListState(initialFirstVisibleItemIndex = initialIndex)
@@ -75,8 +79,10 @@ fun CityPickerWheel(
         lazyListState = listState
     )
 
+    val haptics = LocalHapticFeedback.current
+
     LaunchedEffect(cities, currentCity) {
-        val index = cities.indexOf(currentCity).takeIf { it >= 0 } ?: 0
+        val index = cities.indexOfFirst { it.display == currentCity }.takeIf { it >= 0 } ?: 0
         if (!hasAligned) {
             listState.scrollToItem(index)
             hasAligned = true
@@ -85,14 +91,17 @@ fun CityPickerWheel(
         }
     }
 
+    var lastSnapped by remember { mutableStateOf(initialIndex.coerceIn(cities.indices)) }
+
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
-            .collect { inProgress ->
-                if (!inProgress) {
-                    val centerIndex = listState.closestCenterItem()
-                    if (centerIndex in cities.indices) {
-                        onChosen(cities[centerIndex])
-                    }
+            .filter { !it }
+            .collect {
+                val centerIndex = listState.closestCenterItem()
+                if (centerIndex in cities.indices && centerIndex != lastSnapped) {
+                    lastSnapped = centerIndex
+                    onChosen(cities[centerIndex].display)
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
     }
@@ -112,15 +121,14 @@ fun CityPickerWheel(
                     if (size.height <= 0f) return@drawWithContent
                     val fadeHeight = with(density) { (140f * sy).dp.toPx() }
                     val fraction = (fadeHeight / size.height).coerceIn(0f, 0.42f)
+                    val stops = arrayOf(
+                        0f to Color.Transparent,
+                        fraction to Color.Black,
+                        (1f - fraction) to Color.Black,
+                        1f to Color.Transparent
+                    )
                     drawRect(
-                        brush = Brush.verticalGradient(
-                            colorStops = arrayOf(
-                                0f to Color.Transparent,
-                                fraction to Color.Black,
-                                (1f - fraction) to Color.Black,
-                                1f to Color.Transparent
-                            )
-                        ),
+                        brush = Brush.verticalGradient(*stops),
                         size = size,
                         blendMode = BlendMode.DstIn
                     )
@@ -136,14 +144,14 @@ fun CityPickerWheel(
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy((12f * sy).dp),
             flingBehavior = flingBehavior
         ) {
-            itemsIndexed(cities) { index, city ->
+            itemsIndexed(cities, key = { index, entry -> entry.id + index }) { index, city ->
                 val distance = abs(centerIndex - index)
                 val scale = 0.60f + 0.40f * (1f - (distance / (VISIBLE_AROUND + 1f))).coerceIn(0f, 1f)
                 val alpha = (1f - distance / (VISIBLE_AROUND + 1f)).coerceIn(0.35f, 1f)
                 val textSize = (42f * scale).coerceIn(22f, 42f)
 
                 BasicText(
-                    text = city,
+                    text = city.display,
                     modifier = Modifier
                         .fillMaxWidth()
                         .graphicsLayer {

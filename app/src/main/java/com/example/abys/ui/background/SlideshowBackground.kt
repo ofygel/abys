@@ -99,8 +99,14 @@ fun SlideshowBackground(
     val driftX = sin(driftPhase * 2f * PI).toFloat() * 12f
     val driftY = cos(driftPhase * 2f * PI).toFloat() * 8f
     val progress = (within / period).toFloat().coerceIn(0f, 1f)
-    val topAlpha = 0.08f + 0.04f * progress
-    val bottomAlpha = 0.12f + 0.05f * (1f - abs(progress - 0.5f) * 2f)
+    val topAlpha = lerp(0.08f, 0.1f, progress)
+    val bottomAlpha = lerp(0.12f, 0.12f, 1f - abs(progress - 0.5f) * 2f)
+    val gradientStops = arrayOf(
+        0f to Color.Black.copy(alpha = topAlpha),
+        0.22f to Color.Transparent,
+        0.78f to Color.Transparent,
+        1f to Color.Black.copy(alpha = bottomAlpha)
+    )
 
     Box(
         modifier
@@ -151,15 +157,11 @@ fun SlideshowBackground(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = topAlpha),
-                            Color.Transparent,
-                            Color.Black.copy(alpha = bottomAlpha)
-                        )
-                    )
-                )
+                .background(brush = Brush.verticalGradient(*gradientStops))
         )
     }
+}
+
+private fun lerp(start: Float, end: Float, fraction: Float): Float {
+    return start + (end - start) * fraction.coerceIn(0f, 1f)
 }

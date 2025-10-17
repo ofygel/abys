@@ -55,6 +55,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.ui:ui:1.6.0")
     implementation("androidx.compose.material3:material3:1.2.0")
+    implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("androidx.compose.animation:animation:1.6.0")
     implementation("androidx.compose.runtime:runtime-livedata:1.6.0")
     implementation("androidx.compose.runtime:runtime-saveable:1.6.0")
@@ -95,6 +96,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
 
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Дополнительные библиотеки десугаринга для поддержки java.time и других API
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")

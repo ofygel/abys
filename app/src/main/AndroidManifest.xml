@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:targetApi="s" />
 
     <application
+        android:name=".AbysApp"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:icon="@mipmap/rose"
@@ -25,6 +31,21 @@
         <!-- MainActivity — Compose host -->
         <activity android:name=".ui.MainActivity"
             android:exported="false"/>
+
+        <receiver
+            android:name=".receiver.PrayerAlarmReceiver"
+            android:exported="false"/>
+
+        <receiver
+            android:name=".receiver.AlarmReschedulerBootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.TIME_CHANGED"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
