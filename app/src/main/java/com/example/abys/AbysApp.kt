@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import com.example.abys.R
+import com.example.abys.work.BackgroundRefreshWorker
 
 /**
  * Application entry point used for one-time system configuration such as
@@ -15,6 +16,7 @@ class AbysApp : Application() {
     override fun onCreate() {
         super.onCreate()
         ensureNotificationChannels()
+        scheduleBackgroundRefresh()
     }
 
     private fun ensureNotificationChannels() {
@@ -41,6 +43,10 @@ class AbysApp : Application() {
         }
 
         manager.createNotificationChannels(listOf(prayerChannel, backgroundChannel))
+    }
+
+    private fun scheduleBackgroundRefresh() {
+        BackgroundRefreshWorker.schedule(this)
     }
 
     companion object {

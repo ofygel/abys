@@ -6,8 +6,13 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.lang.ref.WeakReference
 import com.example.abys.data.FallbackContent
+import com.example.abys.logic.NightIntervals
+import com.example.abys.logic.PrayerAlarmScheduler
 import com.example.abys.net.RetrofitProvider
 import com.example.abys.net.TimingsResponse
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import java.lang.ref.WeakReference
 import com.example.abys.util.LocationHelper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -53,11 +58,7 @@ class MainViewModel : ViewModel() {
         "Isha" to fallbackTimings.isha
     )
 
-    private val fallbackThirds = Triple(
-        FallbackContent.prayerTimes.firstThird ?: "--:--",
-        FallbackContent.prayerTimes.midnight ?: "--:--",
-        FallbackContent.prayerTimes.lastThird ?: "--:--"
-    )
+    private val fallbackThirds = FallbackContent.nightIntervals
 
     private val _sheetVisible = MutableLiveData(false)
     val sheetVisible: LiveData<Boolean> = _sheetVisible
@@ -81,7 +82,7 @@ class MainViewModel : ViewModel() {
     val prayerTimes: LiveData<Map<String, String>> = _prayerTimes
 
     private val _thirds = MutableLiveData(fallbackThirds)
-    val thirds: LiveData<Triple<String, String, String>> = _thirds
+    val thirds: LiveData<NightIntervals> = _thirds
 
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     private val _clock = MutableLiveData(TimeHelper.now(fallbackTimings.tz).format(timeFormatter))
@@ -269,6 +270,7 @@ class MainViewModel : ViewModel() {
                 viewModelScope.launch(io) {
                     SettingsStore.setLastJson(context, persistedAdapter.toJson(persisted))
                     SettingsStore.setCity(context, cityName)
+                    PrayerAlarmScheduler(context).schedule(ui, _school.value ?: 0)
                 }
             }
         }
@@ -287,13 +289,12 @@ class MainViewModel : ViewModel() {
         )
 
         val parts = TimeHelper.splitNight(ui.maghrib, ui.fajr, ui.tz)
-        _thirds.postValue(
-            Triple(
-                TimeHelper.formatZ(parts.first.first),
-                TimeHelper.formatZ(parts.second.first),
-                TimeHelper.formatZ(parts.third.first)
-            )
+        val intervals = NightIntervals(
+            first = TimeHelper.formatZ(parts.first.first) to TimeHelper.formatZ(parts.first.second),
+            second = TimeHelper.formatZ(parts.second.first) to TimeHelper.formatZ(parts.second.second),
+            third = TimeHelper.formatZ(parts.third.first) to TimeHelper.formatZ(parts.third.second)
         )
+        _thirds.postValue(intervals)
     }
 
     private fun hijriText(d: TimingsResponse.Data): String? {

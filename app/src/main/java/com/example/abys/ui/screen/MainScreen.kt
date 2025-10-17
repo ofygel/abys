@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
@@ -34,7 +35,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -61,10 +67,12 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.abys.R
+import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
 import com.example.abys.data.EffectId
 import com.example.abys.logic.CitySheetTab
 import com.example.abys.logic.MainViewModel
+import com.example.abys.logic.NightIntervals
 import com.example.abys.ui.EffectCarousel
 import com.example.abys.ui.EffectThumb
 import com.example.abys.ui.EffectViewModel
@@ -87,7 +95,7 @@ fun MainApp(
 ) {
     val city by vm.city.observeAsState("Almaty")
     val times by vm.prayerTimes.observeAsState(emptyMap())
-    val thirds by vm.thirds.observeAsState(Triple("21:12", "00:59", "4:50"))
+    val thirds by vm.thirds.observeAsState(FallbackContent.nightIntervals)
     val now by vm.clock.observeAsState(
         LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
     )
@@ -143,7 +151,7 @@ fun MainScreen(
     city: String,
     now: String,
     prayerTimes: Map<String, String>,
-    thirds: Triple<String, String, String>,
+    thirds: NightIntervals,
     selectedEffect: EffectId,
     effectThumbs: List<EffectThumb>,
     showSheet: Boolean,
@@ -443,12 +451,13 @@ private fun HeaderPill(
 @Composable
 private fun PrayerCard(
     times: Map<String, String>,
-    thirds: Triple<String, String, String>,
+    thirds: NightIntervals,
     modifier: Modifier = Modifier
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val s = Dimens.s()
+    var thirdsExpanded by remember { mutableStateOf(false) }
 
     val rowStep = Dimens.scaledY(R.dimen.abys_row_step)
     val labelHeight = (Tokens.TypographyPx.label * sy).dp
@@ -517,7 +526,35 @@ private fun PrayerCard(
             RowItem("Иша", times["Isha"] ?: "--:--")
 
             Spacer(Modifier.height((24f * sy).dp))
-            Timeline(thirds)
+
+            val rotation by animateFloatAsState(
+                targetValue = if (thirdsExpanded) 180f else 0f,
+                animationSpec = tween(durationMillis = 200),
+                label = "night-toggle"
+            )
+
+            OutlinedButton(
+                onClick = { thirdsExpanded = !thirdsExpanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Ночь (3 части)",
+                    fontSize = Tokens.TypographySp.label,
+                    fontWeight = FontWeight.Bold,
+                    color = Tokens.Colors.text,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = Tokens.Colors.text,
+                    modifier = Modifier.graphicsLayer { rotationZ = rotation }
+                )
+            }
+
+            AnimatedVisibility(thirdsExpanded) {
+                NightTimeline(thirds)
+            }
         }
     }
 }
@@ -591,48 +628,50 @@ private fun AsrSub(
 }
 
 @Composable
-private fun Timeline(thirds: Triple<String, String, String>) {
+private fun NightTimeline(thirds: NightIntervals) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val long = (57f * sy).dp
-    val short = (49f * sy).dp
-    val gap = (8f * sx).dp
+    val labelStyle = MaterialTheme.typography.bodyMedium.copy(
+        fontFamily = AbysFonts.inter,
+        fontWeight = FontWeight.SemiBold,
+        color = Tokens.Colors.text
+    )
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = (16f * sy).dp),
+        verticalArrangement = Arrangement.spacedBy((12f * sy).dp)
     ) {
-        listOf(thirds.first, thirds.second, thirds.third).forEach { time ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        thirds.asList().forEachIndexed { index, (start, end) ->
+            val label = when (index) {
+                0 -> "Первая треть"
+                1 -> "Вторая треть"
+                else -> "Последняя треть"
+            }
+            Column {
+                Text(text = label, style = labelStyle)
+                Spacer(Modifier.height((4f * sy).dp))
                 Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(gap)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Tick(height = short)
-                    Tick(height = long)
-                    Tick(height = short)
+                    Text(
+                        text = start,
+                        fontSize = Tokens.TypographySp.timeline,
+                        fontWeight = FontWeight.Bold,
+                        color = Tokens.Colors.text
+                    )
+                    Text(
+                        text = end,
+                        fontSize = Tokens.TypographySp.timeline,
+                        fontWeight = FontWeight.Bold,
+                        color = Tokens.Colors.text
+                    )
                 }
-                Spacer(Modifier.height((12f * sy).dp))
-                Text(
-                    text = time,
-                    fontSize = Tokens.TypographySp.timeline,
-                    fontWeight = FontWeight.Bold,
-                    color = Tokens.Colors.text,
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }
-}
-
-@Composable
-private fun Tick(height: Dp) {
-    Box(
-        Modifier
-            .width(3.dp)
-            .height(height)
-            .background(Tokens.Colors.tickFull)
-    )
 }
 
