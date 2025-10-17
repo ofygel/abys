@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -121,10 +122,11 @@ fun CityPickerWheel(
                     if (size.height <= 0f) return@drawWithContent
                     val fadeHeight = with(density) { (140f * sy).dp.toPx() }
                     val fraction = (fadeHeight / size.height).coerceIn(0f, 0.42f)
+                    val fade = Color.White.copy(alpha = 0.2f)
                     val stops = arrayOf(
                         0f to Color.Transparent,
-                        fraction to Color.Black,
-                        (1f - fraction) to Color.Black,
+                        fraction to fade,
+                        (1f - fraction) to fade,
                         1f to Color.Transparent
                     )
                     drawRect(
@@ -161,7 +163,8 @@ fun CityPickerWheel(
                         fontFamily = AbysFonts.inter,
                         textAlign = TextAlign.Center,
                         fontSize = (textSize * s).sp,
-                        fontWeight = if (distance == 0) FontWeight.ExtraBold else FontWeight.Bold,
+                        fontWeight = if (distance == 0) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        fontStyle = if (distance == 0) FontStyle.Italic else FontStyle.Normal,
                         color = Tokens.Colors.text,
                         lineHeight = (if (distance == 0) 1.10f else 1.05f).em,
                         shadow = Shadow(
@@ -175,7 +178,7 @@ fun CityPickerWheel(
             }
         }
 
-        val highlightShape = RoundedCornerShape((18f * s).dp)
+        val highlightShape = RoundedCornerShape(Tokens.Radii.card())
         val slotHeightDp = with(density) { itemHeight.toDp() }
         Box(
             modifier = Modifier
@@ -183,9 +186,25 @@ fun CityPickerWheel(
                 .fillMaxWidth()
                 .height(slotHeightDp)
                 .clip(highlightShape)
-                .background(Tokens.Colors.tickDark.copy(alpha = 0.08f))
-                .border(2.dp, Tokens.Colors.chipStroke, highlightShape)
-        )
+                .border(1.dp, Tokens.Colors.chipStroke, highlightShape)
+        ) {
+            Row(
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(0.74f),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(2) {
+                    Box(
+                        Modifier
+                            .height(1.dp)
+                            .width((48f * sx).dp)
+                            .background(Tokens.Colors.text.copy(alpha = 0.6f))
+                    )
+                }
+            }
+        }
     }
 }
 
