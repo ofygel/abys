@@ -252,49 +252,51 @@ class MainViewModel(
         cityOverride: String?,
         persistCtx: Context?,
     ) {
-        if (std?.isSuccessful == true && han?.isSuccessful == true) {
-            val dStd = std.body()!!.data
-            val dHan = han.body()!!.data
-            val tz = ZoneId.of(dStd.meta.timezone)
+        val stdBody = std?.takeIf { it.isSuccessful }?.body()?.data ?: return
+        val hanBody = han?.takeIf { it.isSuccessful }?.body()?.data
 
-            val ui = UiTimings(
-                fajr    = dStd.timings.fajr,
-                sunrise = dStd.timings.sunrise,
-                dhuhr   = dStd.timings.dhuhr,
-                asrStd  = dStd.timings.asr,
-                asrHan  = dHan.timings.asr,
-                maghrib = dStd.timings.maghrib,
-                isha    = dStd.timings.isha,
-                tz      = tz
+        val tz = runCatching { ZoneId.of(stdBody.meta.timezone) }.getOrElse { ZoneId.systemDefault() }
+
+        val ui = UiTimings(
+            fajr = stdBody.timings.fajr,
+            sunrise = stdBody.timings.sunrise,
+            dhuhr = stdBody.timings.dhuhr,
+            asrStd = stdBody.timings.asr,
+            asrHan = hanBody?.timings?.asr ?: stdBody.timings.asr,
+            maghrib = stdBody.timings.maghrib,
+            isha = stdBody.timings.isha,
+            tz = tz
+        )
+        _timings.postValue(ui)
+        updateDerived(ui)
+
+        val derivedCity = stdBody.meta.timezone.substringAfter('/', stdBody.meta.timezone).ifBlank { null }
+        val cityName = cityOverride?.takeIf { it.isNotBlank() }
+            ?: derivedCity
+            ?: _city.value
+            ?: FallbackContent.cityLabel
+        _city.postValue(cityName)
+
+        val hijri = hijriText(stdBody)
+        _hijri.postValue(hijri)
+
+        persistCtx?.let { context ->
+            val persisted = PersistedUiState(
+                city = cityName,
+                hijri = hijri,
+                fajr = ui.fajr,
+                sunrise = ui.sunrise,
+                dhuhr = ui.dhuhr,
+                asrStd = ui.asrStd,
+                asrHan = ui.asrHan,
+                maghrib = ui.maghrib,
+                isha = ui.isha,
+                tz = ui.tz.id
             )
-            _timings.postValue(ui)
-            updateDerived(ui)
-
-            // Город: либо из аргумента, либо «подрезаем» timezone "Asia/Almaty" → "Almaty"
-            val cityName = cityOverride ?: dStd.meta.timezone.substringAfter('/', dStd.meta.timezone)
-            _city.postValue(cityName)
-
-            val hijri = hijriText(dStd)
-            _hijri.postValue(hijri)
-
-            persistCtx?.let { context ->
-                val persisted = PersistedUiState(
-                    city = cityName,
-                    hijri = hijri,
-                    fajr = ui.fajr,
-                    sunrise = ui.sunrise,
-                    dhuhr = ui.dhuhr,
-                    asrStd = ui.asrStd,
-                    asrHan = ui.asrHan,
-                    maghrib = ui.maghrib,
-                    isha = ui.isha,
-                    tz = ui.tz.id
-                )
-                viewModelScope.launch(io) {
-                    SettingsStore.setLastJson(context, persistedAdapter.toJson(persisted))
-                    SettingsStore.setCity(context, cityName)
-                    PrayerAlarmScheduler(context).schedule(ui, _school.value ?: 0)
-                }
+            viewModelScope.launch(io) {
+                SettingsStore.setLastJson(context, persistedAdapter.toJson(persisted))
+                SettingsStore.setCity(context, cityName)
+                PrayerAlarmScheduler(context).schedule(ui, _school.value ?: 0)
             }
         }
     }
