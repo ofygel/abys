@@ -16,8 +16,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.PlaybackException
 import com.example.abys.R
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SplashActivity : AppCompatActivity() {
@@ -25,7 +23,6 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var placeholderView: ImageView
-    private var navigationJob: Job? = null
     private var hasNavigated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,11 +42,6 @@ class SplashActivity : AppCompatActivity() {
 
         val mediaItem = MediaItem.Builder()
             .setUri("asset:///greeting.mp4")
-            .setClippingConfiguration(
-                MediaItem.ClippingConfiguration.Builder()
-                    .setEndPositionMs(2000)
-                    .build()
-            )
             .build()
 
         player = ExoPlayer.Builder(this)
@@ -87,29 +79,18 @@ class SplashActivity : AppCompatActivity() {
         lifecycleScope.launch {
             player.prepare()
         }
-
-        navigationJob = lifecycleScope.launch {
-            delay(SPLASH_TIMEOUT_MS)
-            navigateToMain()
-        }
     }
 
     override fun onStop() {
         super.onStop()
         player.release()
-        navigationJob?.cancel()
     }
 
     private fun navigateToMain() {
         if (hasNavigated) return
         hasNavigated = true
-        navigationJob?.cancel()
         startActivity(Intent(this@SplashActivity, MainActivity::class.java))
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
-    }
-
-    companion object {
-        private const val SPLASH_TIMEOUT_MS = 2_500L
     }
 }
