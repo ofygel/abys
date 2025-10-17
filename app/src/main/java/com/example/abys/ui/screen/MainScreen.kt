@@ -29,14 +29,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,9 +44,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
@@ -67,6 +67,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -79,11 +80,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -586,7 +588,8 @@ private fun HeaderPill(
                         fontFeatureSettings = TABULAR_FEATURE,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
-                        modifier = Modifier.wrapContentWidth(Alignment.End)
+                        modifier = Modifier.wrapContentWidth(Alignment.End),
+                        style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
                     )
                 }
             }
@@ -714,7 +717,8 @@ private fun PrayerRow(label: String, value: String) {
             lineHeight = TypeScale.label,
             fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1
+            maxLines = 1,
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
         )
     }
 }
@@ -762,6 +766,8 @@ private fun AsrVariantRow(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
             fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
@@ -863,7 +869,8 @@ private fun RowItem(label: String, value: String) {
             textAlign = TextAlign.Right,
             fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1
+            maxLines = 1,
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
         )
     }
 }
@@ -914,6 +921,8 @@ private fun AsrSub(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
             fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
@@ -960,6 +969,8 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
                     fontSize = TypeScale.timeline,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.primary,
+                    maxLines = 1,
+                    style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
                     fontFeatureSettings = TABULAR_FEATURE,
                     maxLines = 1
                 )
