@@ -158,6 +158,7 @@ fun SlideshowBackground(
         Box(
             Modifier
                 .fillMaxSize()
+                .background(brush = Brush.verticalGradient(*gradientStops))
                 .background(brush = Brush.verticalGradient(colorStops = gradientStops))
                 .background(Brush.verticalGradient(gradientStops))
         )

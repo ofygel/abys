@@ -122,15 +122,14 @@ fun CityPickerWheel(
                     if (size.height <= 0f) return@drawWithContent
                     val fadeHeight = with(density) { (140f * sy).dp.toPx() }
                     val fraction = (fadeHeight / size.height).coerceIn(0f, 0.42f)
+                    val stops = arrayOf(
+                        0f to Color.Transparent,
+                        fraction to Color.Black,
+                        (1f - fraction) to Color.Black,
+                        1f to Color.Transparent
+                    )
                     drawRect(
-                        brush = Brush.verticalGradient(
-                            colorStops = arrayOf(
-                                0f to Color.Transparent,
-                                fraction to Color.Black,
-                                (1f - fraction) to Color.Black,
-                                1f to Color.Transparent
-                            )
-                        ),
+                        brush = Brush.verticalGradient(*stops),
                         size = size,
                         blendMode = BlendMode.DstIn
                     )
