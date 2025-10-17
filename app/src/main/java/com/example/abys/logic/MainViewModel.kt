@@ -1,19 +1,17 @@
 package com.example.abys.logic
 
 import android.content.Context
-import androidx.lifecycle.*
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import java.lang.ref.WeakReference
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.abys.data.FallbackContent
-import com.example.abys.logic.NightIntervals
-import com.example.abys.logic.PrayerAlarmScheduler
 import com.example.abys.net.RetrofitProvider
 import com.example.abys.net.TimingsResponse
+import com.example.abys.util.LocationHelper
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.lang.ref.WeakReference
-import com.example.abys.util.LocationHelper
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
