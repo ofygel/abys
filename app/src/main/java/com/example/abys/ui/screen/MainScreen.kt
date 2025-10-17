@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -113,15 +115,73 @@ private object GlassDefaults {
     val stroke = Color(0x26FFFFFF)
     val blur = 22.dp
     val bgScrim = Color(0x44101518)
+    val top = Color(0x59131618)
+    val bottom = Color(0x66131618)
+    val stroke = Color(0x14FFFFFF)
+    val blur = 18.dp
+    val bgScrim = Color(0x33101518)
 }
 
 // Единая шкала таймингов — чтобы анимации были согласованы
 private object Dur {
-    const val XShort = 180
-    const val Short = 200
-    const val Base = 220
-    const val Med = 240
-    const val Long = 260
+    const val X_SHORT = 180
+    const val SHORT = 200
+    const val BASE = 220
+    const val MED = 240
+    const val LONG = 260
+}
+
+// Палитра и типографика под «серый» макет
+private object TypeTone {
+    val primary: Color
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.92f)
+    val secondary: Color
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.78f)
+    val dim: Color
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.62f)
+    val divider: Color
+        @Composable get() = Color.White.copy(alpha = 0.08f)
+}
+
+@Composable
+private fun ThinDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
+}
+
+@Composable
+private fun MutedBackgroundCrossfade(effect: EffectId) {
+    Crossfade(
+        modifier = Modifier.fillMaxSize(),
+        targetState = effect,
+        animationSpec = tween(durationMillis = Dur.X_SHORT),
+        label = "muted-effect-background"
+    ) { target ->
+        Box(Modifier.fillMaxSize()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val matrix = remember {
+                    ColorMatrix().apply { setSaturation(0.35f) }
+                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            renderEffect = RenderEffect.createColorFilterEffect(
+                                ColorMatrixColorFilter(matrix)
+                            ).asComposeRenderEffect()
+                        }
+                ) {
+                    BackgroundHost(effect = target)
+                }
+            } else {
+                BackgroundHost(effect = target)
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(GlassDefaults.bgScrim)
+                )
+            }
+        }
+    }
 }
 
 // Палитра и типографика под «серый» макет
@@ -271,55 +331,55 @@ fun MainScreen(
     val headerLift = remember(density, sy) { with(density) { (14f * sy).dp.toPx() } }
 
     val prayerAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.Short else Dur.Med) },
+        transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.SHORT else Dur.MED) },
         label = "prayerAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0f }
     val prayerScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Long) },
+        transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "prayerScale"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
     val prayerTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Med) },
+        transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "prayerTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
 
     val headerAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Base) },
+        transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
     val headerTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Base) },
+        transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
 
     val carouselAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Base) },
+        transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "carouselAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
     val carouselScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Med) },
+        transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselScale"
     ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
     val carouselTranslation by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Med) },
+        transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselTranslation"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
 
     val scrimAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Base) },
+        transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "scrimAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
 
     val sheetAlpha by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Med) },
+        transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "sheetAlpha"
     ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
     val sheetTranslationX by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Long) },
+        transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationX"
     ) { st -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
     val sheetTranslationY by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Long) },
+        transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationY"
     ) { st ->
         when (st) {
@@ -329,7 +389,7 @@ fun MainScreen(
         }
     }
     val sheetScale by transition.animateFloat(
-        transitionSpec = { tween(durationMillis = Dur.Long) },
+        transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetScale"
     ) { st ->
         when (st) {
@@ -394,8 +454,8 @@ fun MainScreen(
         if (prayerAlpha > 0.01f) {
             AnimatedVisibility(
                 visible = !showSheet,
-                enter = fadeIn(tween(Dur.Base)) + scaleIn(initialScale = 0.96f, animationSpec = tween(Dur.Base)),
-                exit = fadeOut(tween(Dur.XShort)) + scaleOut(targetScale = 0.96f, animationSpec = tween(Dur.XShort))
+                enter = fadeIn(tween(Dur.BASE)) + scaleIn(initialScale = 0.96f, animationSpec = tween(Dur.BASE)),
+                exit = fadeOut(tween(Dur.X_SHORT)) + scaleOut(targetScale = 0.96f, animationSpec = tween(Dur.X_SHORT))
             ) {
                 PrayerCard(
                     times = prayerTimes,
@@ -449,10 +509,10 @@ fun MainScreen(
         if (sheetAlpha > 0.01f) {
             AnimatedVisibility(
                 visible = showSheet,
-                enter = fadeIn(tween(Dur.Base)) +
-                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.Base)),
-                exit = fadeOut(tween(Dur.XShort)) +
-                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.XShort))
+                enter = fadeIn(tween(Dur.BASE)) +
+                    slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
+                exit = fadeOut(tween(Dur.X_SHORT)) +
+                    slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
             ) {
                 GlassSheetContainer(
                     modifier = Modifier
@@ -490,7 +550,6 @@ private fun HeaderPill(
     modifier: Modifier = Modifier,
     onTap: () -> Unit
 ) {
-    val sx = Dimens.sx()
     val sy = Dimens.sy()
     val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
@@ -532,6 +591,7 @@ private fun HeaderPill(
                 Text(
                     text = city,
                     fontSize = TypeScale.city,
+                    fontSize = Tokens.TypographySp.city,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
                     maxLines = 1,
@@ -541,6 +601,7 @@ private fun HeaderPill(
                 Text(
                     text = now,
                     fontSize = TypeScale.timeNow,
+                    fontSize = Tokens.TypographySp.timeNow,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.secondary,
                     textAlign = TextAlign.Right,
@@ -571,7 +632,7 @@ private fun PrayerCard(
     var thirdsExpanded by rememberSaveable { mutableStateOf(true) }
     val rotation by animateFloatAsState(
         targetValue = if (thirdsExpanded) 180f else 0f,
-        animationSpec = tween(durationMillis = Dur.Short),
+        animationSpec = tween(durationMillis = Dur.SHORT),
         label = "night-toggle"
     )
 
@@ -601,6 +662,7 @@ private fun PrayerCard(
                     bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
                 )
                 .animateContentSize(animationSpec = tween(Dur.Base))
+                .animateContentSize(animationSpec = tween(Dur.BASE))
         ) {
             RowItem("Фаджр", times["Fajr"] ?: "--:--")
             ThinDivider(Modifier.padding(vertical = (6f * sy).dp))
@@ -615,6 +677,7 @@ private fun PrayerCard(
             Text(
                 text = "Аср:",
                 fontSize = TypeScale.label,
+                fontSize = Tokens.TypographySp.label,
                 fontWeight = FontWeight.SemiBold,
                 color = TypeTone.primary
             )
@@ -653,6 +716,7 @@ private fun PrayerCard(
                 Text(
                     text = "Ночь (3 части)",
                     fontSize = TypeScale.label,
+                    fontSize = Tokens.TypographySp.label,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
                     modifier = Modifier.weight(1f)
@@ -666,8 +730,8 @@ private fun PrayerCard(
             }
             AnimatedVisibility(
                 visible = thirdsExpanded,
-                enter = expandVertically(animationSpec = tween(Dur.Base)) + fadeIn(tween(Dur.XShort)),
-                exit = shrinkVertically(animationSpec = tween(Dur.Base)) + fadeOut(tween(Dur.XShort))
+                enter = expandVertically(animationSpec = tween(Dur.BASE)) + fadeIn(tween(Dur.X_SHORT)),
+                exit = shrinkVertically(animationSpec = tween(Dur.BASE)) + fadeOut(tween(Dur.X_SHORT))
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Spacer(Modifier.height((16f * sy).dp))
@@ -688,6 +752,7 @@ private fun RowItem(label: String, value: String) {
         Text(
             text = label,
             fontSize = TypeScale.label,
+            fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.Medium,
             color = TypeTone.secondary,
             modifier = Modifier.weight(1f),
@@ -696,6 +761,7 @@ private fun RowItem(label: String, value: String) {
         Text(
             text = value,
             fontSize = TypeScale.label,
+            fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
@@ -721,6 +787,7 @@ private fun AsrSub(
         Text(
             text = label,
             fontSize = TypeScale.subLabel,
+            fontSize = Tokens.TypographySp.subLabel,
             fontWeight = FontWeight.Medium,
             color = TypeTone.dim,
             modifier = Modifier.weight(1f),
@@ -737,6 +804,18 @@ private fun AsrSub(
         Text(
             text = value,
             fontSize = TypeScale.subLabel,
+        )
+        Box(
+            Modifier
+                .width(indicatorWidth)
+                .height(indicatorHeight)
+                .clip(RoundedCornerShape(indicatorRadius))
+                .background(Tokens.Colors.tickFull)
+        )
+        Spacer(Modifier.width(spacing))
+        Text(
+            text = value,
+            fontSize = Tokens.TypographySp.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
@@ -778,6 +857,7 @@ private fun NightThirdCard(
         fontFamily = AbysFonts.inter,
         fontWeight = FontWeight.Medium,
         fontSize = TypeScale.timeline,
+        fontSize = Tokens.TypographySp.timeline,
         color = TypeTone.primary,
         textAlign = TextAlign.Center
     )
