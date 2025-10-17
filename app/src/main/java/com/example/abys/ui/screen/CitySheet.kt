@@ -114,7 +114,7 @@ fun CitySheet(
         Box(
             Modifier
                 .matchParentSize()
-                .shadow(elevation = (36f * sy).dp, shape = shape, clip = false)
+                .shadow(elevation = (24f * sy).dp, shape = shape, clip = false)
                 .clip(shape)
         ) {
             Box(
@@ -409,14 +409,15 @@ private fun HadithFrame(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val s = Dimens.s()
-    val shape = RoundedCornerShape((46f * s).dp)
-    val borderColor = Color.White.copy(alpha = 0.12f)
+    val shape = RoundedCornerShape((68f * s).dp)
+    val borderColor = Tokens.Colors.tickDark.copy(alpha = 0.4f)
     Box(
         modifier
             .clip(shape)
             .border(1.dp, borderColor, shape)
-            .background(Tokens.Colors.tickDark.copy(alpha = 0.08f))
-            .padding(horizontal = (32f * sx).dp, vertical = (28f * sy).dp)
+            .backdropBlur(8.dp)
+            .background(Color.White.copy(alpha = 0.16f))
+            .padding(horizontal = (32f * sx).dp, vertical = (32f * sy).dp)
     ) {
         val scrollState = rememberScrollState()
         Column(Modifier.verticalScroll(scrollState)) {

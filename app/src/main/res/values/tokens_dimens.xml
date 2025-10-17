@@ -1,7 +1,7 @@
 <resources>
     <!-- Радиусы -->
     <dimen name="abys_radius_pill">22dp</dimen>
-    <dimen name="abys_radius_card">19dp</dimen>
+    <dimen name="abys_radius_card">28dp</dimen>
     <dimen name="abys_radius_chip">22dp</dimen>
     <dimen name="abys_radius_list">28dp</dimen>
 
