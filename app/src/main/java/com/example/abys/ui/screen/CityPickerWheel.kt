@@ -101,6 +101,7 @@ fun CityPickerWheel(
                 if (centerIndex in cities.indices && centerIndex != lastSnapped) {
                     lastSnapped = centerIndex
                     onChosen(cities[centerIndex].display)
+                    onChosen(cities[centerIndex])
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }

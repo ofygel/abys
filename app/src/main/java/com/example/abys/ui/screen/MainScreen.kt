@@ -96,6 +96,7 @@ fun MainApp(
     val selectedEffect by effectViewModel.effect.collectAsState()
     val effectThumbs = rememberEffectCatalogFromRes()
     val cityOptions = rememberCityDirectory()
+    val cityOptions = rememberCitiesFromRes()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
@@ -128,6 +129,7 @@ fun MainApp(
                 onShowWheel = { vm.setSheetTab(CitySheetTab.Wheel) },
                 onTabSelected = vm::setSheetTab,
                 onSheetDismiss = vm::toggleSheet,
+                onCityChipTap = vm::togglePicker,
                 onCityChosen = { vm.setCity(it, context.applicationContext) },
                 onEffectSelected = effectViewModel::onEffectSelected
             )
