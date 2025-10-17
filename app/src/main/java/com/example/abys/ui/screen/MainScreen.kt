@@ -439,9 +439,8 @@ fun MainScreen(
             .widthIn(max = cardMaxWidth)
             .heightIn(max = cardMaxHeight)
             .graphicsLayer {
-                val explodedAlpha = if (exploded) 0f else 1f
                 val explodedScale = if (exploded) 1.08f else 1f
-                alpha = prayerAlpha * explodedAlpha
+                alpha = prayerAlpha
                 scaleX = prayerScale * explodedScale
                 scaleY = prayerScale * explodedScale
                 translationY = prayerTranslation
