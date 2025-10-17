@@ -18,6 +18,12 @@
     <string name="theme_apply_action">Применить тему %1$s</string>
     <string name="theme_apply_double_tap">Двойной тап — применить тему %1$s</string>
 
+    <!-- Notification channels -->
+    <string name="channel_prayer_times_name">Напоминания о намазах</string>
+    <string name="channel_prayer_times_description">Оповещения о времени молитв и дополнительных напоминаниях.</string>
+    <string name="channel_background_updates_name">Фоновые обновления</string>
+    <string name="channel_background_updates_description">Бесшумные обновления цитат, фона и расписания.</string>
+
     <!-- Намазы -->
     <string name="prayer_fajr">Fajr</string>
     <string name="prayer_shuruq">Shuruq</string>
@@ -81,5 +87,10 @@
     <string name="city_search_title">Выбор города</string>
     <string name="city_search_hint">Almaty / Astana / Shymkent …</string>
     <string name="city_search_featured">Популярные города</string>
+    <string name="city_search_results">Результаты поиска</string>
     <string name="city_search_empty">Ничего не найдено</string>
+    <string name="city_tab_wheel">Колесо</string>
+    <string name="city_tab_search">Поиск</string>
+    <string name="city_search_placeholder">Город… (например, Almaty)</string>
+    <string name="city_search_button">Найти</string>
 </resources>
