@@ -30,6 +30,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -364,7 +365,13 @@ fun MainScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val maxH = maxHeight
+        val bottomSafe = navPadding.calculateBottomPadding()
+        val topPad = maxOf(16.dp, maxH * 0.18f)
+        val availableCardHeight = (maxH - topPad - bottomSafe - 96.dp).coerceAtLeast(0.dp)
+        val minCardHeight = minOf(maxH * 0.62f, availableCardHeight)
+
         HeaderPill(
             city = city,
             now = now,
@@ -393,9 +400,9 @@ fun MainScreen(
             .padding(
                 start = (64f * sx).dp,
                 end = (64f * sx).dp,
-                top = (226f * sy).dp
+                top = topPad
             )
-            .heightIn(min = (611f * sy).dp)
+            .heightIn(min = minCardHeight)
             .graphicsLayer {
                 val explodedAlpha = if (exploded) 0f else 1f
                 val explodedScale = if (exploded) 1.08f else 1f
@@ -439,9 +446,15 @@ fun MainScreen(
                 .padding(bottom = navPadding.calculateBottomPadding() + (48f * sy).dp)
                 .graphicsLayer {
                     alpha = carouselAlpha
-                    scaleX = carouselScale
-                    scaleY = carouselScale
-                    translationY = carouselTranslation
+                    if (stage == SurfaceStage.Dashboard) {
+                        scaleX = carouselScale
+                        scaleY = carouselScale
+                        translationY = carouselTranslation
+                    } else {
+                        scaleX = 1f
+                        scaleY = 1f
+                        translationY = 0f
+                    }
                 }
         )
 
