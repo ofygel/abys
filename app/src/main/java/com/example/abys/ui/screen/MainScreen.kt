@@ -585,6 +585,7 @@ private fun HeaderPill(
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
                         textAlign = TextAlign.Right,
+                        fontFeatureSettings = TABULAR_FEATURE,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                         modifier = Modifier.wrapContentWidth(Alignment.End),
@@ -714,6 +715,7 @@ private fun PrayerRow(label: String, value: String) {
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             lineHeight = TypeScale.label,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1,
             style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
@@ -766,6 +768,8 @@ private fun AsrVariantRow(
             maxLines = 1,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            fontFeatureSettings = TABULAR_FEATURE,
+            modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
 }
@@ -863,6 +867,7 @@ private fun RowItem(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1,
             style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
@@ -918,6 +923,8 @@ private fun AsrSub(
             maxLines = 1,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            fontFeatureSettings = TABULAR_FEATURE,
+            modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
 }
@@ -964,6 +971,8 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
                     color = TypeTone.primary,
                     maxLines = 1,
                     style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+                    fontFeatureSettings = TABULAR_FEATURE,
+                    maxLines = 1
                 )
             }
         }
