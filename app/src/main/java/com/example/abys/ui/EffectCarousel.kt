@@ -4,8 +4,8 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.animateScrollBy
-import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -79,9 +79,12 @@ fun EffectCarousel(
     var hasAligned by remember { mutableStateOf(false) }
     LaunchedEffect(items) { hasAligned = false }
 
-    val flingBehavior = rememberSnapFlingBehavior(
+    val baseFling = rememberSnapFlingBehavior(
         lazyListState = listState
     )
+    val flingBehavior = remember(baseFling) {
+        ScaledFlingBehavior(baseFling, frictionScale = 0.88f)
+    }
     val scope = rememberCoroutineScope()
 
     var viewportWidthPx by remember { mutableStateOf(0) }
@@ -92,7 +95,11 @@ fun EffectCarousel(
     val globalTargetIndex = (centerOffset + targetBaseIndex)
         .coerceIn(0, repeatedItems.lastIndex)
 
-    LaunchedEffect(viewportWidthPx, selected, items) {
+    LaunchedEffect(repeatedItems) {
+        hasAligned = false
+    }
+
+    LaunchedEffect(viewportWidthPx, items, selected, repeatedItems) {
         if (viewportWidthPx == 0 || repeatedItems.isEmpty()) return@LaunchedEffect
         if (!hasAligned) {
             listState.scrollToItem(globalTargetIndex)
@@ -101,13 +108,13 @@ fun EffectCarousel(
         }
         if (listState.isScrollInProgress) return@LaunchedEffect
         val currentIndex = nearestCenterIndex(listState, viewportWidthPx)
-        if (currentIndex != globalTargetIndex) {
-            listState.animateScrollToItem(globalTargetIndex)
-        } else {
-            val delta = listState.calculateCenteringDelta(viewportWidthPx)
-            if (delta != null && abs(delta) > 0.5f) {
-                listState.scrollByCompat(delta)
-            }
+        val targetIndex = nearestMiddleIndex(
+            currentIndex = currentIndex,
+            baseCount = baseCount,
+            targetBaseIndex = targetBaseIndex
+        )
+        if (targetIndex != null && targetIndex != currentIndex) {
+            listState.animateScrollToItem(targetIndex)
         }
     }
 
@@ -130,11 +137,6 @@ fun EffectCarousel(
         snapshotFlow { listState.isScrollInProgress }
             .filter { !it }
             .collectLatest {
-                val delta = listState.calculateCenteringDelta(viewportWidthPx)
-                if (delta != null && abs(delta) > 0.5f) {
-                    listState.animateScrollByCompat(delta)
-                    return@collectLatest
-                }
                 if (!enabled) return@collectLatest
                 val index = nearestCenterIndex(listState, viewportWidthPx)
                 val effect = repeatedItems.getOrNull(index)?.id ?: return@collectLatest
@@ -232,18 +234,6 @@ private fun nearestCenterIndex(listState: LazyListState, viewportWidthPx: Int): 
     }?.index ?: listState.firstVisibleItemIndex
 }
 
-private fun LazyListState.calculateCenteringDelta(viewportWidthPx: Int): Float? {
-    val layout = layoutInfo
-    if (layout.visibleItemsInfo.isEmpty()) return null
-    val viewportCenter = (layout.viewportStartOffset + layout.viewportEndOffset) / 2f
-    val closest = layout.visibleItemsInfo.minByOrNull { info ->
-        val itemCenter = info.offset + info.size / 2f
-        abs(itemCenter - viewportCenter)
-    } ?: return null
-    val itemCenter = closest.offset + closest.size / 2f
-    return viewportCenter - itemCenter
-}
-
 private fun scaleForDistance(distance: Float): Float {
     if (distance == Float.MAX_VALUE) return 0.75f
     return when {
@@ -264,12 +254,30 @@ private fun lerp(start: Float, end: Float, fraction: Float): Float {
     return start + (end - start) * fraction
 }
 
-private suspend fun LazyListState.scrollByCompat(distance: Float) {
-    if (distance == 0f) return
-    scrollBy(distance)
+private fun nearestMiddleIndex(
+    currentIndex: Int,
+    baseCount: Int,
+    targetBaseIndex: Int
+): Int? {
+    if (baseCount == 0) return null
+    val middleStart = baseCount
+    val middleEnd = baseCount * 2 - 1
+    var candidate = currentIndex
+    val normalized = ((candidate % baseCount) + baseCount) % baseCount
+    val delta = targetBaseIndex - normalized
+    candidate += delta
+    val total = baseCount * 3
+    while (candidate < middleStart) candidate += baseCount
+    while (candidate > middleEnd) candidate -= baseCount
+    return candidate.coerceIn(0, total - 1)
 }
 
-private suspend fun LazyListState.animateScrollByCompat(distance: Float) {
-    if (distance == 0f) return
-    animateScrollBy(distance)
+private class ScaledFlingBehavior(
+    private val delegate: FlingBehavior,
+    private val frictionScale: Float
+) : FlingBehavior {
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        val scaled = initialVelocity * frictionScale
+        return with(delegate) { this@performFling.performFling(scaled) }
+    }
 }
