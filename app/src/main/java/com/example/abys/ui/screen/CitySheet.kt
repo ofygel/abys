@@ -2,9 +2,7 @@
 
 package com.example.abys.ui.screen
 
-import android.content.Intent
 import android.os.Build
-import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
@@ -19,32 +17,25 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -68,10 +59,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -89,6 +76,7 @@ import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
+
 @Composable
 fun CitySheet(
     city: String,
@@ -104,8 +92,6 @@ fun CitySheet(
     val sy = Dimens.sy()
     val s = Dimens.s()
     val navPadding = WindowInsets.navigationBars.asPaddingValues()
-    val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
     val blurSupported = remember { Build.VERSION.SDK_INT >= Build.VERSION_CODES.S }
     val backgroundTarget = if (activeTab == CitySheetTab.Wheel) {
         if (blurSupported) Tokens.Colors.glassPickerBlur else Tokens.Colors.glassPickerOpaque
@@ -124,10 +110,6 @@ fun CitySheet(
         modifier
             .fillMaxSize()
             .padding(horizontal = (28f * sx).dp, vertical = (28f * sy).dp)
-            .padding(
-                horizontal = (28f * sx).dp,
-                vertical = (28f * sy).dp
-            )
     ) {
         Box(
             Modifier
@@ -170,126 +152,6 @@ fun CitySheet(
                     )
                 }
 
-                Spacer(Modifier.height((16f * sy).dp))
-
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = (72f * sx).dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy((18f * sx).dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        enabled = hadith.isNotBlank(),
-                        onClick = {
-                            if (hadith.isBlank()) return@IconButton
-                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, hadith)
-                            }
-                            context.startActivity(
-                                Intent.createChooser(
-                                    shareIntent,
-                                    context.getString(R.string.hadith_share_title)
-                                )
-                            )
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Share,
-                            contentDescription = stringResource(R.string.hadith_share_cd),
-                            tint = if (hadith.isBlank()) Tokens.Colors.text.copy(alpha = 0.4f) else Tokens.Colors.text
-                        )
-                Spacer(Modifier.height((36f * sy).dp))
-
-                CitySheetTabs(activeTab = activeTab, onTabSelected = onTabSelected)
-
-                Spacer(Modifier.height((24f * sy).dp))
-
-                Crossfade(
-                    targetState = activeTab,
-                    animationSpec = tween(durationMillis = 220),
-                    label = "city-sheet-tab"
-                ) { tab ->
-                    when (tab) {
-                        CitySheetTab.Wheel -> {
-                            CityPickerWheel(
-                                cities = cities,
-                                currentCity = city,
-                                onChosen = onCityChosen,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = (24f * sx).dp)
-                            )
-                        }
-
-                        CitySheetTab.Search -> {
-                            CitySearchPane(
-                                cities = cities,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .padding(horizontal = (24f * sx).dp),
-                                onCityChosen = onCityChosen
-                AnimatedContent(
-                    targetState = pickerVisible,
-                    transitionSpec = { fadeIn(tween(220)) with fadeOut(tween(180)) }
-                ) { showPicker ->
-                    if (showPicker) {
-                        CityPickerWheel(
-                            cities = cities,
-                            currentCity = city,
-                            onChosen = onCityChosen,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(
-                                    horizontal = (72f * sx).dp,
-                                    vertical = (120f * sy).dp
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            HadithFrame(
-                                text = hadith,
-                                modifier = Modifier
-                                    .fillMaxWidth(0.74f)
-                                    .defaultMinSize(minHeight = (220f * sy).dp)
-                            )
-                        }
-                    }
-                    IconButton(
-                        enabled = hadith.isNotBlank(),
-                        onClick = {
-                            if (hadith.isBlank()) return@IconButton
-                            clipboard.setText(AnnotatedString(hadith))
-                            Toast.makeText(context, R.string.hadith_copy_toast, Toast.LENGTH_SHORT).show()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = stringResource(R.string.hadith_copy_cd),
-                            tint = if (hadith.isBlank()) Tokens.Colors.text.copy(alpha = 0.4f) else Tokens.Colors.text
-                        )
-                    }
-                    IconButton(
-                        enabled = hadith.isNotBlank(),
-                        onClick = {
-                            if (hadith.isBlank()) return@IconButton
-                            clipboard.setText(AnnotatedString(hadith))
-                            Toast.makeText(context, R.string.hadith_copy_toast, Toast.LENGTH_SHORT).show()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ContentCopy,
-                            contentDescription = stringResource(R.string.hadith_copy_cd),
-                            tint = if (hadith.isBlank()) Tokens.Colors.text.copy(alpha = 0.4f) else Tokens.Colors.text
-                        )
-                    }
-                }
-
                 Spacer(Modifier.height((36f * sy).dp))
 
                 CitySheetTabs(activeTab = activeTab, onTabSelected = onTabSelected)
@@ -324,178 +186,6 @@ fun CitySheet(
                             )
                         }
                     }
-                }
-
-                Spacer(Modifier.height((32f * sy).dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun CityNameChip(city: String, modifier: Modifier = Modifier) {
-    val s = Dimens.s()
-    val shape = RoundedCornerShape((24f * s).dp)
-    val chipSize = ((36f * s).coerceIn(24f, 36f)).sp
-
-    Box(
-        modifier
-            .fillMaxWidth()
-            .sizeIn(minHeight = (64f * s).dp)
-            .border(width = 1.dp, color = Color.White.copy(alpha = 0.12f), shape = shape)
-            .padding(horizontal = (18f * s).dp),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicText(
-            city,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = AbysFonts.inter,
-                fontSize = chipSize,
-                fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.Bold,
-                color = Tokens.Colors.text,
-                shadow = Shadow(
-                    Tokens.Colors.tickDark.copy(alpha = 0.35f),
-                    offset = Offset(0f, 2f),
-                    blurRadius = 4f
-                )
-            ),
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun CitySheetTabs(activeTab: CitySheetTab, onTabSelected: (CitySheetTab) -> Unit) {
-    val tabs = listOf(CitySheetTab.Wheel, CitySheetTab.Search)
-    TabRow(
-        selectedTabIndex = tabs.indexOf(activeTab),
-        containerColor = Color.Transparent,
-        contentColor = Tokens.Colors.text,
-        indicator = { tabPositions ->
-            TabRowDefaults.Indicator(
-                modifier = Modifier
-                    .tabIndicatorOffset(tabPositions[tabs.indexOf(activeTab)])
-                    .height(2.dp),
-                color = Tokens.Colors.text
-            )
-        }
-    ) {
-        tabs.forEach { tab ->
-            Tab(
-                selected = tab == activeTab,
-                onClick = { onTabSelected(tab) },
-                text = {
-                    val label = when (tab) {
-                        CitySheetTab.Wheel -> stringResource(R.string.city_tab_wheel)
-                        CitySheetTab.Search -> stringResource(R.string.city_tab_search)
-                    }
-                    Text(text = label, fontWeight = FontWeight.SemiBold)
-                }
-
-                Spacer(Modifier.height((36f * sy).dp))
-
-                CitySheetTabs(activeTab = activeTab, onTabSelected = onTabSelected)
-
-                Spacer(Modifier.height((24f * sy).dp))
-
-                Crossfade(
-                    targetState = activeTab,
-                    animationSpec = tween(durationMillis = 220),
-                    label = "city-sheet-tab"
-                ) { tab ->
-                    when (tab) {
-                        CitySheetTab.Wheel -> {
-                            CityPickerWheel(
-                                cities = cities,
-                                currentCity = city,
-                                onChosen = onCityChosen,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = (24f * sx).dp)
-                            )
-                        }
-
-                        CitySheetTab.Search -> {
-                            CitySearchPane(
-                                cities = cities,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .padding(horizontal = (24f * sx).dp),
-                                onCityChosen = onCityChosen
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height((32f * sy).dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun CityNameChip(city: String, modifier: Modifier = Modifier) {
-    val s = Dimens.s()
-    val shape = RoundedCornerShape((24f * s).dp)
-    val chipSize = ((36f * s).coerceIn(24f, 36f)).sp
-
-    Box(
-        modifier
-            .fillMaxWidth()
-            .sizeIn(minHeight = (64f * s).dp)
-            .border(width = 1.dp, color = Color.White.copy(alpha = 0.12f), shape = shape)
-            .padding(horizontal = (18f * s).dp),
-        contentAlignment = Alignment.Center
-    ) {
-        BasicText(
-            city,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontFamily = AbysFonts.inter,
-                fontSize = chipSize,
-                fontStyle = FontStyle.Italic,
-                fontWeight = FontWeight.Bold,
-                color = Tokens.Colors.text,
-                shadow = Shadow(
-                    Tokens.Colors.tickDark.copy(alpha = 0.35f),
-                    offset = Offset(0f, 2f),
-                    blurRadius = 4f
-                )
-            ),
-            overflow = TextOverflow.Ellipsis,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-private fun CitySheetTabs(activeTab: CitySheetTab, onTabSelected: (CitySheetTab) -> Unit) {
-    val tabs = listOf(CitySheetTab.Wheel, CitySheetTab.Search)
-    TabRow(
-        selectedTabIndex = tabs.indexOf(activeTab),
-        containerColor = Color.Transparent,
-        contentColor = Tokens.Colors.text,
-        indicator = { tabPositions ->
-            TabRowDefaults.Indicator(
-                modifier = Modifier
-                    .tabIndicatorOffset(tabPositions[tabs.indexOf(activeTab)])
-                    .height(2.dp),
-                color = Tokens.Colors.text
-            )
-        }
-    ) {
-        tabs.forEach { tab ->
-            Tab(
-                selected = tab == activeTab,
-                onClick = { onTabSelected(tab) },
-                text = {
-                    val label = when (tab) {
-                        CitySheetTab.Wheel -> stringResource(R.string.city_tab_wheel)
-                        CitySheetTab.Search -> stringResource(R.string.city_tab_search)
-                    }
-                    Text(text = label, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(Modifier.height((32f * sy).dp))
@@ -630,17 +320,17 @@ private fun CitySearchPane(
             }
         }
 
-    val list = when {
-        results.isNotEmpty() -> results
-        submitted && canSearch -> emptyList()
-        else -> featured
-    }
+        val list = when {
+            results.isNotEmpty() -> results
+            submitted && canSearch -> emptyList()
+            else -> featured
+        }
 
-    val listTitle = when {
-        results.isNotEmpty() -> stringResource(R.string.city_search_results)
-        submitted && canSearch -> stringResource(R.string.city_search_results)
-        else -> stringResource(R.string.city_search_featured)
-    }
+        val listTitle = when {
+            results.isNotEmpty() -> stringResource(R.string.city_search_results)
+            submitted && canSearch -> stringResource(R.string.city_search_results)
+            else -> stringResource(R.string.city_search_featured)
+        }
 
         Text(
             text = listTitle,

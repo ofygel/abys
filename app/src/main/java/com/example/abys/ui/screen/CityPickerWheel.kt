@@ -2,6 +2,7 @@ package com.example.abys.ui.screen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.border
 import com.example.abys.data.CityEntry
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
@@ -101,7 +101,6 @@ fun CityPickerWheel(
                 if (centerIndex in cities.indices && centerIndex != lastSnapped) {
                     lastSnapped = centerIndex
                     onChosen(cities[centerIndex].display)
-                    onChosen(cities[centerIndex])
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
