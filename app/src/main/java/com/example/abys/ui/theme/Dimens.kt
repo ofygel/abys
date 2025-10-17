@@ -13,10 +13,18 @@ import androidx.compose.ui.unit.dp
  */
 object Dimens {
     @Composable
-    fun sx(): Float = LocalConfiguration.current.screenWidthDp / 636f
+    fun sx(): Float {
+        val width = LocalConfiguration.current.screenWidthDp
+        val safeWidth = if (width > 0) width else 636
+        return safeWidth / 636f
+    }
 
     @Composable
-    fun sy(): Float = LocalConfiguration.current.screenHeightDp / 1131f
+    fun sy(): Float {
+        val height = LocalConfiguration.current.screenHeightDp
+        val safeHeight = if (height > 0) height else 1131
+        return safeHeight / 1131f
+    }
 
     @Composable
     fun s(): Float = (sx() + sy()) * 0.5f

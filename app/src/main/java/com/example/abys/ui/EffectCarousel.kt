@@ -1,15 +1,21 @@
 package com.example.abys.ui
 
+import android.os.SystemClock
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.matchParentSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,22 +29,28 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.abys.R
+import com.example.abys.data.EffectId
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
-import com.example.abys.data.EffectId
+import com.example.abys.ui.util.backdropBlur
 import kotlin.math.abs
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
@@ -55,49 +67,113 @@ fun EffectCarousel(
     onSelected: (EffectId) -> Unit,
     enabled: Boolean = true
 ) {
+    if (items.isEmpty()) {
+        return
+    }
+
     val cardWidth: Dp = Dimens.scaledX(R.dimen.abys_thumb_w)
     val cardHeight: Dp = Dimens.scaledY(R.dimen.abys_thumb_h)
     val cardRadius = Tokens.Radii.chip()
-    val itemSpacing = 40.dp
+    val cardElevation = (18f * Dimens.s()).dp
+    val itemSpacing = (28f * Dimens.sx()).dp
+
+    val repeatedItems = remember(items) {
+        val source = items.ifEmpty { return@remember emptyList() }
+        val chunk = source.size
+        List(chunk * 3) { index -> source[index % chunk] }
+    }
+    val baseCount = items.size
+    val centerOffset = baseCount
 
     val listState = rememberLazyListState()
-    val flingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
+    var hasAligned by remember { mutableStateOf(false) }
+    LaunchedEffect(items) { hasAligned = false }
+
+    val baseFling = rememberSnapFlingBehavior(
+        lazyListState = listState
+    )
+    val flingBehavior = remember(baseFling) {
+        ScaledFlingBehavior(baseFling, frictionScale = 0.88f)
+    }
     val scope = rememberCoroutineScope()
 
     var viewportWidthPx by remember { mutableStateOf(0) }
 
     val sidePadding = cardWidth / 2 + itemSpacing
 
-    LaunchedEffect(items, selected, viewportWidthPx) {
-        if (viewportWidthPx == 0) return@LaunchedEffect
-        val targetIndex = items.indexOfFirst { it.id == selected }
-        if (targetIndex < 0) return@LaunchedEffect
+    val targetBaseIndex = items.indexOfFirst { it.id == selected }.takeIf { it >= 0 } ?: 0
+    val globalTargetIndex = (centerOffset + targetBaseIndex)
+        .coerceIn(0, repeatedItems.lastIndex)
+
+    LaunchedEffect(repeatedItems) {
+        hasAligned = false
+    }
+
+    LaunchedEffect(viewportWidthPx, items, selected, repeatedItems) {
+        if (viewportWidthPx == 0 || repeatedItems.isEmpty()) return@LaunchedEffect
+        if (!hasAligned) {
+            listState.scrollToItem(globalTargetIndex)
+            hasAligned = true
+            return@LaunchedEffect
+        }
+        if (listState.isScrollInProgress) return@LaunchedEffect
         val currentIndex = nearestCenterIndex(listState, viewportWidthPx)
-        if (currentIndex == targetIndex) {
-            val delta = listState.calculateCenteringDelta(viewportWidthPx)
-            if (delta != null && abs(delta) > 0.5f) {
-                listState.scrollBy(delta)
-            }
-        } else {
+        val targetIndex = nearestMiddleIndex(
+            currentIndex = currentIndex,
+            baseCount = baseCount,
+            targetBaseIndex = targetBaseIndex
+        )
+        if (targetIndex != null && targetIndex != currentIndex) {
             listState.animateScrollToItem(targetIndex)
         }
     }
 
-    LaunchedEffect(listState, viewportWidthPx, items, enabled) {
-        if (viewportWidthPx == 0) return@LaunchedEffect
+    LaunchedEffect(listState, items) {
+        if (repeatedItems.isEmpty()) return@LaunchedEffect
+        if (baseCount < 2) return@LaunchedEffect
+        val threshold = (baseCount / 2).coerceAtLeast(1)
+        val total = repeatedItems.size
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collectLatest { (index, offset) ->
+                when {
+                    index < threshold -> listState.scrollToItem(index + baseCount, offset)
+                    index > total - baseCount - threshold -> listState.scrollToItem(index - baseCount, offset)
+                }
+            }
+    }
+
+    val haptics = LocalHapticFeedback.current
+    var lastAnnounced by remember { mutableStateOf(selected) }
+    var lastSelectionTimestamp by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(selected) {
+        lastAnnounced = selected
+    }
+
+    val attemptSelect: (EffectId) -> Unit = remember(onSelected) {
+        {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastSelectionTimestamp >= 250L) {
+                lastSelectionTimestamp = now
+                onSelected(it)
+            }
+        }
+    }
+
+    LaunchedEffect(listState, viewportWidthPx, repeatedItems, enabled) {
+        if (viewportWidthPx == 0 || repeatedItems.isEmpty()) return@LaunchedEffect
         snapshotFlow { listState.isScrollInProgress }
             .filter { !it }
             .collectLatest {
-                val delta = listState.calculateCenteringDelta(viewportWidthPx)
-                if (delta != null && abs(delta) > 0.5f) {
-                    listState.animateScrollBy(delta)
-                    return@collectLatest
-                }
                 if (!enabled) return@collectLatest
                 val index = nearestCenterIndex(listState, viewportWidthPx)
-                val effect = items.getOrNull(index)?.id ?: return@collectLatest
+                val effect = repeatedItems.getOrNull(index)?.id ?: return@collectLatest
                 if (effect != selected) {
-                    onSelected(effect)
+                    attemptSelect(effect)
+                }
+                if (effect != lastAnnounced) {
+                    lastAnnounced = effect
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
     }
@@ -113,13 +189,18 @@ fun EffectCarousel(
                 .fillMaxWidth()
                 .onGloballyPositioned { viewportWidthPx = it.size.width }
         ) {
-            itemsIndexed(items) { index, item ->
+            itemsIndexed(
+                items = repeatedItems,
+                key = { index, item -> "${item.id.name}-$index" }
+            ) { index, item ->
                 val distance = distanceToCenter(index, listState, viewportWidthPx)
                 val scale = scaleForDistance(distance)
                 val alpha = alphaForDistance(distance)
+                val shadowElevation = cardElevation * alpha
 
                 Card(
                     modifier = Modifier
+                        .shadow(shadowElevation, RoundedCornerShape(cardRadius), clip = false)
                         .size(cardWidth, cardHeight)
                         .graphicsLayer {
                             scaleX = scale
@@ -133,28 +214,59 @@ fun EffectCarousel(
                         scope.launch {
                             listState.animateScrollToItem(index)
                             if (selected != item.id) {
-                                onSelected(item.id)
+                                attemptSelect(item.id)
                             }
                         }
                     }
                 ) {
-                    Image(
-                        painter = painterResource(item.resId),
-                        contentDescription = item.id.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.matchParentSize()
-                    )
-
-                    if (item.id == selected) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(cardRadius))
+                    ) {
                         Box(
-                            modifier = Modifier
+                            Modifier
                                 .matchParentSize()
+                                .backdropBlur((6f * Dimens.s()).dp)
                                 .border(
-                                    width = 2.dp,
-                                    color = Tokens.Colors.separator,
+                                    BorderStroke(
+                                        width = 1.dp,
+                                        brush = Brush.verticalGradient(
+                                            0f to Color.White.copy(alpha = 0.12f),
+                                            1f to Color.White.copy(alpha = 0.08f)
+                                        )
+                                    ),
                                     shape = RoundedCornerShape(cardRadius)
                                 )
                         )
+
+                        Image(
+                            painter = painterResource(item.resId),
+                            contentDescription = item.id.name,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        val selectionStroke = BorderStroke(
+                            width = 1.5.dp,
+                            brush = Brush.verticalGradient(
+                                0f to Tokens.Colors.separator,
+                                1f to Color.White.copy(alpha = 0.4f)
+                            )
+                        )
+                        if (item.id == selected) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .border(selectionStroke, RoundedCornerShape(cardRadius))
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .background(Color.Black.copy(alpha = 0.08f))
+                            )
+                        }
                     }
                 }
             }
@@ -187,18 +299,6 @@ private fun nearestCenterIndex(listState: LazyListState, viewportWidthPx: Int): 
     }?.index ?: listState.firstVisibleItemIndex
 }
 
-private fun LazyListState.calculateCenteringDelta(viewportWidthPx: Int): Float? {
-    val layout = layoutInfo
-    if (layout.visibleItemsInfo.isEmpty()) return null
-    val viewportCenter = (layout.viewportStartOffset + layout.viewportEndOffset) / 2f
-    val closest = layout.visibleItemsInfo.minByOrNull { info ->
-        val itemCenter = info.offset + info.size / 2f
-        abs(itemCenter - viewportCenter)
-    } ?: return null
-    val itemCenter = closest.offset + closest.size / 2f
-    return viewportCenter - itemCenter
-}
-
 private fun scaleForDistance(distance: Float): Float {
     if (distance == Float.MAX_VALUE) return 0.75f
     return when {
@@ -217,4 +317,32 @@ private fun alphaForDistance(distance: Float): Float {
 
 private fun lerp(start: Float, end: Float, fraction: Float): Float {
     return start + (end - start) * fraction
+}
+
+private fun nearestMiddleIndex(
+    currentIndex: Int,
+    baseCount: Int,
+    targetBaseIndex: Int
+): Int? {
+    if (baseCount == 0) return null
+    val middleStart = baseCount
+    val middleEnd = baseCount * 2 - 1
+    var candidate = currentIndex
+    val normalized = ((candidate % baseCount) + baseCount) % baseCount
+    val delta = targetBaseIndex - normalized
+    candidate += delta
+    val total = baseCount * 3
+    while (candidate < middleStart) candidate += baseCount
+    while (candidate > middleEnd) candidate -= baseCount
+    return candidate.coerceIn(0, total - 1)
+}
+
+private class ScaledFlingBehavior(
+    private val delegate: FlingBehavior,
+    private val frictionScale: Float
+) : FlingBehavior {
+    override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+        val scaled = initialVelocity * frictionScale
+        return with(delegate) { this@performFling.performFling(scaled) }
+    }
 }

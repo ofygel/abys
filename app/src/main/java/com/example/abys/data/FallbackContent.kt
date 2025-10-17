@@ -1,6 +1,8 @@
 package com.example.abys.data
 
 import com.example.abys.data.model.PrayerTimes
+import com.example.abys.logic.NightIntervals
+import com.example.abys.logic.TimeHelper
 import com.example.abys.logic.UiTimings
 import java.time.LocalDate
 import java.time.ZoneId
@@ -52,6 +54,13 @@ object FallbackContent {
         hijriDate = "10 Dhul Qa'dah 1445",
         hijriMonth = "Dhul Qa'dah",
         hijriYear = "1445"
+    )
+
+    private val nightParts = TimeHelper.splitNight(uiTimings.maghrib, uiTimings.fajr, zone)
+    val nightIntervals = NightIntervals(
+        first = TimeHelper.formatZ(nightParts.first.first) to TimeHelper.formatZ(nightParts.first.second),
+        second = TimeHelper.formatZ(nightParts.second.first) to TimeHelper.formatZ(nightParts.second.second),
+        third = TimeHelper.formatZ(nightParts.third.first) to TimeHelper.formatZ(nightParts.third.second)
     )
 
     val actionTips: List<ActionTip> = listOf(
