@@ -84,6 +84,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -152,6 +153,8 @@ private fun tabularFigures(value: String) = buildAnnotatedString {
         append(value)
     }
 }
+
+private const val TABULAR_FEATURE = "tnum"
 
 @Composable
 private fun ThinDivider(modifier: Modifier = Modifier) {
@@ -594,9 +597,11 @@ private fun HeaderPill(
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
                         textAlign = TextAlign.Right,
+                        fontFeatureSettings = TABULAR_FEATURE,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
-                        modifier = Modifier.wrapContentWidth(Alignment.End)
+                        modifier = Modifier.wrapContentWidth(Alignment.End),
+                        style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
                     )
                 }
             }
@@ -722,8 +727,10 @@ private fun PrayerRow(label: String, value: String) {
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             lineHeight = TypeScale.label,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1
+            maxLines = 1,
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
         )
     }
 }
@@ -771,6 +778,9 @@ private fun AsrVariantRow(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
@@ -869,8 +879,10 @@ private fun RowItem(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End),
-            maxLines = 1
+            maxLines = 1,
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
         )
     }
 }
@@ -921,6 +933,9 @@ private fun AsrSub(
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
             maxLines = 1,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+            fontFeatureSettings = TABULAR_FEATURE,
             modifier = Modifier.wrapContentWidth(Alignment.End)
         )
     }
@@ -966,6 +981,13 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
                     fontSize = TypeScale.timeline,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.primary,
+                    text = value,
+                    fontSize = TypeScale.timeline,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TypeTone.primary,
+                    maxLines = 1,
+                    style = LocalTextStyle.current.merge(TextStyle(fontFeatureSettings = TABULAR_FEATURE))
+                    fontFeatureSettings = TABULAR_FEATURE,
                     maxLines = 1
                 )
             }
