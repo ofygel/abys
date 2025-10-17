@@ -45,7 +45,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -110,11 +110,6 @@ private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
-    val top = Color(0x7A121417)
-    val bottom = Color(0x8F121417)
-    val stroke = Color(0x26FFFFFF)
-    val blur = 22.dp
-    val bgScrim = Color(0x44101518)
     val top = Color(0x59131618)
     val bottom = Color(0x66131618)
     val stroke = Color(0x14FFFFFF)
@@ -184,14 +179,6 @@ private fun MutedBackgroundCrossfade(effect: EffectId) {
     }
 }
 
-// Палитра и типографика под «серый» макет
-private object TypeTone {
-    val primary = Tokens.Colors.text.copy(alpha = 0.92f)
-    val secondary = Tokens.Colors.text.copy(alpha = 0.78f)
-    val dim = Tokens.Colors.text.copy(alpha = 0.62f)
-    val divider = Color.White.copy(alpha = 0.08f)
-}
-
 private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).roundToInt().sp
 
 private object TypeScale {
@@ -200,47 +187,6 @@ private object TypeScale {
     val label = scaledSp(Tokens.TypographyPx.label, 0.76f)
     val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.74f)
     val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.72f)
-}
-
-@Composable
-private fun ThinDivider(modifier: Modifier = Modifier) {
-    Divider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
-}
-
-@Composable
-private fun MutedBackgroundCrossfade(effect: EffectId) {
-    Crossfade(
-        modifier = Modifier.fillMaxSize(),
-        targetState = effect,
-        animationSpec = tween(durationMillis = Dur.XShort),
-        label = "muted-effect-background"
-    ) { target ->
-        Box(Modifier.fillMaxSize()) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val matrix = remember {
-                    ColorMatrix().apply { setSaturation(0.25f) }
-                }
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            renderEffect = RenderEffect.createColorFilterEffect(
-                                ColorMatrixColorFilter(matrix)
-                            )
-                        }
-                ) {
-                    BackgroundHost(effect = target)
-                }
-            } else {
-                BackgroundHost(effect = target)
-            }
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .background(GlassDefaults.bgScrim)
-            )
-        }
-    }
 }
 
 @Composable
@@ -591,7 +537,6 @@ private fun HeaderPill(
                 Text(
                     text = city,
                     fontSize = TypeScale.city,
-                    fontSize = Tokens.TypographySp.city,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
                     maxLines = 1,
@@ -601,7 +546,6 @@ private fun HeaderPill(
                 Text(
                     text = now,
                     fontSize = TypeScale.timeNow,
-                    fontSize = Tokens.TypographySp.timeNow,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.secondary,
                     textAlign = TextAlign.Right,
@@ -661,7 +605,6 @@ private fun PrayerCard(
                     top = Dimens.scaledY(R.dimen.abys_card_pad_top),
                     bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
                 )
-                .animateContentSize(animationSpec = tween(Dur.Base))
                 .animateContentSize(animationSpec = tween(Dur.BASE))
         ) {
             RowItem("Фаджр", times["Fajr"] ?: "--:--")
@@ -677,7 +620,6 @@ private fun PrayerCard(
             Text(
                 text = "Аср:",
                 fontSize = TypeScale.label,
-                fontSize = Tokens.TypographySp.label,
                 fontWeight = FontWeight.SemiBold,
                 color = TypeTone.primary
             )
@@ -716,7 +658,6 @@ private fun PrayerCard(
                 Text(
                     text = "Ночь (3 части)",
                     fontSize = TypeScale.label,
-                    fontSize = Tokens.TypographySp.label,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
                     modifier = Modifier.weight(1f)
@@ -752,7 +693,6 @@ private fun RowItem(label: String, value: String) {
         Text(
             text = label,
             fontSize = TypeScale.label,
-            fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.Medium,
             color = TypeTone.secondary,
             modifier = Modifier.weight(1f),
@@ -761,7 +701,6 @@ private fun RowItem(label: String, value: String) {
         Text(
             text = value,
             fontSize = TypeScale.label,
-            fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
@@ -787,7 +726,6 @@ private fun AsrSub(
         Text(
             text = label,
             fontSize = TypeScale.subLabel,
-            fontSize = Tokens.TypographySp.subLabel,
             fontWeight = FontWeight.Medium,
             color = TypeTone.dim,
             modifier = Modifier.weight(1f),
@@ -801,10 +739,6 @@ private fun AsrSub(
                 .background(Tokens.Colors.tickFull)
         )
         Spacer(Modifier.width(spacing))
-        Text(
-            text = value,
-            fontSize = TypeScale.subLabel,
-        )
         Box(
             Modifier
                 .width(indicatorWidth)
@@ -815,7 +749,7 @@ private fun AsrSub(
         Spacer(Modifier.width(spacing))
         Text(
             text = value,
-            fontSize = Tokens.TypographySp.subLabel,
+            fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             textAlign = TextAlign.Right,
@@ -857,7 +791,6 @@ private fun NightThirdCard(
         fontFamily = AbysFonts.inter,
         fontWeight = FontWeight.Medium,
         fontSize = TypeScale.timeline,
-        fontSize = Tokens.TypographySp.timeline,
         color = TypeTone.primary,
         textAlign = TextAlign.Center
     )
