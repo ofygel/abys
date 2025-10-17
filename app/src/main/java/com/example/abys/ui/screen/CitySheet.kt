@@ -4,6 +4,7 @@ package com.example.abys.ui.screen
 
 import android.os.Build
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -65,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -76,6 +78,17 @@ import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
+
+private object SheetDefaults {
+    val blur: Dp
+        @Composable get() = (10f * Dimens.s()).dp
+    val stroke: Color
+        @Composable get() = Color.White.copy(alpha = 0.22f)
+    val glow: Color
+        @Composable get() = Color.White.copy(alpha = 0.16f)
+    val elevation: Dp
+        @Composable get() = (28f * Dimens.s()).dp
+}
 
 @Composable
 fun CitySheet(
@@ -104,59 +117,77 @@ fun CitySheet(
         label = "sheet-glass-color"
     )
 
-    val shape = RoundedCornerShape((32f * s).dp)
+    val shape = RoundedCornerShape(Tokens.Radii.glass())
+    val panelWidth = (504f * sx).dp
+    val panelHeight = (990f * sy).dp
+    val panelPadding = PaddingValues(
+        start = (69f * sx).dp,
+        end = (69f * sx).dp,
+        top = (54f * sy).dp,
+        bottom = (54f * sy).dp
+    )
 
     Box(
         modifier
             .fillMaxSize()
-            .padding(horizontal = (28f * sx).dp, vertical = (28f * sy).dp)
+            .padding(panelPadding)
     ) {
         Box(
             Modifier
-                .matchParentSize()
-                .shadow(elevation = (24f * sy).dp, shape = shape, clip = false)
+                .align(Alignment.TopCenter)
+                .widthIn(max = panelWidth)
+                .heightIn(max = panelHeight)
+                .shadow(elevation = SheetDefaults.elevation, shape = shape, clip = false)
                 .clip(shape)
         ) {
             Box(
                 Modifier
                     .matchParentSize()
                     .clip(shape)
-                    .backdropBlur(8.dp)
+                    .backdropBlur(SheetDefaults.blur)
                     .background(backgroundColor)
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.verticalGradient(
+                            0f to SheetDefaults.stroke,
+                            1f to SheetDefaults.glow
+                        ),
+                        shape = shape
+                    )
             )
             Column(
                 Modifier
                     .matchParentSize()
                     .clip(shape)
-                    .padding(bottom = navPadding.calculateBottomPadding())
+                    .padding(
+                        start = (36f * sx).dp,
+                        end = (36f * sx).dp,
+                        top = (64f * sy).dp,
+                        bottom = navPadding.calculateBottomPadding() + (36f * sy).dp
+                    )
             ) {
                 CityNameChip(
                     city = city,
                     modifier = Modifier
-                        .padding(top = (60f * sy).dp, start = (64f * sx).dp, end = (64f * sx).dp)
+                        .fillMaxWidth()
                         .pointerInput(Unit) { detectTapGestures { onCityChipTap() } }
                 )
 
-                Spacer(Modifier.height((48f * sy).dp))
+                Spacer(Modifier.height((32f * sy).dp))
 
-                Box(
-                    Modifier
-                        .padding(horizontal = (72f * sx).dp)
+                HadithFrame(
+                    text = hadith,
+                    modifier = Modifier
                         .fillMaxWidth()
-                ) {
-                    HadithFrame(
-                        text = hadith,
-                        modifier = Modifier
-                            .fillMaxWidth(0.8f)
-                            .align(Alignment.Center)
-                    )
-                }
+                        .padding(horizontal = (12f * sx).dp)
+                        .animateContentSize(animationSpec = tween(durationMillis = 220))
+                )
 
-                Spacer(Modifier.height((36f * sy).dp))
+                Spacer(Modifier.height((28f * sy).dp))
 
                 CitySheetTabs(activeTab = activeTab, onTabSelected = onTabSelected)
 
-                Spacer(Modifier.height((24f * sy).dp))
+                Spacer(Modifier.height((20f * sy).dp))
 
                 Crossfade(
                     targetState = activeTab,
@@ -171,7 +202,7 @@ fun CitySheet(
                                 onChosen = onCityChosen,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .padding(horizontal = (24f * sx).dp)
+                                    .padding(horizontal = (12f * sx).dp)
                             )
                         }
 
@@ -181,14 +212,14 @@ fun CitySheet(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding(horizontal = (24f * sx).dp),
+                                    .padding(horizontal = (12f * sx).dp),
                                 onCityChosen = onCityChosen
                             )
                         }
                     }
                 }
 
-                Spacer(Modifier.height((32f * sy).dp))
+                Spacer(Modifier.height((12f * sy).dp))
             }
         }
     }
@@ -197,15 +228,24 @@ fun CitySheet(
 @Composable
 private fun CityNameChip(city: String, modifier: Modifier = Modifier) {
     val s = Dimens.s()
+    val sy = Dimens.sy()
     val shape = RoundedCornerShape((24f * s).dp)
-    val chipSize = ((36f * s).coerceIn(24f, 36f)).sp
+    val chipSize = ((36f * s).coerceIn(24f, 34f)).sp
+    val strokeWidth = (3f * Dimens.sx()).dp
 
     Box(
         modifier
             .fillMaxWidth()
-            .sizeIn(minHeight = (64f * s).dp)
-            .border(width = 1.dp, color = Color.White.copy(alpha = 0.12f), shape = shape)
-            .padding(horizontal = (18f * s).dp),
+            .sizeIn(minHeight = (64f * sy).dp)
+            .border(
+                width = strokeWidth,
+                brush = Brush.verticalGradient(
+                    0f to Color.White.copy(alpha = 0.24f),
+                    1f to Color.White.copy(alpha = 0.14f)
+                ),
+                shape = shape
+            )
+            .padding(horizontal = (16f * s).dp),
         contentAlignment = Alignment.Center
     ) {
         BasicText(
@@ -239,8 +279,8 @@ private fun CitySheetTabs(activeTab: CitySheetTab, onTabSelected: (CitySheetTab)
             TabRowDefaults.Indicator(
                 modifier = Modifier
                     .tabIndicatorOffset(tabPositions[tabs.indexOf(activeTab)])
-                    .height(2.dp),
-                color = Tokens.Colors.text
+                    .height(1.dp),
+                color = Tokens.Colors.text.copy(alpha = 0.74f)
             )
         }
     ) {

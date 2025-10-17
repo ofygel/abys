@@ -115,10 +115,18 @@ private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
-    val top = Color.White.copy(alpha = 0.26f)
-    val bottom = Color.White.copy(alpha = 0.22f)
-    val stroke = Color.White.copy(alpha = 0.18f)
-    val blur = 8.dp
+    val top: Color
+        @Composable get() = Tokens.Colors.overlayTop.copy(alpha = 0.9f)
+    val bottom: Color
+        @Composable get() = Tokens.Colors.overlayCard.copy(alpha = 0.86f)
+    val stroke: Color
+        @Composable get() = Color.White.copy(alpha = 0.32f)
+    val glow: Color
+        @Composable get() = Color.White.copy(alpha = 0.18f)
+    val blur: Dp
+        @Composable get() = (10f * Dimens.s()).dp
+    val elevation: Dp
+        @Composable get() = (24f * Dimens.s()).dp
     val bgScrim = Color.Black.copy(alpha = 0.25f)
 }
 
@@ -134,13 +142,13 @@ private object Dur {
 // Палитра и типографика под «серый» макет
 private object TypeTone {
     val primary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.92f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.96f)
     val secondary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.78f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.88f)
     val dim: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.62f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.7f)
     val divider: Color
-        @Composable get() = Color.White.copy(alpha = 0.06f)
+        @Composable get() = Color.White.copy(alpha = 0.16f)
 }
 
 private const val TABULAR_FEATURE = "'tnum'"
@@ -177,7 +185,7 @@ private fun TabularText(
 
 @Composable
 private fun ThinDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(modifier = modifier, color = TypeTone.divider, thickness = 0.75.dp)
+    HorizontalDivider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
 }
 
 @Composable
@@ -219,12 +227,12 @@ private fun MutedBackgroundCrossfade(effect: EffectId) {
 private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).roundToInt().sp
 
 private object TypeScale {
-    val eyebrow = scaledSp(Tokens.TypographyPx.timeline, 0.6f)
-    val city = scaledSp(Tokens.TypographyPx.city, 0.76f)
-    val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.76f)
-    val label = scaledSp(Tokens.TypographyPx.label, 0.7f)
-    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.68f)
-    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.66f)
+    val eyebrow = scaledSp(Tokens.TypographyPx.timeline, 0.52f)
+    val city = scaledSp(Tokens.TypographyPx.city, 0.68f)
+    val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.68f)
+    val label = scaledSp(Tokens.TypographyPx.label, 0.62f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.6f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.6f)
 }
 
 @Composable
@@ -395,22 +403,22 @@ fun MainScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val maxH = maxHeight
-        val bottomSafe = navPadding.calculateBottomPadding()
-        val topPad = maxOf(16.dp, maxH * 0.18f)
-        val availableCardHeight = (maxH - topPad - bottomSafe - 96.dp).coerceAtLeast(0.dp)
-        val minCardHeight = minOf(maxH * 0.62f, availableCardHeight)
+        val headerOffsetY = (79f * sy).dp
+        val headerHorizontal = (67f * sx).dp
+        val headerWidth = (533f * sx).dp
+        val cardOffsetY = (226f * sy).dp
+        val cardHorizontal = (64f * sx).dp
+        val cardMaxWidth = (508f * sx).dp
+        val cardMaxHeight = (611f * sy).dp
+        val carouselBottomOffset = navPadding.calculateBottomPadding() + (48f * sy).dp
 
         HeaderPill(
             city = city,
             now = now,
             modifier = Modifier
-                .padding(
-                    start = (51f * sx).dp,
-                    top = (79f * sy).dp,
-                    end = (51f * sx).dp
-                )
-                .height((102f * sy).dp)
+                .align(Alignment.TopCenter)
+                .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
+                .widthIn(max = headerWidth)
                 .graphicsLayer {
                     alpha = headerAlpha
                     translationY = headerTranslation
@@ -426,12 +434,10 @@ fun MainScreen(
         }
 
         val prayerModifier = Modifier
-            .padding(
-                start = (64f * sx).dp,
-                end = (64f * sx).dp,
-                top = topPad
-            )
-            .heightIn(min = minCardHeight)
+            .align(Alignment.TopCenter)
+            .padding(top = cardOffsetY, start = cardHorizontal, end = cardHorizontal)
+            .widthIn(max = cardMaxWidth)
+            .heightIn(max = cardMaxHeight)
             .graphicsLayer {
                 val explodedAlpha = if (exploded) 0f else 1f
                 val explodedScale = if (exploded) 1.08f else 1f
@@ -472,7 +478,7 @@ fun MainScreen(
             enabled = stage == SurfaceStage.Dashboard && !isTransitioning,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = navPadding.calculateBottomPadding() + (56f * sy).dp)
+                .padding(bottom = carouselBottomOffset)
                 .graphicsLayer {
                     alpha = carouselAlpha
                     if (stage == SurfaceStage.Dashboard) {
@@ -553,13 +559,13 @@ private fun HeaderPill(
     val sy = Dimens.sy()
     val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
-    val eyebrowSpacing = (6f * sy).dp
+    val eyebrowSpacing = (4f * sy).dp
     val shape = RoundedCornerShape(Tokens.Radii.pill())
 
     Box(
         modifier
             .fillMaxWidth()
-            .shadow(elevation = (36f * sy).dp, shape = shape, clip = false)
+            .shadow(elevation = GlassDefaults.elevation, shape = shape, clip = false)
             .clip(shape)
             .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
     ) {
@@ -571,7 +577,14 @@ private fun HeaderPill(
                 .background(
                     Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
                 )
-                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        0f to GlassDefaults.stroke,
+                        1f to GlassDefaults.glow
+                    ),
+                    shape = shape
+                )
         )
         Box(
             Modifier
@@ -635,14 +648,15 @@ private fun PrayerCard(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val shape = RoundedCornerShape(Tokens.Radii.card())
-    val rowSpacing = (12f * sy).dp
-    val sectionSpacing = (22f * sy).dp
-    val asrSpacing = (8f * sy).dp
-    val asrLineHeight = (1.2f * sy).dp
-    val asrGap = (10f * sx).dp
+    val rowSpacing = (16f * sy).dp
+    val sectionSpacing = (28f * sy).dp
+    val asrSpacing = (12f * sy).dp
+    val asrLineHeight = (2f * sy).dp
+    val asrGap = (12f * sx).dp
     Box(
         modifier
             .fillMaxWidth()
+            .shadow(elevation = GlassDefaults.elevation, shape = shape, clip = false)
             .clip(shape)
             .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
     ) {
@@ -654,7 +668,14 @@ private fun PrayerCard(
                 .background(
                     Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom))
                 )
-                .border(width = 1.dp, color = GlassDefaults.stroke, shape = shape)
+                .border(
+                    width = 1.dp,
+                    brush = Brush.verticalGradient(
+                        0f to GlassDefaults.stroke,
+                        1f to GlassDefaults.glow
+                    ),
+                    shape = shape
+                )
         )
         Column(
             Modifier
@@ -725,7 +746,6 @@ private fun PrayerCard(
 private fun PrayerRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
