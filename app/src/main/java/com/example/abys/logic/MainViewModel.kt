@@ -151,6 +151,10 @@ class MainViewModel : ViewModel() {
     }
 
     fun restorePersisted(ctx: Context) {
+        // Гарантируем, что главный экран стартует в режиме Dashboard,
+        // даже если сохранённое состояние когда-то открыло city sheet.
+        _sheetVisible.value = false
+        _sheetTab.value = CitySheetTab.Wheel
         lastPersistContext = WeakReference(ctx.applicationContext)
         viewModelScope.launch(io) {
             val school = SettingsStore.getSchool(ctx)
@@ -186,6 +190,10 @@ class MainViewModel : ViewModel() {
                 !savedCity.isNullOrBlank() -> loadByCity(savedCity!!, ctx = ctx)
                 else -> loadByLocation(ctx)
             }
+
+            // Перестраховываемся на случай фоновых обновлений.
+            _sheetVisible.postValue(false)
+            _sheetTab.postValue(CitySheetTab.Wheel)
         }
     }
 
