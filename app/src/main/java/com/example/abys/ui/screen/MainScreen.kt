@@ -516,9 +516,6 @@ fun MainScreen(
                                 slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
                         exit = fadeOut(tween(Dur.X_SHORT)) +
                                 slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
-                            slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
-                        exit = fadeOut(tween(Dur.X_SHORT)) +
-                            slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
                     ) {
                         GlassSheetContainer(
                             modifier = Modifier
