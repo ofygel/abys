@@ -102,6 +102,7 @@ fun SlideshowBackground(
     val topAlpha = lerp(0.08f, 0.1f, progress)
     val bottomAlpha = lerp(0.12f, 0.12f, 1f - abs(progress - 0.5f) * 2f)
     val gradientStops = arrayOf(
+    val gradientStops = listOf(
         0f to Color.Black.copy(alpha = topAlpha),
         0.22f to Color.Transparent,
         0.78f to Color.Transparent,
@@ -158,6 +159,7 @@ fun SlideshowBackground(
             Modifier
                 .fillMaxSize()
                 .background(brush = Brush.verticalGradient(colorStops = gradientStops))
+                .background(Brush.verticalGradient(gradientStops))
         )
     }
 }

@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -44,6 +45,7 @@ import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
@@ -70,6 +72,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -121,6 +124,10 @@ fun CitySheet(
         modifier
             .fillMaxSize()
             .padding(horizontal = (28f * sx).dp, vertical = (28f * sy).dp)
+            .padding(
+                horizontal = (28f * sx).dp,
+                vertical = (28f * sy).dp
+            )
     ) {
         Box(
             Modifier
@@ -193,6 +200,65 @@ fun CitySheet(
                             contentDescription = stringResource(R.string.hadith_share_cd),
                             tint = if (hadith.isBlank()) Tokens.Colors.text.copy(alpha = 0.4f) else Tokens.Colors.text
                         )
+                Spacer(Modifier.height((36f * sy).dp))
+
+                CitySheetTabs(activeTab = activeTab, onTabSelected = onTabSelected)
+
+                Spacer(Modifier.height((24f * sy).dp))
+
+                Crossfade(
+                    targetState = activeTab,
+                    animationSpec = tween(durationMillis = 220),
+                    label = "city-sheet-tab"
+                ) { tab ->
+                    when (tab) {
+                        CitySheetTab.Wheel -> {
+                            CityPickerWheel(
+                                cities = cities,
+                                currentCity = city,
+                                onChosen = onCityChosen,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(horizontal = (24f * sx).dp)
+                            )
+                        }
+
+                        CitySheetTab.Search -> {
+                            CitySearchPane(
+                                cities = cities,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = (24f * sx).dp),
+                                onCityChosen = onCityChosen
+                AnimatedContent(
+                    targetState = pickerVisible,
+                    transitionSpec = { fadeIn(tween(220)) with fadeOut(tween(180)) }
+                ) { showPicker ->
+                    if (showPicker) {
+                        CityPickerWheel(
+                            cities = cities,
+                            currentCity = city,
+                            onChosen = onCityChosen,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    horizontal = (72f * sx).dp,
+                                    vertical = (120f * sy).dp
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HadithFrame(
+                                text = hadith,
+                                modifier = Modifier
+                                    .fillMaxWidth(0.74f)
+                                    .defaultMinSize(minHeight = (220f * sy).dp)
+                            )
+                        }
                     }
                     IconButton(
                         enabled = hadith.isNotBlank(),
@@ -244,6 +310,74 @@ fun CitySheet(
                             )
                         }
                     }
+                }
+
+                Spacer(Modifier.height((32f * sy).dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CityNameChip(city: String, modifier: Modifier = Modifier) {
+    val s = Dimens.s()
+    val shape = RoundedCornerShape((24f * s).dp)
+    val chipSize = ((36f * s).coerceIn(24f, 36f)).sp
+
+    Box(
+        modifier
+            .fillMaxWidth()
+            .sizeIn(minHeight = (64f * s).dp)
+            .border(width = 1.dp, color = Color.White.copy(alpha = 0.12f), shape = shape)
+            .padding(horizontal = (18f * s).dp),
+        contentAlignment = Alignment.Center
+    ) {
+        BasicText(
+            city,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                fontFamily = AbysFonts.inter,
+                fontSize = chipSize,
+                fontStyle = FontStyle.Italic,
+                fontWeight = FontWeight.Bold,
+                color = Tokens.Colors.text,
+                shadow = Shadow(
+                    Tokens.Colors.tickDark.copy(alpha = 0.35f),
+                    offset = Offset(0f, 2f),
+                    blurRadius = 4f
+                )
+            ),
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun CitySheetTabs(activeTab: CitySheetTab, onTabSelected: (CitySheetTab) -> Unit) {
+    val tabs = listOf(CitySheetTab.Wheel, CitySheetTab.Search)
+    TabRow(
+        selectedTabIndex = tabs.indexOf(activeTab),
+        containerColor = Color.Transparent,
+        contentColor = Tokens.Colors.text,
+        indicator = { tabPositions ->
+            TabRowDefaults.Indicator(
+                modifier = Modifier
+                    .tabIndicatorOffset(tabPositions[tabs.indexOf(activeTab)])
+                    .height(2.dp),
+                color = Tokens.Colors.text
+            )
+        }
+    ) {
+        tabs.forEach { tab ->
+            Tab(
+                selected = tab == activeTab,
+                onClick = { onTabSelected(tab) },
+                text = {
+                    val label = when (tab) {
+                        CitySheetTab.Wheel -> stringResource(R.string.city_tab_wheel)
+                        CitySheetTab.Search -> stringResource(R.string.city_tab_search)
+                    }
+                    Text(text = label, fontWeight = FontWeight.SemiBold)
                 }
 
                 Spacer(Modifier.height((32f * sy).dp))
