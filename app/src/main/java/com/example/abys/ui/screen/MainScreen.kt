@@ -256,7 +256,16 @@ fun MainApp(
 
     LaunchedEffect(Unit) {
         vm.restorePersisted(context.applicationContext)
-        vm.hideSheet()
+    }
+
+    var hasBootstrappedSheet by remember { mutableStateOf(false) }
+    LaunchedEffect(showSheet) {
+        if (!hasBootstrappedSheet) {
+            if (showSheet) {
+                vm.hideSheet()
+            }
+            hasBootstrappedSheet = true
+        }
     }
 
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
