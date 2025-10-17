@@ -1,5 +1,6 @@
 package com.example.abys.ui
 
+import android.os.SystemClock
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -136,9 +137,20 @@ fun EffectCarousel(
 
     val haptics = LocalHapticFeedback.current
     var lastAnnounced by remember { mutableStateOf(selected) }
+    var lastSelectionTimestamp by remember { mutableStateOf(0L) }
 
     LaunchedEffect(selected) {
         lastAnnounced = selected
+    }
+
+    val attemptSelect: (EffectId) -> Unit = remember(onSelected) {
+        {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastSelectionTimestamp >= 250L) {
+                lastSelectionTimestamp = now
+                onSelected(it)
+            }
+        }
     }
 
     LaunchedEffect(listState, viewportWidthPx, repeatedItems, enabled) {
@@ -150,7 +162,7 @@ fun EffectCarousel(
                 val index = nearestCenterIndex(listState, viewportWidthPx)
                 val effect = repeatedItems.getOrNull(index)?.id ?: return@collectLatest
                 if (effect != selected) {
-                    onSelected(effect)
+                    attemptSelect(effect)
                 }
                 if (effect != lastAnnounced) {
                     lastAnnounced = effect
@@ -193,7 +205,7 @@ fun EffectCarousel(
                         scope.launch {
                             listState.animateScrollToItem(index)
                             if (selected != item.id) {
-                                onSelected(item.id)
+                                attemptSelect(item.id)
                             }
                         }
                     }
