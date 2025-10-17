@@ -505,6 +505,7 @@ private fun HeaderPill(
     val sy = Dimens.sy()
     val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
+    val eyebrowSpacing = (6f * sy).dp
     val shape = RoundedCornerShape(Tokens.Radii.pill())
 
     Box(
@@ -535,10 +536,9 @@ private fun HeaderPill(
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             contentAlignment = Alignment.CenterStart
         ) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(eyebrowSpacing)
             ) {
                 Text(
                     text = city,
@@ -561,7 +561,36 @@ private fun HeaderPill(
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
                     modifier = Modifier.wrapContentWidth(Alignment.End)
+                    text = "Город",
+                    fontSize = TypeScale.eyebrow,
+                    fontWeight = FontWeight.Medium,
+                    color = TypeTone.dim
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = city,
+                        fontSize = TypeScale.city,
+                        fontWeight = FontWeight.Medium,
+                        color = TypeTone.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = now,
+                        fontSize = TypeScale.timeNow,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TypeTone.secondary,
+                        textAlign = TextAlign.Right,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.wrapContentWidth(Alignment.End)
+                    )
+                }
             }
         }
     }
@@ -581,6 +610,10 @@ private fun PrayerCard(
     val asrSpacing = (8f * sy).dp
     val asrLineHeight = (1.2f * sy).dp
     val asrGap = (10f * sx).dp
+    val rowSpacing = (10f * sy).dp
+    val subSpacing = (6f * sy).dp
+    val dividerPadding = (5f * sy).dp
+    val blockSpacing = (18f * sy).dp
     val togglePadding = PaddingValues(
         vertical = (10f * sy).dp,
         horizontal = (18f * sx).dp
@@ -668,6 +701,52 @@ private fun PrayerCard(
             }
 
             Spacer(Modifier.height(sectionSpacing))
+            RowItem("Фаджр", times["Fajr"] ?: "--:--")
+            Spacer(Modifier.height(rowSpacing))
+            ThinDivider(Modifier.padding(vertical = dividerPadding))
+            Spacer(Modifier.height(rowSpacing))
+
+            RowItem("Восход", times["Sunrise"] ?: "--:--")
+            Spacer(Modifier.height(rowSpacing))
+            ThinDivider(Modifier.padding(vertical = dividerPadding))
+            Spacer(Modifier.height(rowSpacing))
+
+            RowItem("Зухр", times["Dhuhr"] ?: "--:--")
+            Spacer(Modifier.height(rowSpacing))
+            ThinDivider(Modifier.padding(vertical = dividerPadding))
+            Spacer(Modifier.height(rowSpacing))
+
+            SectionHeading("Аср")
+            Spacer(Modifier.height((2f * sy).dp))
+            AsrSub(
+                label = "стандарт",
+                value = times["AsrStd"] ?: "--:--",
+                indicatorWidth = (60f * sx).dp,
+                indicatorHeight = (4f * sy).dp,
+                indicatorRadius = (2f * s).dp,
+                spacing = (10f * sx).dp
+            )
+            Spacer(Modifier.height(subSpacing))
+            AsrSub(
+                label = "ханафи",
+                value = times["AsrHana"] ?: "--:--",
+                indicatorWidth = (60f * sx).dp,
+                indicatorHeight = (4f * sy).dp,
+                indicatorRadius = (2f * s).dp,
+                spacing = (10f * sx).dp
+            )
+            Spacer(Modifier.height(rowSpacing))
+            ThinDivider(Modifier.padding(vertical = dividerPadding))
+            Spacer(Modifier.height(rowSpacing))
+
+            RowItem("Магриб", times["Maghrib"] ?: "--:--")
+            Spacer(Modifier.height(rowSpacing))
+            ThinDivider(Modifier.padding(vertical = dividerPadding))
+            Spacer(Modifier.height(rowSpacing))
+
+            RowItem("Иша", times["Isha"] ?: "--:--")
+
+            Spacer(Modifier.height(blockSpacing))
 
             OutlinedButton(
                 onClick = { thirdsExpanded = !thirdsExpanded },
@@ -719,6 +798,7 @@ private fun PrayerRow(label: String, value: String) {
             fontSize = TypeScale.label,
             fontWeight = FontWeight.Medium,
             color = TypeTone.secondary,
+            lineHeight = TypeScale.label,
             modifier = Modifier.weight(1f),
             maxLines = 1
         )
@@ -728,6 +808,7 @@ private fun PrayerRow(label: String, value: String) {
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
+            lineHeight = TypeScale.label,
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
         )
@@ -762,6 +843,25 @@ private fun AsrVariantRow(
                 .background(TypeTone.divider)
         )
         Spacer(Modifier.width(gap))
+            lineHeight = TypeScale.subLabel,
+            modifier = Modifier.weight(1f),
+            maxLines = 1
+        )
+        Row(
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            horizontalArrangement = Arrangement.spacedBy(spacing)
+        ) {
+            repeat(2) {
+                Box(
+                    Modifier
+                        .width(indicatorWidth)
+                        .height(indicatorHeight)
+                        .clip(RoundedCornerShape(indicatorRadius))
+                        .background(Tokens.Colors.tickFull)
+                )
+            }
+        }
+        Spacer(Modifier.width(spacing))
         Text(
             text = value,
             fontSize = TypeScale.subLabel,
@@ -770,6 +870,9 @@ private fun AsrVariantRow(
             textAlign = TextAlign.Right,
             maxLines = 1,
             modifier = Modifier.wrapContentWidth(Alignment.End)
+            lineHeight = TypeScale.subLabel,
+            modifier = Modifier.wrapContentWidth(Alignment.End),
+            maxLines = 1
         )
     }
 }
