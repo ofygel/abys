@@ -80,6 +80,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -140,6 +144,14 @@ private object TypeTone {
         @Composable get() = Tokens.Colors.text.copy(alpha = 0.62f)
     val divider: Color
         @Composable get() = Color.White.copy(alpha = 0.06f)
+}
+
+private const val TABULAR_FEATURE = "tnum"
+
+private fun tabularFigures(value: String) = buildAnnotatedString {
+    withStyle(SpanStyle(fontFeatureSettings = TABULAR_FEATURE)) {
+        append(value)
+    }
 }
 
 private const val TABULAR_FEATURE = "tnum"
@@ -580,7 +592,7 @@ private fun HeaderPill(
                     )
                     Spacer(Modifier.width((12f * Dimens.sx()).dp))
                     Text(
-                        text = now,
+                        text = tabularFigures(now),
                         fontSize = TypeScale.timeNow,
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
@@ -709,7 +721,7 @@ private fun PrayerRow(label: String, value: String) {
             maxLines = 1
         )
         Text(
-            text = value,
+            text = tabularFigures(value),
             fontSize = TypeScale.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
@@ -760,7 +772,7 @@ private fun AsrVariantRow(
         )
         Spacer(Modifier.width(gap))
         Text(
-            text = value,
+            text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
@@ -862,7 +874,7 @@ private fun RowItem(label: String, value: String) {
         )
         Spacer(Modifier.width(spacing))
         Text(
-            text = value,
+            text = tabularFigures(value),
             fontSize = TypeScale.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
@@ -915,7 +927,7 @@ private fun AsrSub(
         }
         Spacer(Modifier.width(spacing))
         Text(
-            text = value,
+            text = tabularFigures(value),
             fontSize = TypeScale.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
@@ -965,6 +977,10 @@ private fun NightThirdsTimeline(thirds: NightIntervals) {
         ) {
             labels.forEach { value ->
                 Text(
+                    text = tabularFigures(value),
+                    fontSize = TypeScale.timeline,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TypeTone.primary,
                     text = value,
                     fontSize = TypeScale.timeline,
                     fontWeight = FontWeight.SemiBold,
