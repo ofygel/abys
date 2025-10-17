@@ -112,7 +112,7 @@ fun CityPickerWheel(
 
     BoxWithConstraints(modifier.clipToBounds()) {
         val itemHeight = with(density) { (92f * sy).dp.toPx() }
-        val viewportHeight = constraints.maxHeight.toFloat().coerceAtLeast(1f)
+        val viewportHeight = with(density) { maxHeight.toPx() }.coerceAtLeast(1f)
         val verticalPadding = ((viewportHeight - itemHeight) / 2f).coerceAtLeast(0f)
         val paddingDp = with(density) { verticalPadding.toDp() }
         val centerIndex by remember { derivedStateOf { listState.closestCenterItem() } }
