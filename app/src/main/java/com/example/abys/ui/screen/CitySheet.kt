@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -109,6 +110,10 @@ fun CitySheet(
         modifier
             .fillMaxSize()
             .padding(horizontal = (28f * sx).dp, vertical = (28f * sy).dp)
+            .padding(
+                horizontal = (28f * sx).dp,
+                vertical = (28f * sy).dp
+            )
     ) {
         Box(
             Modifier
@@ -182,6 +187,32 @@ fun CitySheet(
                                     .fillMaxWidth()
                                     .padding(horizontal = (24f * sx).dp),
                                 onCityChosen = onCityChosen
+                AnimatedContent(
+                    targetState = pickerVisible,
+                    transitionSpec = { fadeIn(tween(220)) with fadeOut(tween(180)) }
+                ) { showPicker ->
+                    if (showPicker) {
+                        CityPickerWheel(
+                            cities = cities,
+                            currentCity = city,
+                            onChosen = onCityChosen,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    horizontal = (72f * sx).dp,
+                                    vertical = (120f * sy).dp
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HadithFrame(
+                                text = hadith,
+                                modifier = Modifier
+                                    .fillMaxWidth(0.74f)
+                                    .defaultMinSize(minHeight = (220f * sy).dp)
                             )
                         }
                     }
