@@ -439,9 +439,8 @@ fun MainScreen(
             .widthIn(max = cardMaxWidth)
             .heightIn(max = cardMaxHeight)
             .graphicsLayer {
-                val explodedAlpha = if (exploded) 0f else 1f
                 val explodedScale = if (exploded) 1.08f else 1f
-                alpha = prayerAlpha * explodedAlpha
+                alpha = prayerAlpha
                 scaleX = prayerScale * explodedScale
                 scaleY = prayerScale * explodedScale
                 translationY = prayerTranslation
@@ -517,9 +516,6 @@ fun MainScreen(
                                 slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
                         exit = fadeOut(tween(Dur.X_SHORT)) +
                                 slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
-                            slideInHorizontally(initialOffsetX = { it / 6 }, animationSpec = tween(Dur.BASE)),
-                        exit = fadeOut(tween(Dur.X_SHORT)) +
-                            slideOutHorizontally(targetOffsetX = { it / 6 }, animationSpec = tween(Dur.X_SHORT))
                     ) {
                         GlassSheetContainer(
                             modifier = Modifier
