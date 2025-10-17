@@ -38,13 +38,14 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +82,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ExpandMore
 import com.example.abys.R
@@ -102,11 +104,17 @@ import com.example.abys.ui.theme.Tokens
 import com.example.abys.ui.util.backdropBlur
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
+    val top = Color(0x7A121417)
+    val bottom = Color(0x8F121417)
+    val stroke = Color(0x26FFFFFF)
+    val blur = 22.dp
+    val bgScrim = Color(0x44101518)
     val top = Color(0x59131618)
     val bottom = Color(0x66131618)
     val stroke = Color(0x14FFFFFF)
@@ -172,6 +180,65 @@ private fun MutedBackgroundCrossfade(effect: EffectId) {
                         .background(GlassDefaults.bgScrim)
                 )
             }
+        }
+    }
+}
+
+// Палитра и типографика под «серый» макет
+private object TypeTone {
+    val primary = Tokens.Colors.text.copy(alpha = 0.92f)
+    val secondary = Tokens.Colors.text.copy(alpha = 0.78f)
+    val dim = Tokens.Colors.text.copy(alpha = 0.62f)
+    val divider = Color.White.copy(alpha = 0.08f)
+}
+
+private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).roundToInt().sp
+
+private object TypeScale {
+    val city = scaledSp(Tokens.TypographyPx.city, 0.84f)
+    val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.84f)
+    val label = scaledSp(Tokens.TypographyPx.label, 0.76f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.74f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.72f)
+}
+
+@Composable
+private fun ThinDivider(modifier: Modifier = Modifier) {
+    Divider(modifier = modifier, color = TypeTone.divider, thickness = 1.dp)
+}
+
+@Composable
+private fun MutedBackgroundCrossfade(effect: EffectId) {
+    Crossfade(
+        modifier = Modifier.fillMaxSize(),
+        targetState = effect,
+        animationSpec = tween(durationMillis = Dur.XShort),
+        label = "muted-effect-background"
+    ) { target ->
+        Box(Modifier.fillMaxSize()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val matrix = remember {
+                    ColorMatrix().apply { setSaturation(0.25f) }
+                }
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            renderEffect = RenderEffect.createColorFilterEffect(
+                                ColorMatrixColorFilter(matrix)
+                            )
+                        }
+                ) {
+                    BackgroundHost(effect = target)
+                }
+            } else {
+                BackgroundHost(effect = target)
+            }
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(GlassDefaults.bgScrim)
+            )
         }
     }
 }
@@ -374,7 +441,7 @@ fun MainScreen(
                 end = (64f * sx).dp,
                 top = (226f * sy).dp
             )
-            .height((611f * sy).dp)
+            .heightIn(min = (611f * sy).dp)
             .graphicsLayer {
                 val explodedAlpha = if (exploded) 0f else 1f
                 val explodedScale = if (exploded) 1.08f else 1f
@@ -523,6 +590,7 @@ private fun HeaderPill(
             ) {
                 Text(
                     text = city,
+                    fontSize = TypeScale.city,
                     fontSize = Tokens.TypographySp.city,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
@@ -532,6 +600,7 @@ private fun HeaderPill(
                 )
                 Text(
                     text = now,
+                    fontSize = TypeScale.timeNow,
                     fontSize = Tokens.TypographySp.timeNow,
                     fontWeight = FontWeight.SemiBold,
                     color = TypeTone.secondary,
@@ -592,6 +661,7 @@ private fun PrayerCard(
                     top = Dimens.scaledY(R.dimen.abys_card_pad_top),
                     bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
                 )
+                .animateContentSize(animationSpec = tween(Dur.Base))
                 .animateContentSize(animationSpec = tween(Dur.BASE))
         ) {
             RowItem("Фаджр", times["Fajr"] ?: "--:--")
@@ -606,6 +676,7 @@ private fun PrayerCard(
 
             Text(
                 text = "Аср:",
+                fontSize = TypeScale.label,
                 fontSize = Tokens.TypographySp.label,
                 fontWeight = FontWeight.SemiBold,
                 color = TypeTone.primary
@@ -644,6 +715,7 @@ private fun PrayerCard(
             ) {
                 Text(
                     text = "Ночь (3 части)",
+                    fontSize = TypeScale.label,
                     fontSize = Tokens.TypographySp.label,
                     fontWeight = FontWeight.Medium,
                     color = TypeTone.primary,
@@ -679,6 +751,7 @@ private fun RowItem(label: String, value: String) {
     ) {
         Text(
             text = label,
+            fontSize = TypeScale.label,
             fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.Medium,
             color = TypeTone.secondary,
@@ -687,6 +760,7 @@ private fun RowItem(label: String, value: String) {
         )
         Text(
             text = value,
+            fontSize = TypeScale.label,
             fontSize = Tokens.TypographySp.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
@@ -712,11 +786,24 @@ private fun AsrSub(
     ) {
         Text(
             text = label,
+            fontSize = TypeScale.subLabel,
             fontSize = Tokens.TypographySp.subLabel,
             fontWeight = FontWeight.Medium,
             color = TypeTone.dim,
             modifier = Modifier.weight(1f),
             maxLines = 1
+        )
+        Box(
+            Modifier
+                .width(indicatorWidth)
+                .height(indicatorHeight)
+                .clip(RoundedCornerShape(indicatorRadius))
+                .background(Tokens.Colors.tickFull)
+        )
+        Spacer(Modifier.width(spacing))
+        Text(
+            text = value,
+            fontSize = TypeScale.subLabel,
         )
         Box(
             Modifier
@@ -769,6 +856,7 @@ private fun NightThirdCard(
     val timeStyle = MaterialTheme.typography.bodyMedium.copy(
         fontFamily = AbysFonts.inter,
         fontWeight = FontWeight.Medium,
+        fontSize = TypeScale.timeline,
         fontSize = Tokens.TypographySp.timeline,
         color = TypeTone.primary,
         textAlign = TextAlign.Center
@@ -776,6 +864,7 @@ private fun NightThirdCard(
     val numeralStyle = MaterialTheme.typography.titleMedium.copy(
         fontFamily = AbysFonts.inter,
         fontWeight = FontWeight.SemiBold,
+        fontSize = TypeScale.label,
         color = TypeTone.secondary
     )
 
