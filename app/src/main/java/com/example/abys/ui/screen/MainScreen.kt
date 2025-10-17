@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
@@ -66,6 +67,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -153,7 +155,7 @@ private fun MutedBackgroundCrossfade(effect: EffectId) {
                         .graphicsLayer {
                             renderEffect = RenderEffect.createColorFilterEffect(
                                 ColorMatrixColorFilter(matrix)
-                            )
+                            ).asComposeRenderEffect()
                         }
                 ) {
                     BackgroundHost(effect = target)
