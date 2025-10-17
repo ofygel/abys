@@ -19,6 +19,8 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+enum class CitySheetTab { Wheel, Search }
+
 /**
  * Главная VM: грузит тайминги по гео или по городу, хранит выбранный мазхаб и заголовок (город/хиджра).
  */
@@ -60,8 +62,8 @@ class MainViewModel : ViewModel() {
     private val _sheetVisible = MutableLiveData(false)
     val sheetVisible: LiveData<Boolean> = _sheetVisible
 
-    private val _pickerVisible = MutableLiveData(false)
-    val pickerVisible: LiveData<Boolean> = _pickerVisible
+    private val _sheetTab = MutableLiveData(CitySheetTab.Wheel)
+    val sheetTab: LiveData<CitySheetTab> = _sheetTab
 
     private val _city = MutableLiveData(FallbackContent.cityLabel)
     val city: LiveData<String> = _city
@@ -115,18 +117,20 @@ class MainViewModel : ViewModel() {
         val newValue = !(_sheetVisible.value ?: false)
         _sheetVisible.value = newValue
         if (!newValue) {
-            _pickerVisible.value = false
+            _sheetTab.value = CitySheetTab.Wheel
+        } else {
+            _sheetTab.value = CitySheetTab.Wheel
         }
     }
 
-    fun togglePicker() {
-        _pickerVisible.value = !(_pickerVisible.value ?: false)
+    fun setSheetTab(tab: CitySheetTab) {
+        _sheetTab.value = tab
     }
 
     fun setCity(c: String, ctx: Context? = null) {
         if (c.isBlank()) return
         _city.value = c
-        _pickerVisible.value = false
+        _sheetTab.value = CitySheetTab.Wheel
         _sheetVisible.value = false
         if (ctx != null) {
             lastPersistContext = WeakReference(ctx.applicationContext)

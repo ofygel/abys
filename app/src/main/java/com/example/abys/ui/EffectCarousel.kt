@@ -32,8 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.hapticfeedback.performHapticFeedback
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -132,6 +135,13 @@ fun EffectCarousel(
             }
     }
 
+    val haptics = LocalHapticFeedback.current
+    var lastAnnounced by remember { mutableStateOf(selected) }
+
+    LaunchedEffect(selected) {
+        lastAnnounced = selected
+    }
+
     LaunchedEffect(listState, viewportWidthPx, repeatedItems, enabled) {
         if (viewportWidthPx == 0 || repeatedItems.isEmpty()) return@LaunchedEffect
         snapshotFlow { listState.isScrollInProgress }
@@ -142,6 +152,10 @@ fun EffectCarousel(
                 val effect = repeatedItems.getOrNull(index)?.id ?: return@collectLatest
                 if (effect != selected) {
                     onSelected(effect)
+                }
+                if (effect != lastAnnounced) {
+                    lastAnnounced = effect
+                    haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
             }
     }
