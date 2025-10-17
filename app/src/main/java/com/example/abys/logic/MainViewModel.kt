@@ -2,6 +2,9 @@ package com.example.abys.logic
 
 import android.content.Context
 import androidx.lifecycle.*
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import java.lang.ref.WeakReference
 import com.example.abys.data.FallbackContent
 import com.example.abys.net.RetrofitProvider
 import com.example.abys.net.TimingsResponse
@@ -24,6 +27,9 @@ class MainViewModel : ViewModel() {
     private val io: CoroutineDispatcher = Dispatchers.IO
 
     private val api = RetrofitProvider.aladhan
+    private val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    private val persistedAdapter = moshi.adapter(PersistedUiState::class.java)
+    private var lastPersistContext: WeakReference<Context>? = null
 
     private val hadiths = listOf(
         "Поистине, дела оцениваются по намерениям, …",
@@ -99,7 +105,7 @@ class MainViewModel : ViewModel() {
         // Перезагружаем по тому источнику, что есть
         val c = _city.value
         if (!c.isNullOrBlank()) {
-            loadByCity(c)
+            loadByCity(c, ctx = ctx)
         } else if (ctx != null) {
             loadByLocation(ctx)
         }
@@ -117,12 +123,16 @@ class MainViewModel : ViewModel() {
         _pickerVisible.value = !(_pickerVisible.value ?: false)
     }
 
-    fun setCity(c: String) {
+    fun setCity(c: String, ctx: Context? = null) {
         if (c.isBlank()) return
         _city.value = c
         _pickerVisible.value = false
         _sheetVisible.value = false
-        loadByCity(c)
+        if (ctx != null) {
+            lastPersistContext = WeakReference(ctx.applicationContext)
+            viewModelScope.launch(io) { SettingsStore.setCity(ctx, c) }
+        }
+        loadByCity(c, ctx = ctx)
     }
 
     fun loadSavedSchool(ctx: Context) {
@@ -132,8 +142,48 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun restorePersisted(ctx: Context) {
+        lastPersistContext = WeakReference(ctx.applicationContext)
+        viewModelScope.launch(io) {
+            val school = SettingsStore.getSchool(ctx)
+            _school.postValue(school)
+
+            val savedCity = SettingsStore.getCity(ctx)
+            val persisted = SettingsStore.getLastJson(ctx)?.let { raw ->
+                runCatching { persistedAdapter.fromJson(raw) }.getOrNull()
+            }
+
+            if (persisted != null) {
+                val zone = runCatching { ZoneId.of(persisted.tz) }.getOrElse { ZoneId.systemDefault() }
+                val ui = UiTimings(
+                    fajr = persisted.fajr,
+                    sunrise = persisted.sunrise,
+                    dhuhr = persisted.dhuhr,
+                    asrStd = persisted.asrStd,
+                    asrHan = persisted.asrHan,
+                    maghrib = persisted.maghrib,
+                    isha = persisted.isha,
+                    tz = zone
+                )
+                _timings.postValue(ui)
+                updateDerived(ui)
+                _city.postValue(persisted.city)
+                _hijri.postValue(persisted.hijri)
+            } else if (!savedCity.isNullOrBlank()) {
+                _city.postValue(savedCity)
+            }
+
+            when {
+                !persisted?.city.isNullOrBlank() -> loadByCity(persisted!!.city, ctx = ctx)
+                !savedCity.isNullOrBlank() -> loadByCity(savedCity!!, ctx = ctx)
+                else -> loadByLocation(ctx)
+            }
+        }
+    }
+
     /** Геолокация → запрос по lat/lon (оба мазхаба). */
     fun loadByLocation(ctx: Context) {
+        lastPersistContext = WeakReference(ctx.applicationContext)
         viewModelScope.launch(io) {
             val last = LocationHelper.getLastBestLocation(ctx) ?: run {
                 // Гео нет — оставляем как есть; CityPicker на UI подстрахует
@@ -149,12 +199,13 @@ class MainViewModel : ViewModel() {
                 api.timings(latitude = lat, longitude = lon, method = 2, school = 1)
             }.getOrNull()
 
-            handlePairResponses(std, han, cityOverride = null)
+            handlePairResponses(std, han, cityOverride = null, persistCtx = ctx)
         }
     }
 
     /** По названию города (оба мазхаба). */
-    fun loadByCity(city: String, country: String = DEFAULT_COUNTRY) {
+    fun loadByCity(city: String, country: String = DEFAULT_COUNTRY, ctx: Context? = null) {
+        ctx?.let { lastPersistContext = WeakReference(it.applicationContext) }
         viewModelScope.launch(io) {
             val std = runCatching {
                 api.timingsByCity(city = city, country = country, method = 2, school = 0)
@@ -163,14 +214,15 @@ class MainViewModel : ViewModel() {
                 api.timingsByCity(city = city, country = country, method = 2, school = 1)
             }.getOrNull()
 
-            handlePairResponses(std, han, cityOverride = city)
+            handlePairResponses(std, han, cityOverride = city, persistCtx = ctx ?: lastPersistContext?.get())
         }
     }
 
     private fun handlePairResponses(
         std: Response<TimingsResponse>?,
         han: Response<TimingsResponse>?,
-        cityOverride: String?
+        cityOverride: String?,
+        persistCtx: Context?,
     ) {
         if (std?.isSuccessful == true && han?.isSuccessful == true) {
             val dStd = std.body()!!.data
@@ -194,10 +246,29 @@ class MainViewModel : ViewModel() {
             val cityName = cityOverride ?: dStd.meta.timezone.substringAfter('/', dStd.meta.timezone)
             _city.postValue(cityName)
 
-            _hijri.postValue(hijriText(dStd))
+            val hijri = hijriText(dStd)
+            _hijri.postValue(hijri)
+
+            persistCtx?.let { context ->
+                val persisted = PersistedUiState(
+                    city = cityName,
+                    hijri = hijri,
+                    fajr = ui.fajr,
+                    sunrise = ui.sunrise,
+                    dhuhr = ui.dhuhr,
+                    asrStd = ui.asrStd,
+                    asrHan = ui.asrHan,
+                    maghrib = ui.maghrib,
+                    isha = ui.isha,
+                    tz = ui.tz.id
+                )
+                viewModelScope.launch(io) {
+                    SettingsStore.setLastJson(context, persistedAdapter.toJson(persisted))
+                    SettingsStore.setCity(context, cityName)
+                }
+            }
         }
     }
-
     private fun updateDerived(ui: UiTimings) {
         _prayerTimes.postValue(
             mapOf(

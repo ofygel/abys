@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -89,6 +90,11 @@ fun MainApp(
     val selectedEffect by effectViewModel.effect.collectAsState()
     val effectThumbs = rememberEffectCatalogFromRes()
     val cityOptions = rememberCitiesFromRes()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        vm.restorePersisted(context.applicationContext)
+    }
 
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
         Box(Modifier.fillMaxSize()) {
@@ -114,7 +120,7 @@ fun MainApp(
                 cities = cityOptions,
                 onCityPillClick = vm::toggleSheet,
                 onCityChipTap = vm::togglePicker,
-                onCityChosen = vm::setCity,
+                onCityChosen = { vm.setCity(it, context.applicationContext) },
                 onEffectSelected = effectViewModel::onEffectSelected
             )
         }
