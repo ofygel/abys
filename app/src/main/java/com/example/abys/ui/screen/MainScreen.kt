@@ -256,6 +256,7 @@ fun MainApp(
 
     LaunchedEffect(Unit) {
         vm.restorePersisted(context.applicationContext)
+        vm.hideSheet()
     }
 
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
@@ -446,29 +447,21 @@ fun MainScreen(
                 translationY = prayerTranslation
             }
 
-        if (prayerAlpha > 0.01f) {
-            AnimatedVisibility(
-                visible = !showSheet,
-                enter = fadeIn(tween(Dur.BASE)) + scaleIn(initialScale = 0.96f, animationSpec = tween(Dur.BASE)),
-                exit = fadeOut(tween(Dur.X_SHORT)) + scaleOut(targetScale = 0.96f, animationSpec = tween(Dur.X_SHORT))
-            ) {
-                PrayerCard(
-                    times = prayerTimes,
-                    thirds = thirds,
-                    modifier = if (stage == SurfaceStage.Dashboard) {
-                        prayerModifier.pointerInput(Unit) {
-                            detectTapGestures(
-                                onDoubleTap = {
-                                    if (!isTransitioning) exploded = !exploded
-                                }
-                            )
+        PrayerCard(
+            times = prayerTimes,
+            thirds = thirds,
+            modifier = if (stage == SurfaceStage.Dashboard) {
+                prayerModifier.pointerInput(Unit) {
+                    detectTapGestures(
+                        onDoubleTap = {
+                            if (!isTransitioning) exploded = !exploded
                         }
-                    } else {
-                        prayerModifier
-                    }
-                )
+                    )
+                }
+            } else {
+                prayerModifier
             }
-        }
+        )
 
         EffectCarousel(
             items = effectThumbs,
