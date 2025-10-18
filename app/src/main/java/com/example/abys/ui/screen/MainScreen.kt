@@ -154,6 +154,8 @@ private const val TABULAR_FEATURE = "'tnum'"
 
 private val TabularFeatureStyle = TextStyle(fontFeatureSettings = TABULAR_FEATURE)
 
+private const val NIGHT_SECTION_TITLE = "Ночь (3 части)"
+
 private fun Density.dpToPx(value: Float): Float = value * density
 
 @Composable
@@ -674,7 +676,6 @@ private fun PrayerCard(
     thirds: NightIntervals,
     modifier: Modifier = Modifier
 ) {
-    val sx = Dimens.sx()
     val sy = Dimens.sy()
     val shape = RoundedCornerShape(Tokens.Radii.card())
     val rowSpacing = (12f * sy).dp
@@ -734,7 +735,7 @@ private fun PrayerCard(
             }
 
             Spacer(Modifier.height(sectionSpacing))
-            SectionHeading("Ночь (3 части)")
+            NightSectionHeading()
             Spacer(Modifier.height(nightHeadingSpacing))
             NightThirdsRow(thirds)
         }
@@ -770,9 +771,9 @@ private fun PrayerRow(label: String, value: String) {
 }
 
 @Composable
-private fun SectionHeading(text: String) {
+private fun NightSectionHeading() {
     Text(
-        text = text,
+        text = NIGHT_SECTION_TITLE,
         fontSize = TypeScale.label,
         fontWeight = FontWeight.SemiBold,
         color = TypeTone.primary
