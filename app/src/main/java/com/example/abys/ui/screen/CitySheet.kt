@@ -8,8 +8,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.clickable
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -33,6 +32,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -74,6 +74,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import com.example.abys.R
 import com.example.abys.data.CityEntry
 import com.example.abys.data.CityRepository
@@ -131,6 +135,8 @@ fun CitySheet(
         bottom = (54f * sy).dp
     )
 
+    val hadithTapSource = remember { MutableInteractionSource() }
+
     Box(
         modifier
             .fillMaxSize()
@@ -184,6 +190,15 @@ fun CitySheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = (12f * sx).dp)
+                        .semantics {
+                            contentDescription = "Открыть выбор города"
+                            role = Role.Button
+                        }
+                        .clickable(
+                            interactionSource = hadithTapSource,
+                            indication = null,
+                            onClick = onCityChipTap
+                        )
                         .animateContentSize(animationSpec = tween(durationMillis = 220))
                 )
 
