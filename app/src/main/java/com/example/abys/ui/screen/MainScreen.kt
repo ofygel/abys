@@ -680,7 +680,7 @@ private fun PrayerCard(
         )
         Column(
             Modifier
-                .matchParentSize()
+                .fillMaxWidth()
                 .padding(
                     start = Dimens.scaledX(R.dimen.abys_card_pad_h),
                     end = Dimens.scaledX(R.dimen.abys_card_pad_h),
