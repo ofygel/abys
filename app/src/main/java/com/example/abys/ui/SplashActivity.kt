@@ -126,6 +126,26 @@ class SplashActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         windowInsetsController = WindowInsetsControllerCompat(window, binding.root).apply {
             systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private fun runNavigationFlow() {
+        lifecycleScope.launch {
+            val assetAvailable = withContext(Dispatchers.IO) {
+                assetExists(ASSET_GREETING_VIDEO)
+            }
+
+            if (!assetAvailable) {
+                Log.w(TAG, "Greeting asset missing; falling back to main")
+                showPlaceholderFallback()
+                scheduleFallback(ExitReason.ASSET_MISSING)
+                return@launch
+            }
+
+            initializePlayer()
+        }
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
@@ -233,12 +253,14 @@ class SplashActivity : AppCompatActivity() {
         if (hasFadedInVideo) return
         hasFadedInVideo = true
 
+        binding.playerView.animate().cancel()
         binding.playerView.animate()
             .alpha(1f)
             .setDuration(VIDEO_FADE_IN_DURATION_MS)
             .setInterpolator(FADE_INTERPOLATOR)
             .start()
 
+        binding.placeholderView.animate().cancel()
         binding.placeholderView.animate().setListener(null)
         binding.placeholderView.animate()
             .alpha(0f)
@@ -255,6 +277,31 @@ class SplashActivity : AppCompatActivity() {
             .start()
 
         ensureSystemBarsHidden()
+    }
+
+    private fun showPlaceholderFallback() {
+        binding.placeholderView.apply {
+            animate().cancel()
+            if (!isVisible) {
+                alpha = 0f
+                scaleX = PLACEHOLDER_INTRO_SCALE
+                scaleY = PLACEHOLDER_INTRO_SCALE
+                isVisible = true
+            } else {
+                scaleX = PLACEHOLDER_INTRO_SCALE
+                scaleY = PLACEHOLDER_INTRO_SCALE
+            }
+
+            animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(PLACEHOLDER_RECOVER_FADE_IN_MS)
+                .setInterpolator(FADE_INTERPOLATOR)
+                .start()
+        }
+    }
+
             .setDuration(FADE_DURATION_MS)
             .start()
 
