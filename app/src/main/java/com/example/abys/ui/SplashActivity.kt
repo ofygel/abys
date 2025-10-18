@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.example.abys.databinding.ActivitySplashBinding
@@ -19,6 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@UnstableApi
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySplashBinding
@@ -47,9 +49,7 @@ class SplashActivity : AppCompatActivity() {
             newPosition: Player.PositionInfo,
             @Player.DiscontinuityReason reason: Int
         ) {
-            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION ||
-                reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION
-            ) {
+            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
                 navigateToMain()
             }
         }
