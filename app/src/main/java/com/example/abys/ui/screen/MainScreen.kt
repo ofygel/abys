@@ -269,16 +269,6 @@ fun MainApp(
         vm.restorePersisted(context.applicationContext)
     }
 
-    var hasBootstrappedSheet by remember { mutableStateOf(false) }
-    LaunchedEffect(showSheet) {
-        if (!hasBootstrappedSheet) {
-            if (showSheet) {
-                vm.hideSheet()
-            }
-            hasBootstrappedSheet = true
-        }
-    }
-
     val overlayAlpha = remember { Animatable(if (startFaded) 1f else 0f) }
 
     LaunchedEffect(startFaded) {
