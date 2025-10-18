@@ -474,25 +474,6 @@ fun MainScreen(
             }
         )
 
-        val normalizedCity = remember(city) { city.substringBefore(',').ifBlank { city }.trim() }
-
-        HeaderPill(
-            city = normalizedCity,
-            now = now,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
-                .widthIn(max = headerWidth)
-                .zIndex(1f)
-                .graphicsLayer {
-                    alpha = headerAlpha
-                    translationY = headerTranslation
-                },
-            onTap = {
-                if (!isTransitioning) onCityPillClick()
-            }
-        )
-
         EffectCarousel(
             items = effectThumbs,
             selected = selectedEffect,
