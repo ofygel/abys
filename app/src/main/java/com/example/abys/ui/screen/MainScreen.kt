@@ -23,10 +23,10 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +48,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalTextStyle
@@ -72,7 +73,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -321,6 +321,7 @@ fun MainApp(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun MainScreen(
     city: String,
     now: String,
@@ -430,6 +431,9 @@ fun MainScreen(
     // Блокируем взаимодействия на время перехода
     val isTransitioning = transition.isRunning
 
+    var showCityHint by rememberSaveable { mutableStateOf(true) }
+    var showExplodeHint by rememberSaveable { mutableStateOf(true) }
+
     BackHandler(enabled = showSheet) {
         if (sheetTab != CitySheetTab.Wheel) {
             onShowWheel()
@@ -449,9 +453,7 @@ fun MainScreen(
 
         val normalizedCity = remember(city) { city.substringBefore(',').ifBlank { city }.trim() }
 
-        HeaderPill(
-            city = normalizedCity,
-            now = now,
+        Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
@@ -461,14 +463,40 @@ fun MainScreen(
                     alpha = headerAlpha
                     translationY = headerTranslation
                 },
-            onTap = {
-                if (!isTransitioning) onCityPillClick()
+            verticalArrangement = Arrangement.spacedBy((12f * sy).dp)
+        ) {
+            HeaderPill(
+                city = normalizedCity,
+                now = now,
+                modifier = Modifier.fillMaxWidth(),
+                onTap = {
+                    showCityHint = false
+                    if (!isTransitioning) onCityPillClick()
+                }
+            )
+
+            AnimatedVisibility(
+                visible = showCityHint && stage == SurfaceStage.Dashboard,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                enter = fadeIn(tween(Dur.BASE)) +
+                        slideInVertically(initialOffsetY = { it / 2 }),
+                exit = fadeOut(tween(Dur.SHORT)) +
+                        slideOutVertically(targetOffsetY = { it / 2 })
+            ) {
+                HintBubble(
+                    text = "Нажмите на плашку, чтобы выбрать город",
+                    onDismiss = { showCityHint = false }
+                )
             }
-        )
+        }
 
         var exploded by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(stage) {
-            if (stage != SurfaceStage.Dashboard) exploded = false
+            if (stage != SurfaceStage.Dashboard) {
+                exploded = false
+                showExplodeHint = false
+                showCityHint = false
+            }
         }
 
         val prayerModifier = Modifier
@@ -483,17 +511,28 @@ fun MainScreen(
                 translationY = prayerTranslation
             }
 
+        val toggleExploded = {
+            if (!isTransitioning) {
+                exploded = !exploded
+                showExplodeHint = false
+            }
+        }
+
         PrayerCard(
             times = prayerTimes,
             thirds = thirds,
+            exploded = exploded,
+            showExplodeHint = showExplodeHint && stage == SurfaceStage.Dashboard,
+            onToggleExploded = toggleExploded,
+            onExplodeHintDismiss = { showExplodeHint = false },
             modifier = if (stage == SurfaceStage.Dashboard) {
-                prayerModifier.pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            if (!isTransitioning) exploded = !exploded
-                        }
-                    )
-                }
+                prayerModifier.combinedClickable(
+                    enabled = !isTransitioning,
+                    onClick = {},
+                    onDoubleClick = { toggleExploded() },
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null
+                )
             } else {
                 prayerModifier
             }
@@ -697,6 +736,10 @@ private fun HeaderPill(
 private fun PrayerCard(
     times: Map<String, String>,
     thirds: NightIntervals,
+    exploded: Boolean,
+    showExplodeHint: Boolean,
+    onToggleExploded: () -> Unit,
+    onExplodeHintDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val sy = Dimens.sy()
@@ -704,6 +747,12 @@ private fun PrayerCard(
     val rowSpacing = (12f * sy).dp
     val sectionSpacing = (24f * sy).dp
     val nightHeadingSpacing = (8f * sy).dp
+    val cardHorizontalPad = Dimens.scaledX(R.dimen.abys_card_pad_h)
+    val cardTopPad = Dimens.scaledY(R.dimen.abys_card_pad_top)
+    val cardBottomPad = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
+    val toggleTopOffset = cardTopPad + (4f * sy).dp
+    val toggleEndOffset = cardHorizontalPad + (2f * Dimens.sx()).dp
+    val hintTopOffset = toggleTopOffset + (34f * sy).dp
     Box(
         modifier
             .fillMaxWidth()
@@ -732,10 +781,10 @@ private fun PrayerCard(
             Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = Dimens.scaledX(R.dimen.abys_card_pad_h),
-                    end = Dimens.scaledX(R.dimen.abys_card_pad_h),
-                    top = Dimens.scaledY(R.dimen.abys_card_pad_top),
-                    bottom = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
+                    start = cardHorizontalPad,
+                    end = cardHorizontalPad,
+                    top = cardTopPad,
+                    bottom = cardBottomPad
                 )
                 .animateContentSize(animationSpec = tween(Dur.BASE))
         ) {
@@ -761,6 +810,28 @@ private fun PrayerCard(
             NightSectionHeading()
             Spacer(Modifier.height(nightHeadingSpacing))
             NightThirdsRow(thirds)
+        }
+
+        ExplodeToggle(
+            expanded = exploded,
+            onToggle = onToggleExploded,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = toggleTopOffset, end = toggleEndOffset)
+        )
+
+        AnimatedVisibility(
+            visible = showExplodeHint,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = hintTopOffset, end = toggleEndOffset),
+            enter = fadeIn(tween(Dur.BASE)) + slideInVertically(initialOffsetY = { -it / 2 }),
+            exit = fadeOut(tween(Dur.SHORT)) + slideOutVertically(targetOffsetY = { -it / 2 })
+        ) {
+            HintBubble(
+                text = "Двойной тап или «Фокус» увеличит расписание",
+                onDismiss = onExplodeHintDismiss
+            )
         }
     }
 }
@@ -790,6 +861,70 @@ private fun PrayerRow(label: String, value: String) {
             modifier = Modifier.wrapContentWidth(Alignment.End),
             maxLines = 1
         )
+    }
+}
+
+@Composable
+private fun ExplodeToggle(expanded: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+    val sx = Dimens.sx()
+    val sy = Dimens.sy()
+    val shape = RoundedCornerShape((18f * sy).dp)
+    val label = if (expanded) "Обычный вид" else "Фокус"
+    Box(
+        modifier
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.14f))
+            .border(width = 1.dp, color = Color.White.copy(alpha = 0.28f), shape = shape)
+            .clickable(onClick = onToggle)
+            .padding(horizontal = (16f * sx).dp, vertical = (6f * sy).dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = TypeScale.eyebrow,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.primary
+        )
+    }
+}
+
+@Composable
+private fun HintBubble(
+    text: String,
+    modifier: Modifier = Modifier,
+    onDismiss: (() -> Unit)? = null
+) {
+    val sx = Dimens.sx()
+    val sy = Dimens.sy()
+    val shape = RoundedCornerShape((18f * sy).dp)
+    Row(
+        modifier
+            .clip(shape)
+            .background(Color.Black.copy(alpha = 0.62f))
+            .border(width = 1.dp, color = Color.White.copy(alpha = 0.28f), shape = shape)
+            .padding(horizontal = (16f * sx).dp, vertical = (8f * sy).dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy((10f * sx).dp)
+    ) {
+        Text(
+            text = text,
+            fontSize = TypeScale.eyebrow,
+            fontWeight = FontWeight.Medium,
+            color = Color.White,
+            lineHeight = TypeScale.eyebrow
+        )
+        if (onDismiss != null) {
+            Text(
+                text = "×",
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .clickable(onClick = onDismiss)
+                    .padding(horizontal = (6f * sx).dp, vertical = (2f * sy).dp),
+                fontSize = TypeScale.eyebrow,
+                fontWeight = FontWeight.Bold,
+                color = Color.White.copy(alpha = 0.85f)
+            )
+        }
     }
 }
 
