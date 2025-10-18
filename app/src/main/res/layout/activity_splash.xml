@@ -11,7 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/black"
-        app:resize_mode="fill"
+        android:alpha="0"
+        app:resize_mode="zoom"
         app:surface_type="texture_view"
         app:use_controller="false" />
 
@@ -22,6 +23,6 @@
         android:contentDescription="@null"
         android:scaleType="centerCrop"
         android:src="@drawable/thumb_sunset_snow"
-        android:visibility="gone" />
+        android:visibility="visible" />
 </FrameLayout>
 
