@@ -117,6 +117,7 @@ private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
 
 private const val MAIN_OVERLAY_DELAY_MS = 180L
 private const val MAIN_OVERLAY_FADE_DURATION_MS = 520
+private const val MAIN_OVERLAY_FADE_DURATION_MS = 520L
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
