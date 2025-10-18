@@ -422,6 +422,25 @@ fun MainScreen(
         val cardMaxWidth = (540f * sx).dp
         val carouselBottomOffset = navPadding.calculateBottomPadding() + (48f * sy).dp
 
+        val normalizedCity = remember(city) { city.substringBefore(',').ifBlank { city }.trim() }
+
+        HeaderPill(
+            city = normalizedCity,
+            now = now,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
+                .widthIn(max = headerWidth)
+                .zIndex(1f)
+                .graphicsLayer {
+                    alpha = headerAlpha
+                    translationY = headerTranslation
+                },
+            onTap = {
+                if (!isTransitioning) onCityPillClick()
+            }
+        )
+
         var exploded by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(stage) {
             if (stage != SurfaceStage.Dashboard) exploded = false
