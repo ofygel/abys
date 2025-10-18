@@ -81,6 +81,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -421,23 +422,6 @@ fun MainScreen(
         val cardMaxWidth = (540f * sx).dp
         val carouselBottomOffset = navPadding.calculateBottomPadding() + (48f * sy).dp
 
-        HeaderPill(
-            city = city,
-            now = now,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
-                .widthIn(max = headerWidth)
-                .zIndex(1f)
-                .graphicsLayer {
-                    alpha = headerAlpha
-                    translationY = headerTranslation
-                },
-            onTap = {
-                if (!isTransitioning) onCityPillClick()
-            }
-        )
-
         var exploded by rememberSaveable { mutableStateOf(false) }
         LaunchedEffect(stage) {
             if (stage != SurfaceStage.Dashboard) exploded = false
@@ -468,6 +452,25 @@ fun MainScreen(
                 }
             } else {
                 prayerModifier
+            }
+        )
+
+        val normalizedCity = remember(city) { city.substringBefore(',').ifBlank { city }.trim() }
+
+        HeaderPill(
+            city = normalizedCity,
+            now = now,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
+                .widthIn(max = headerWidth)
+                .zIndex(1f)
+                .graphicsLayer {
+                    alpha = headerAlpha
+                    translationY = headerTranslation
+                },
+            onTap = {
+                if (!isTransitioning) onCityPillClick()
             }
         )
 
@@ -600,7 +603,9 @@ private fun HeaderPill(
             contentAlignment = Alignment.CenterStart
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = (4f * sy).dp),
                 verticalArrangement = Arrangement.spacedBy(headlineSpacing)
             ) {
                 Row(
@@ -609,17 +614,18 @@ private fun HeaderPill(
                     horizontalArrangement = Arrangement.spacedBy((12f * sx).dp)
                 ) {
                     Text(
-                        text = city,
+                        text = city.ifBlank { "—" },
                         fontSize = TypeScale.city,
                         fontWeight = FontWeight.Bold,
                         fontStyle = FontStyle.Italic,
                         color = TypeTone.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        textDecoration = TextDecoration.Underline
                     )
                     TabularText(
-                        text = now,
+                        text = now.ifBlank { "--:--" },
                         fontSize = TypeScale.timeNow,
                         fontWeight = FontWeight.SemiBold,
                         color = TypeTone.secondary,
