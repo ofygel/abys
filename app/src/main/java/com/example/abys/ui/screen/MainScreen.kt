@@ -82,11 +82,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toPx
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -151,6 +151,8 @@ private object TypeTone {
 private const val TABULAR_FEATURE = "'tnum'"
 
 private val TabularFeatureStyle = TextStyle(fontFeatureSettings = TABULAR_FEATURE)
+
+private fun Density.dpToPx(value: Float): Float = value * density
 
 @Composable
 private fun TabularText(
@@ -323,11 +325,11 @@ fun MainScreen(
 
     val transition = updateTransition(targetState = stage, label = "surface")
     // Предвычисляем px-значения, чтобы не трогать layout на каждую рекомпозицию
-    val sheetHiddenOffset = remember(density, sx) { with(density) { (236f * sx).dp.toPx() } }
-    val sheetLift = remember(density, sy) { with(density) { (18f * sy).dp.toPx() } }
-    val cardLift = remember(density, sy) { with(density) { (42f * sy).dp.toPx() } }
-    val carouselDrop = remember(density, sy) { with(density) { (36f * sy).dp.toPx() } }
-    val headerLift = remember(density, sy) { with(density) { (14f * sy).dp.toPx() } }
+    val sheetHiddenOffset: Float = remember(density, sx) { density.dpToPx(236f * sx) }
+    val sheetLift: Float = remember(density, sy) { density.dpToPx(18f * sy) }
+    val cardLift: Float = remember(density, sy) { density.dpToPx(42f * sy) }
+    val carouselDrop: Float = remember(density, sy) { density.dpToPx(36f * sy) }
+    val headerLift: Float = remember(density, sy) { density.dpToPx(14f * sy) }
 
     val prayerAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.SHORT else Dur.MED) },
