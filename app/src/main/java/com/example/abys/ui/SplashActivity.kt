@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.animation.PathInterpolator
 import android.widget.ImageView
@@ -23,9 +24,12 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.example.abys.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.max
 
 @Suppress("OptInUsage", "DEPRECATION", "SameParameterValue")
 class SplashActivity : AppCompatActivity() {
@@ -34,9 +38,12 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var playerView: PlayerView
     private lateinit var placeholderView: ImageView
     private var fallbackJob: Job? = null
+    private var videoRevealJob: Job? = null
     private var hasNavigated = false
-    private var hasFadedInVideo = false
+    private var hasStartedVideoReveal = false
     private var isPlayerReleased = false
+    private var isVideoReady = false
+    private var placeholderVisibleDeadlineMs = 0L
     private var windowInsetsController: WindowInsetsControllerCompat? = null
 
     @OptIn(UnstableApi::class)
@@ -74,6 +81,7 @@ class SplashActivity : AppCompatActivity() {
         placeholderView.alpha = PLACEHOLDER_INTRO_ALPHA
         placeholderView.scaleX = PLACEHOLDER_INTRO_SCALE
         placeholderView.scaleY = PLACEHOLDER_INTRO_SCALE
+        placeholderVisibleDeadlineMs = SystemClock.uptimeMillis() + PLACEHOLDER_MIN_VISIBLE_MS
         placeholderView.animate()
             .alpha(1f)
             .scaleX(1f)
@@ -98,7 +106,8 @@ class SplashActivity : AppCompatActivity() {
     @OptIn(UnstableApi::class)
     private fun runNavigationFlow() {
         lifecycleScope.launch {
-            if (!assetExists()) {
+            val assetAvailable = withContext(Dispatchers.IO) { assetExists() }
+            if (!assetAvailable) {
                 Log.w(TAG, "Greeting asset missing; falling back to main")
                 showPlaceholderFallback()
                 scheduleFallback()
@@ -111,6 +120,9 @@ class SplashActivity : AppCompatActivity() {
     @UnstableApi
     private fun initializePlayer() {
         isPlayerReleased = false
+        isVideoReady = false
+        hasStartedVideoReveal = false
+        cancelVideoRevealJob()
         player = ExoPlayer.Builder(this)
             .setUseLazyPreparation(true)
             .build().apply {
@@ -131,11 +143,14 @@ class SplashActivity : AppCompatActivity() {
             when (playbackState) {
                 Player.STATE_READY -> {
                     cancelFallback()
-                    fadeInVideo()
+                    isVideoReady = true
+                    scheduleVideoRevealIfReady()
                     ensureSystemBarsHidden()
-                    if (!player.isPlaying) player.play()
                 }
-                Player.STATE_ENDED -> navigateToMain()
+                Player.STATE_ENDED -> {
+                    cancelFallback()
+                    handleVideoEnded()
+                }
                 Player.STATE_BUFFERING, Player.STATE_IDLE -> { /* no-op */ }
             }
         }
@@ -144,22 +159,36 @@ class SplashActivity : AppCompatActivity() {
             Log.w(TAG, "Splash video playback error", error)
             showPlaceholderFallback()
             cancelFallback()
+            cancelVideoRevealJob()
             navigateToMain()
         }
     }
 
-    private fun fadeInVideo() {
-        if (hasFadedInVideo) return
-        hasFadedInVideo = true
-        playerView.animate()
-            .alpha(1f)
-            .setDuration(VIDEO_FADE_IN_DURATION_MS)
-            .setInterpolator(FADE_INTERPOLATOR)
-            .start()
+    private fun scheduleVideoRevealIfReady() {
+        if (hasStartedVideoReveal || isPlayerReleased || !isVideoReady) return
+        val now = SystemClock.uptimeMillis()
+        val delayMs = max(placeholderVisibleDeadlineMs - now, 0L) + VIDEO_REVEAL_LEAD_IN_MS
+        if (delayMs <= 0L) {
+            startVideoReveal()
+        } else {
+            videoRevealJob?.cancel()
+            videoRevealJob = lifecycleScope.launch {
+                delay(delayMs)
+                startVideoReveal()
+            }
+        }
+    }
+
+    private fun startVideoReveal() {
+        if (hasStartedVideoReveal || isPlayerReleased || !isVideoReady) return
+        hasStartedVideoReveal = true
+        cancelVideoRevealJob()
 
         placeholderView.animate().setListener(null)
         placeholderView.animate()
             .alpha(0f)
+            .scaleX(PLACEHOLDER_OUTRO_SCALE)
+            .scaleY(PLACEHOLDER_OUTRO_SCALE)
             .setDuration(PLACEHOLDER_FADE_OUT_DURATION_MS)
             .setInterpolator(FADE_INTERPOLATOR)
             .setListener(object : AnimatorListenerAdapter() {
@@ -171,10 +200,27 @@ class SplashActivity : AppCompatActivity() {
                 }
             })
             .start()
+
+        player.pause()
+        player.seekTo(0)
+
+        playerView.animate().setListener(null)
+        playerView.animate()
+            .alpha(1f)
+            .setDuration(VIDEO_FADE_IN_DURATION_MS)
+            .setInterpolator(FADE_INTERPOLATOR)
+            .withEndAction {
+                if (!isPlayerReleased) {
+                    player.play()
+                }
+            }
+            .start()
     }
 
     private fun showPlaceholderFallback() {
         placeholderView.apply {
+            cancelVideoRevealJob()
+            placeholderVisibleDeadlineMs = SystemClock.uptimeMillis() + PLACEHOLDER_MIN_VISIBLE_MS
             if (!isVisible) {
                 alpha = 0f
                 scaleX = PLACEHOLDER_INTRO_SCALE
@@ -214,6 +260,8 @@ class SplashActivity : AppCompatActivity() {
     private fun releasePlayer() {
         if (isPlayerReleased || !::player.isInitialized) return
         isPlayerReleased = true
+        isVideoReady = false
+        cancelVideoRevealJob()
         player.removeListener(playerListener)
         player.release()
         playerView.keepScreenOn = false
@@ -224,23 +272,47 @@ class SplashActivity : AppCompatActivity() {
         if (hasNavigated) return
         hasNavigated = true
         cancelFallback()
+        cancelVideoRevealJob()
         Log.d(TAG, "Leaving splash")
         playerView.keepScreenOn = false
-        startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+        val intent = Intent(this@SplashActivity, MainActivity::class.java).apply {
+            putExtra(MainActivity.EXTRA_START_FADED, true)
+        }
+        startActivity(intent)
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
     }
 
+    private fun handleVideoEnded() {
+        if (hasNavigated) return
+        playerView.animate().setListener(null)
+        playerView.animate()
+            .alpha(0f)
+            .setDuration(VIDEO_OUTRO_FADE_DURATION_MS)
+            .setInterpolator(FADE_INTERPOLATOR)
+            .withEndAction { navigateToMain() }
+            .start()
+    }
+
+    private fun cancelVideoRevealJob() {
+        videoRevealJob?.cancel()
+        videoRevealJob = null
+    }
+
     companion object {
         private val FADE_INTERPOLATOR = PathInterpolator(0.22f, 1f, 0.36f, 1f)
-        private const val VIDEO_FADE_IN_DURATION_MS = 360L
-        private const val PLACEHOLDER_FADE_OUT_DURATION_MS = 360L
+        private const val VIDEO_FADE_IN_DURATION_MS = 420L
+        private const val VIDEO_OUTRO_FADE_DURATION_MS = 320L
+        private const val VIDEO_REVEAL_LEAD_IN_MS = 120L
+        private const val PLACEHOLDER_FADE_OUT_DURATION_MS = 420L
         private const val PLACEHOLDER_INTRO_DURATION_MS = 320L
         private const val PLACEHOLDER_RECOVER_FADE_IN_MS = 240L
+        private const val PLACEHOLDER_MIN_VISIBLE_MS = 920L
         private const val FALLBACK_DELAY_MS = 2000L
         private const val ASSET_GREETING_VIDEO = "greeting.mp4"
         private const val PLACEHOLDER_INTRO_ALPHA = 0.9f
         private const val PLACEHOLDER_INTRO_SCALE = 0.98f
+        private const val PLACEHOLDER_OUTRO_SCALE = 1.02f
         private const val TAG = "SplashActivity"
     }
 }

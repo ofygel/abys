@@ -9,7 +9,9 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -109,8 +111,12 @@ import com.example.abys.ui.util.backdropBlur
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 private enum class SurfaceStage { Dashboard, CitySheet, CityPicker }
+
+private const val MAIN_OVERLAY_DELAY_MS = 180L
+private const val MAIN_OVERLAY_FADE_TWEEN_MS = 520
 
 // Тоны серого стекла и параметры блюра — под эталонный макет
 private object GlassDefaults {
@@ -241,7 +247,8 @@ private object TypeScale {
 @Composable
 fun MainApp(
     vm: MainViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    effectViewModel: EffectViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    effectViewModel: EffectViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    startFaded: Boolean = false
 ) {
     val city by vm.city.observeAsState("Almaty")
     val times by vm.prayerTimes.observeAsState(emptyMap())
@@ -271,6 +278,23 @@ fun MainApp(
         }
     }
 
+    val overlayAlpha = remember { Animatable(if (startFaded) 1f else 0f) }
+
+    LaunchedEffect(startFaded) {
+        if (startFaded && overlayAlpha.value > 0f) {
+            delay(MAIN_OVERLAY_DELAY_MS)
+            overlayAlpha.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(
+                    durationMillis = MAIN_OVERLAY_FADE_TWEEN_MS,
+                    easing = FastOutSlowInEasing
+                )
+            )
+        } else if (!startFaded && overlayAlpha.value != 0f) {
+            overlayAlpha.snapTo(0f)
+        }
+    }
+
     CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = AbysFonts.inter)) {
         Box(Modifier.fillMaxSize()) {
             MutedBackgroundCrossfade(selectedEffect)
@@ -293,6 +317,14 @@ fun MainApp(
                 onCityChosen = { vm.setCity(it, context.applicationContext) },
                 onEffectSelected = effectViewModel::onEffectSelected
             )
+
+            if (overlayAlpha.value > 0.01f) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = overlayAlpha.value))
+                )
+            }
         }
     }
 }
