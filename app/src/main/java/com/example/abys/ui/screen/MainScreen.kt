@@ -81,13 +81,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -428,6 +428,7 @@ fun MainScreen(
                 .align(Alignment.TopCenter)
                 .padding(top = headerOffsetY, start = headerHorizontal, end = headerHorizontal)
                 .widthIn(max = headerWidth)
+                .zIndex(1f)
                 .graphicsLayer {
                     alpha = headerAlpha
                     translationY = headerTranslation
@@ -556,9 +557,11 @@ private fun HeaderPill(
     onTap: () -> Unit
 ) {
     val sy = Dimens.sy()
+    val sx = Dimens.sx()
     val horizontalPadding = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val verticalPadding = Dimens.scaledY(R.dimen.abys_pill_pad_v)
-    val eyebrowSpacing = (4f * sy).dp
+    val headlineSpacing = (10f * sy).dp
+    val chevronSize = (14f * sx).dp
     val shape = RoundedCornerShape(Tokens.Radii.pill())
 
     Box(
@@ -598,30 +601,23 @@ private fun HeaderPill(
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(eyebrowSpacing)
+                verticalArrangement = Arrangement.spacedBy(headlineSpacing)
             ) {
-                Text(
-                    text = "Город",
-                    fontSize = TypeScale.eyebrow,
-                    fontWeight = FontWeight.Medium,
-                    color = TypeTone.dim
-                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy((12f * sx).dp)
                 ) {
                     Text(
                         text = city,
                         fontSize = TypeScale.city,
                         fontWeight = FontWeight.Bold,
                         fontStyle = FontStyle.Italic,
-                        textDecoration = TextDecoration.Underline,
                         color = TypeTone.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    Spacer(Modifier.width((12f * Dimens.sx()).dp))
                     TabularText(
                         text = now,
                         fontSize = TypeScale.timeNow,
@@ -631,6 +627,34 @@ private fun HeaderPill(
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                         modifier = Modifier.wrapContentWidth(Alignment.End)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy((8f * sx).dp)
+                ) {
+                    Box(
+                        Modifier
+                            .size(chevronSize)
+                            .border(
+                                width = 1.dp,
+                                color = TypeTone.divider,
+                                shape = RoundedCornerShape(chevronSize / 2)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "›",
+                            fontSize = TypeScale.eyebrow,
+                            color = TypeTone.secondary
+                        )
+                    }
+                    Text(
+                        text = "Открыть выбор города",
+                        fontSize = TypeScale.eyebrow,
+                        fontWeight = FontWeight.Medium,
+                        color = TypeTone.dim
                     )
                 }
             }
