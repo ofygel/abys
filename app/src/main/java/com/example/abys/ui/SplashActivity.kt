@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import com.example.abys.databinding.ActivitySplashBinding
@@ -26,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@UnstableApi
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySplashBinding
@@ -47,6 +49,7 @@ class SplashActivity : AppCompatActivity() {
                 }
 
                 Player.STATE_ENDED -> navigateToMain(ExitReason.PLAYBACK_ENDED)
+                Player.STATE_ENDED -> navigateToMain()
             }
         }
 
@@ -59,6 +62,8 @@ class SplashActivity : AppCompatActivity() {
                 reason == Player.DISCONTINUITY_REASON_PERIOD_TRANSITION
             ) {
                 navigateToMain(ExitReason.PLAYBACK_DISCONTINUITY)
+            if (reason == Player.DISCONTINUITY_REASON_AUTO_TRANSITION) {
+                navigateToMain()
             }
         }
 
@@ -67,6 +72,9 @@ class SplashActivity : AppCompatActivity() {
             showPlaceholderFallback()
             cancelFallback()
             navigateToMain(ExitReason.PLAYER_ERROR)
+            binding.placeholderView.isVisible = true
+            cancelFallback()
+            navigateToMain()
         }
     }
 
@@ -138,6 +146,63 @@ class SplashActivity : AppCompatActivity() {
 
             initializePlayer()
         }
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
+    private fun runNavigationFlow() {
+        lifecycleScope.launch {
+            val assetAvailable = withContext(Dispatchers.IO) {
+                assetExists(ASSET_GREETING_VIDEO)
+            }
+
+            if (!assetAvailable) {
+                Log.w(TAG, "Greeting asset missing; falling back to main")
+                showPlaceholderFallback()
+                scheduleFallback(ExitReason.ASSET_MISSING)
+                return@launch
+            }
+
+            initializePlayer()
+        }
+    }
+
+        binding = ActivitySplashBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        windowInsetsController = WindowInsetsControllerCompat(window, binding.root)
+
+        setupViews()
+
+        if (!assetExists(ASSET_GREETING_VIDEO)) {
+            scheduleFallback()
+            return
+        }
+
+        initializePlayer()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ensureSystemBarsHidden()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        releasePlayer()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        releasePlayer()
+        cancelFallback()
+    }
+
+    private fun setupViews() = with(binding) {
+        playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+        playerView.alpha = 0f
+        placeholderView.isVisible = true
+        placeholderView.alpha = 1f
     }
 
     private fun initializePlayer() {
@@ -173,6 +238,14 @@ class SplashActivity : AppCompatActivity() {
                     showPlaceholderFallback()
                     navigateToMain(ExitReason.PREPARE_FAILED)
                 }
+            keepScreenOn = true
+        }
+
+        scheduleFallback()
+
+        lifecycleScope.launch {
+            runCatching { player?.prepare() }
+                .onFailure { navigateToMain() }
         }
     }
 
@@ -209,6 +282,74 @@ class SplashActivity : AppCompatActivity() {
     private fun showPlaceholderFallback() {
         binding.placeholderView.apply {
             animate().cancel()
+            if (!isVisible) {
+                alpha = 0f
+                scaleX = PLACEHOLDER_INTRO_SCALE
+                scaleY = PLACEHOLDER_INTRO_SCALE
+                isVisible = true
+            } else {
+                scaleX = PLACEHOLDER_INTRO_SCALE
+                scaleY = PLACEHOLDER_INTRO_SCALE
+            }
+
+            animate()
+                .alpha(1f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(PLACEHOLDER_RECOVER_FADE_IN_MS)
+                .setInterpolator(FADE_INTERPOLATOR)
+                .start()
+        }
+    }
+
+            .setDuration(FADE_DURATION_MS)
+            .start()
+
+        binding.placeholderView.animate()
+            .alpha(0f)
+            .setDuration(FADE_DURATION_MS)
+            .withEndAction {
+                binding.placeholderView.isVisible = false
+            }
+            .start()
+
+        ensureSystemBarsHidden()
+    }
+
+    private fun scheduleFallback() {
+        cancelFallback()
+        fallbackJob = lifecycleScope.launch {
+            delay(FALLBACK_DELAY_MS)
+            navigateToMain()
+        }
+    }
+
+    private fun cancelFallback() {
+        fallbackJob?.cancel()
+        fallbackJob = null
+    }
+
+    private fun ensureSystemBarsHidden() {
+        windowInsetsController?.hide(WindowInsetsCompat.Type.systemBars())
+    }
+
+    private fun assetExists(assetName: String): Boolean = runCatching {
+        assets.open(assetName).close()
+    }.isSuccess
+
+    private fun releasePlayer() {
+        player?.let { exoPlayer ->
+            exoPlayer.removeListener(playerListener)
+            exoPlayer.stop()
+            exoPlayer.clearMediaItems()
+            exoPlayer.release()
+        }
+        binding.playerView.player = null
+        player = null
+    }
+
+    private fun showPlaceholderFallback() {
+        binding.placeholderView.apply {
             if (!isVisible) {
                 alpha = 0f
                 scaleX = PLACEHOLDER_INTRO_SCALE
@@ -299,5 +440,8 @@ class SplashActivity : AppCompatActivity() {
         PLAYBACK_ENDED("playback_ended"),
         PLAYBACK_DISCONTINUITY("playback_discontinuity"),
         USER_BACKGROUND("user_background")
+        private const val FADE_DURATION_MS = 300L
+        private const val FALLBACK_DELAY_MS = 2_000L
+        private const val ASSET_GREETING_VIDEO = "greeting.mp4"
     }
 }
