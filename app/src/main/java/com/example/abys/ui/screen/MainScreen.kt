@@ -321,7 +321,7 @@ fun MainScreen(
         else -> SurfaceStage.CitySheet
     }
 
-    val transition = updateTransition(stage, label = "surface")
+    val transition = updateTransition(targetState = stage, label = "surface")
     // Предвычисляем px-значения, чтобы не трогать layout на каждую рекомпозицию
     val sheetHiddenOffset = remember(density, sx) { with(density) { (236f * sx).dp.toPx() } }
     val sheetLift = remember(density, sy) { with(density) { (18f * sy).dp.toPx() } }
@@ -332,55 +332,55 @@ fun MainScreen(
     val prayerAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.SHORT else Dur.MED) },
         label = "prayerAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0f }
     val prayerScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "prayerScale"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
     val prayerTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "prayerTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
 
     val headerAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
     val headerTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
 
     val carouselAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "carouselAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
     val carouselScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselScale"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
     val carouselTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
 
     val scrimAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "scrimAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else 1f }
 
     val sheetAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "sheetAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else 1f }
     val sheetTranslationX by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationX"
-    ) { st -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
     val sheetTranslationY by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationY"
-    ) { st ->
+    ) { st: SurfaceStage ->
         when (st) {
             SurfaceStage.Dashboard -> sheetLift
             SurfaceStage.CitySheet -> 0f
@@ -390,7 +390,7 @@ fun MainScreen(
     val sheetScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetScale"
-    ) { st ->
+    ) { st: SurfaceStage ->
         when (st) {
             SurfaceStage.Dashboard -> 0.9f
             SurfaceStage.CitySheet -> 1f
