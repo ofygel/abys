@@ -230,9 +230,9 @@ private object TypeScale {
     val eyebrow = scaledSp(Tokens.TypographyPx.timeline, 0.52f)
     val city = scaledSp(Tokens.TypographyPx.city, 0.68f)
     val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.68f)
-    val label = scaledSp(Tokens.TypographyPx.label, 0.62f)
-    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.6f)
-    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.6f)
+    val label = scaledSp(Tokens.TypographyPx.label, 0.56f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.54f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.54f)
 }
 
 @Composable
@@ -417,9 +417,8 @@ fun MainScreen(
         val headerHorizontal = (67f * sx).dp
         val headerWidth = (533f * sx).dp
         val cardOffsetY = (226f * sy).dp
-        val cardHorizontal = (64f * sx).dp
-        val cardMaxWidth = (508f * sx).dp
-        val cardMaxHeight = (611f * sy).dp
+        val cardHorizontal = (52f * sx).dp
+        val cardMaxWidth = (540f * sx).dp
         val carouselBottomOffset = navPadding.calculateBottomPadding() + (48f * sy).dp
 
         HeaderPill(
@@ -447,7 +446,6 @@ fun MainScreen(
             .align(Alignment.TopCenter)
             .padding(top = cardOffsetY, start = cardHorizontal, end = cardHorizontal)
             .widthIn(max = cardMaxWidth)
-            .heightIn(max = cardMaxHeight)
             .graphicsLayer {
                 val explodedScale = if (exploded) 1.08f else 1f
                 alpha = prayerAlpha
@@ -649,9 +647,9 @@ private fun PrayerCard(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val shape = RoundedCornerShape(Tokens.Radii.card())
-    val rowSpacing = (16f * sy).dp
-    val sectionSpacing = (30f * sy).dp
-    val nightHeadingSpacing = (12f * sy).dp
+    val rowSpacing = (12f * sy).dp
+    val sectionSpacing = (24f * sy).dp
+    val nightHeadingSpacing = (8f * sy).dp
     Box(
         modifier
             .fillMaxWidth()
@@ -755,9 +753,9 @@ private fun SectionHeading(text: String) {
 private fun NightThirdsRow(thirds: NightIntervals) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val spacing = (12f * sx).dp
-    val cardHeight = (78f * sy).dp
-    val shape = RoundedCornerShape((18f * sy).dp)
+    val spacing = (10f * sx).dp
+    val cardHeight = (72f * sy).dp
+    val shape = RoundedCornerShape((16f * sy).dp)
     val borderColor = Color.White.copy(alpha = 0.26f)
     val background = Brush.verticalGradient(
         0f to Color.White.copy(alpha = 0.22f),
