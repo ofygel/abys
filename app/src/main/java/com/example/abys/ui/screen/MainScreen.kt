@@ -72,6 +72,7 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -82,11 +83,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toPx
 import com.example.abys.R
 import com.example.abys.data.FallbackContent
 import com.example.abys.data.CityEntry
@@ -151,6 +152,8 @@ private object TypeTone {
 private const val TABULAR_FEATURE = "'tnum'"
 
 private val TabularFeatureStyle = TextStyle(fontFeatureSettings = TABULAR_FEATURE)
+
+private fun Density.dpToPx(value: Float): Float = value * density
 
 @Composable
 private fun TabularText(
@@ -227,9 +230,9 @@ private object TypeScale {
     val eyebrow = scaledSp(Tokens.TypographyPx.timeline, 0.52f)
     val city = scaledSp(Tokens.TypographyPx.city, 0.68f)
     val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.68f)
-    val label = scaledSp(Tokens.TypographyPx.label, 0.62f)
-    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.6f)
-    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.6f)
+    val label = scaledSp(Tokens.TypographyPx.label, 0.56f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.54f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.54f)
 }
 
 @Composable
@@ -321,66 +324,66 @@ fun MainScreen(
         else -> SurfaceStage.CitySheet
     }
 
-    val transition = updateTransition(stage, label = "surface")
+    val transition = updateTransition(targetState = stage, label = "surface")
     // Предвычисляем px-значения, чтобы не трогать layout на каждую рекомпозицию
-    val sheetHiddenOffset = remember(density, sx) { with(density) { (236f * sx).dp.toPx() } }
-    val sheetLift = remember(density, sy) { with(density) { (18f * sy).dp.toPx() } }
-    val cardLift = remember(density, sy) { with(density) { (42f * sy).dp.toPx() } }
-    val carouselDrop = remember(density, sy) { with(density) { (36f * sy).dp.toPx() } }
-    val headerLift = remember(density, sy) { with(density) { (14f * sy).dp.toPx() } }
+    val sheetHiddenOffset: Float = remember(density, sx) { density.dpToPx(236f * sx) }
+    val sheetLift: Float = remember(density, sy) { density.dpToPx(18f * sy) }
+    val cardLift: Float = remember(density, sy) { density.dpToPx(42f * sy) }
+    val carouselDrop: Float = remember(density, sy) { density.dpToPx(36f * sy) }
+    val headerLift: Float = remember(density, sy) { density.dpToPx(14f * sy) }
 
     val prayerAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = if (targetState == SurfaceStage.Dashboard) Dur.SHORT else Dur.MED) },
         label = "prayerAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0f }
     val prayerScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "prayerScale"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.94f }
     val prayerTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "prayerTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else -cardLift }
 
     val headerAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.82f }
     val headerTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "headerTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else -headerLift }
 
     val carouselAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "carouselAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.45f }
     val carouselScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselScale"
-    ) { st -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 1f else 0.92f }
     val carouselTranslation by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "carouselTranslation"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else carouselDrop }
 
     val scrimAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.BASE) },
         label = "scrimAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else 1f }
 
     val sheetAlpha by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.MED) },
         label = "sheetAlpha"
-    ) { st -> if (st == SurfaceStage.Dashboard) 0f else 1f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) 0f else 1f }
     val sheetTranslationX by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationX"
-    ) { st -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
+    ) { st: SurfaceStage -> if (st == SurfaceStage.Dashboard) sheetHiddenOffset else 0f }
     val sheetTranslationY by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetTranslationY"
-    ) { st ->
+    ) { st: SurfaceStage ->
         when (st) {
             SurfaceStage.Dashboard -> sheetLift
             SurfaceStage.CitySheet -> 0f
@@ -390,7 +393,7 @@ fun MainScreen(
     val sheetScale by transition.animateFloat(
         transitionSpec = { tween(durationMillis = Dur.LONG) },
         label = "sheetScale"
-    ) { st ->
+    ) { st: SurfaceStage ->
         when (st) {
             SurfaceStage.Dashboard -> 0.9f
             SurfaceStage.CitySheet -> 1f
@@ -414,9 +417,8 @@ fun MainScreen(
         val headerHorizontal = (67f * sx).dp
         val headerWidth = (533f * sx).dp
         val cardOffsetY = (226f * sy).dp
-        val cardHorizontal = (64f * sx).dp
-        val cardMaxWidth = (508f * sx).dp
-        val cardMaxHeight = (611f * sy).dp
+        val cardHorizontal = (52f * sx).dp
+        val cardMaxWidth = (540f * sx).dp
         val carouselBottomOffset = navPadding.calculateBottomPadding() + (48f * sy).dp
 
         HeaderPill(
@@ -444,7 +446,6 @@ fun MainScreen(
             .align(Alignment.TopCenter)
             .padding(top = cardOffsetY, start = cardHorizontal, end = cardHorizontal)
             .widthIn(max = cardMaxWidth)
-            .heightIn(max = cardMaxHeight)
             .graphicsLayer {
                 val explodedScale = if (exploded) 1.08f else 1f
                 alpha = prayerAlpha
@@ -646,9 +647,9 @@ private fun PrayerCard(
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val shape = RoundedCornerShape(Tokens.Radii.card())
-    val rowSpacing = (16f * sy).dp
-    val sectionSpacing = (30f * sy).dp
-    val nightHeadingSpacing = (12f * sy).dp
+    val rowSpacing = (12f * sy).dp
+    val sectionSpacing = (24f * sy).dp
+    val nightHeadingSpacing = (8f * sy).dp
     Box(
         modifier
             .fillMaxWidth()
@@ -752,9 +753,9 @@ private fun SectionHeading(text: String) {
 private fun NightThirdsRow(thirds: NightIntervals) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val spacing = (12f * sx).dp
-    val cardHeight = (78f * sy).dp
-    val shape = RoundedCornerShape((18f * sy).dp)
+    val spacing = (10f * sx).dp
+    val cardHeight = (72f * sy).dp
+    val shape = RoundedCornerShape((16f * sy).dp)
     val borderColor = Color.White.copy(alpha = 0.26f)
     val background = Brush.verticalGradient(
         0f to Color.White.copy(alpha = 0.22f),
