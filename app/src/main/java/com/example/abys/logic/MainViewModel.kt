@@ -115,17 +115,10 @@ class MainViewModel(
         }
     }
 
-    fun toggleSheet() {
-        val newValue = !(_sheetVisible.value ?: false)
-        _sheetVisible.value = newValue
-        if (!newValue) {
-            _sheetTab.value = CitySheetTab.Wheel
-        } else {
-            _sheetTab.value = CitySheetTab.Wheel
-        }
-        if (newValue) {
-            shouldKeepSheetHidden.set(false)
-        }
+    fun showSheet() {
+        shouldKeepSheetHidden.set(false)
+        _sheetVisible.value = true
+        _sheetTab.value = CitySheetTab.Wheel
     }
 
     fun hideSheet() {
