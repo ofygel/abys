@@ -283,10 +283,10 @@ fun MainApp(
                 sheetTab = sheetTab,
                 hadith = hadith,
                 cities = cityOptions,
-                onCityPillClick = vm::toggleSheet,
+                onCityPillClick = vm::showSheet,
                 onShowWheel = { vm.setSheetTab(CitySheetTab.Wheel) },
                 onTabSelected = vm::setSheetTab,
-                onSheetDismiss = vm::toggleSheet,
+                onSheetDismiss = vm::hideSheet,
                 onCityChosen = { vm.setCity(it, context.applicationContext) },
                 onEffectSelected = effectViewModel::onEffectSelected
             )
@@ -613,7 +613,7 @@ private fun HeaderPill(
                     Text(
                         text = city,
                         fontSize = TypeScale.city,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         fontStyle = FontStyle.Italic,
                         textDecoration = TextDecoration.Underline,
                         color = TypeTone.primary,
