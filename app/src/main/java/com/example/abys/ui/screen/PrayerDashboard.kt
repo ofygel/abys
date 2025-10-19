@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -97,6 +98,7 @@ internal fun TabularText(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
+    fontFamily: FontFamily? = null,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
     textAlign: TextAlign? = null,
@@ -109,6 +111,7 @@ internal fun TabularText(
         modifier = modifier,
         color = color,
         fontSize = fontSize,
+        fontFamily = fontFamily,
         fontStyle = fontStyle,
         fontWeight = fontWeight,
         textAlign = textAlign,
