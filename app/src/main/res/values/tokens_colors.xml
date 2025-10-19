@@ -1,6 +1,6 @@
 <resources>
     <!-- Альфы в ARGB (#AARRGGBB) -->
-    <color name="abys_fg">#FFFFFFFF</color>
+    <color name="abys_fg">#F0F5F7FB</color>
     <color name="abys_overlayTop">#5C000000</color>
     <color name="abys_overlayCard">#4F000000</color>
     <color name="abys_tickFull">#FFFFFFFF</color>

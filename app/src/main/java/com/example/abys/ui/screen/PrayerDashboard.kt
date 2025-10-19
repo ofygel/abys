@@ -69,13 +69,15 @@ internal object GlassDefaults {
 
 internal object TypeTone {
     val primary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.96f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.94f)
     val secondary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.88f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.72f)
     val divider: Color
-        @Composable get() = Color.White.copy(alpha = 0.16f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.18f)
     val tick: Color
         @Composable get() = Tokens.Colors.tickFull
+    val indicator: Color
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.32f)
 }
 
 private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).sp
@@ -83,9 +85,28 @@ private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).sp
 internal object TypeScale {
     val city = scaledSp(Tokens.TypographyPx.city, 0.68f)
     val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.68f)
-    val label = scaledSp(Tokens.TypographyPx.label, 0.56f)
-    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.54f)
-    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.54f)
+    val prayerTime = scaledSp(Tokens.TypographyPx.label, 0.62f)
+    val prayerName = scaledSp(Tokens.TypographyPx.label, 0.54f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.48f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.5f)
+}
+
+private fun TextUnit.lineHeight(multiplier: Float) = (value * multiplier).sp
+
+internal object TypeLeading {
+    val city = TypeScale.city.lineHeight(1.18f)
+    val timeNow = TypeScale.timeNow.lineHeight(1.18f)
+    val prayerTime = TypeScale.prayerTime.lineHeight(1.26f)
+    val prayerName = TypeScale.prayerName.lineHeight(1.26f)
+    val subLabel = TypeScale.subLabel.lineHeight(1.24f)
+    val timeline = TypeScale.timeline.lineHeight(1.22f)
+}
+
+private const val EMPTY_TIME_PLACEHOLDER = "—:—"
+
+private fun sanitizeTime(value: String): String {
+    val trimmed = value.trim()
+    return trimmed.takeIf { it.any(Char::isDigit) } ?: EMPTY_TIME_PLACEHOLDER
 }
 
 private const val TABULAR_FEATURE = "'tnum'"
@@ -245,6 +266,7 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
             Text(
                 text = cityText,
                 fontSize = TypeScale.city,
+                lineHeight = TypeLeading.city,
                 fontWeight = FontWeight.SemiBold,
                 fontStyle = FontStyle.Italic,
                 color = primaryColor,
@@ -268,15 +290,16 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
 
             Spacer(Modifier.width((20f * sx).dp))
 
-            TabularText(
-                text = now.ifBlank { "--:--" },
-                fontSize = TypeScale.timeNow,
-                fontWeight = FontWeight.Bold,
-                color = primaryColor,
-                textAlign = TextAlign.Right,
-                fontFamily = AbysFonts.inter,
-                modifier = Modifier.widthIn(min = 0.dp)
-            )
+                TabularText(
+                    text = sanitizeTime(now),
+                    fontSize = TypeScale.timeNow,
+                    lineHeight = TypeLeading.timeNow,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryColor,
+                    textAlign = TextAlign.Right,
+                    fontFamily = AbysFonts.inter,
+                    modifier = Modifier.widthIn(min = 0.dp)
+                )
         }
     }
 }
@@ -289,15 +312,15 @@ private fun PrayerSchedule(times: Map<String, String>, modifier: Modifier = Modi
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(rowSpacing)
     ) {
-        PrayerRow(label = "Фаджр", value = times["Fajr"] ?: "--:--")
-        PrayerRow(label = "Восход", value = times["Sunrise"] ?: "--:--")
-        PrayerRow(label = "Зухр", value = times["Dhuhr"] ?: "--:--")
+        PrayerRow(label = "Фаджр", value = times["Fajr"].orEmpty())
+        PrayerRow(label = "Восход", value = times["Sunrise"].orEmpty())
+        PrayerRow(label = "Зухр", value = times["Dhuhr"].orEmpty())
         AsrSection(
-            standard = times["AsrStd"] ?: "--:--",
-            hanafi = times["AsrHana"] ?: "--:--"
+            standard = times["AsrStd"].orEmpty(),
+            hanafi = times["AsrHana"].orEmpty()
         )
-        PrayerRow(label = "Магриб", value = times["Maghrib"] ?: "--:--")
-        PrayerRow(label = "Иша", value = times["Isha"] ?: "--:--")
+        PrayerRow(label = "Магриб", value = times["Maghrib"].orEmpty())
+        PrayerRow(label = "Иша", value = times["Isha"].orEmpty())
     }
 }
 
@@ -309,8 +332,9 @@ private fun PrayerRow(label: String, value: String) {
     ) {
         Text(
             text = label,
-            fontSize = TypeScale.label,
-            fontWeight = FontWeight.Bold,
+            fontSize = TypeScale.prayerName,
+            lineHeight = TypeLeading.prayerName,
+            fontWeight = FontWeight.Medium,
             color = TypeTone.primary,
             fontFamily = AbysFonts.inter,
             modifier = Modifier.weight(1f),
@@ -319,9 +343,10 @@ private fun PrayerRow(label: String, value: String) {
         )
 
         TabularText(
-            text = value,
-            fontSize = TypeScale.label,
-            fontWeight = FontWeight.SemiBold,
+            text = sanitizeTime(value),
+            fontSize = TypeScale.prayerTime,
+            lineHeight = TypeLeading.prayerTime,
+            fontWeight = FontWeight.Bold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             fontFamily = AbysFonts.inter,
@@ -348,8 +373,9 @@ private fun AsrSection(standard: String, hanafi: String) {
         ) {
             Text(
                 text = "Аср",
-                fontSize = TypeScale.label,
-                fontWeight = FontWeight.Bold,
+                fontSize = TypeScale.prayerName,
+                lineHeight = TypeLeading.prayerName,
+                fontWeight = FontWeight.Medium,
                 color = TypeTone.primary,
                 fontFamily = AbysFonts.inter,
                 modifier = Modifier.weight(1f)
@@ -393,7 +419,8 @@ private fun AsrSubRow(
         Text(
             text = label,
             fontSize = TypeScale.subLabel,
-            fontWeight = FontWeight.SemiBold,
+            lineHeight = TypeLeading.subLabel,
+            fontWeight = FontWeight.Medium,
             color = TypeTone.secondary,
             fontFamily = AbysFonts.inter,
             modifier = Modifier.weight(1f)
@@ -404,15 +431,16 @@ private fun AsrSubRow(
                 .width(indicatorWidth)
                 .height(indicatorHeight)
                 .clip(indicatorShape)
-                .background(TypeTone.primary)
+                .background(TypeTone.indicator)
         )
 
         Spacer(Modifier.width(indicatorSpacing))
 
         TabularText(
-            text = value,
+            text = sanitizeTime(value),
             fontSize = TypeScale.subLabel,
-            fontWeight = FontWeight.SemiBold,
+            lineHeight = TypeLeading.subLabel,
+            fontWeight = FontWeight.Bold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             fontFamily = AbysFonts.inter,
@@ -432,9 +460,9 @@ private fun NightTimeline(thirds: NightIntervals, modifier: Modifier = Modifier)
     val labelSpacing = (16f * sy).dp
 
     val labels = listOf(
-        thirds.first.first.ifBlank { "--:--" },
-        thirds.second.first.ifBlank { "--:--" },
-        thirds.third.first.ifBlank { "--:--" }
+        sanitizeTime(thirds.first.first),
+        sanitizeTime(thirds.second.first),
+        sanitizeTime(thirds.third.first)
     )
 
     Row(
@@ -479,7 +507,8 @@ private fun NightTimelineGroup(
         TabularText(
             text = label,
             fontSize = TypeScale.timeline,
-            fontWeight = FontWeight.SemiBold,
+            lineHeight = TypeLeading.timeline,
+            fontWeight = FontWeight.Medium,
             color = TypeTone.primary,
             textAlign = TextAlign.Center,
             fontFamily = AbysFonts.inter
