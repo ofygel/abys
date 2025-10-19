@@ -234,6 +234,40 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
             .clickable(onClick = onTap)
             .padding(horizontal = padHorizontal, vertical = padVertical)
     ) {
+        val primaryColor = TypeTone.primary
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val cityText = city.ifBlank { "—" }
+            Text(
+                text = cityText,
+                fontSize = TypeScale.city,
+                fontWeight = FontWeight.SemiBold,
+                fontStyle = FontStyle.Italic,
+                color = primaryColor,
+                fontFamily = AbysFonts.inter,
+                modifier = Modifier
+                    .weight(1f)
+                    .drawBehind {
+                        if (cityText.isNotBlank()) {
+                            val thickness = underlineThickness.toPx()
+                            val offset = underlineOffset.toPx()
+                            drawRect(
+                                color = primaryColor,
+                                topLeft = Offset(0f, size.height + offset - thickness),
+                                size = Size(size.width, thickness)
+                            )
+                        }
+                    },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(Modifier.width((20f * sx).dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
