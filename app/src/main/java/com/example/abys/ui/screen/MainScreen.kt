@@ -219,7 +219,6 @@ fun MainScreen(
             now = now,
             prayerTimes = prayerTimes,
             thirds = thirds,
-            hadith = hadith,
             onCityClick = onCityPillClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)

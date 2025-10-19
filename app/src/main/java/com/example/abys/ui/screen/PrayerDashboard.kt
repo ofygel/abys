@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LocalTextStyle
@@ -22,7 +23,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -32,6 +36,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +74,8 @@ internal object TypeTone {
         @Composable get() = Tokens.Colors.text.copy(alpha = 0.88f)
     val divider: Color
         @Composable get() = Color.White.copy(alpha = 0.16f)
+    val tick: Color
+        @Composable get() = Tokens.Colors.tickFull
 }
 
 private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).sp
@@ -79,7 +86,6 @@ internal object TypeScale {
     val label = scaledSp(Tokens.TypographyPx.label, 0.56f)
     val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.54f)
     val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.54f)
-    val hadith = scaledSp(Tokens.TypographyPx.timeline, 0.6f)
 }
 
 private const val TABULAR_FEATURE = "'tnum'"
@@ -92,6 +98,7 @@ internal fun TabularText(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
+    fontFamily: FontFamily? = null,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
     textAlign: TextAlign? = null,
@@ -104,6 +111,7 @@ internal fun TabularText(
         modifier = modifier,
         color = color,
         fontSize = fontSize,
+        fontFamily = fontFamily,
         fontStyle = fontStyle,
         fontWeight = fontWeight,
         textAlign = textAlign,
@@ -129,7 +137,6 @@ internal fun PrayerDashboard(
     now: String,
     prayerTimes: Map<String, String>,
     thirds: NightIntervals,
-    hadith: String,
     onCityClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -139,62 +146,61 @@ internal fun PrayerDashboard(
     val cardHorizontalPad = Dimens.scaledX(R.dimen.abys_card_pad_h)
     val cardTopPad = Dimens.scaledY(R.dimen.abys_card_pad_top)
     val cardBottomPad = Dimens.scaledY(R.dimen.abys_card_pad_bottom)
-    val contentSpacing = (28f * sy).dp
-    val columnsSpacing = (40f * sx).dp
+    val sectionSpacing = (36f * sy).dp
+    val headerSpacing = (32f * sy).dp
 
-    Box(
-        modifier
-            .fillMaxWidth()
-            .shadow(elevation = GlassDefaults.elevation, shape = shape, clip = false)
-            .clip(shape)
-            .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(headerSpacing)
     ) {
-        Box(
-            Modifier
-                .matchParentSize()
-                .clip(shape)
-                .backdropBlur(GlassDefaults.blur)
-                .background(Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom)))
-                .border(
-                    width = 1.dp,
-                    brush = Brush.verticalGradient(0f to GlassDefaults.stroke, 1f to GlassDefaults.glow),
-                    shape = shape
-                )
+        CityHeaderPill(
+            city = city,
+            now = now,
+            onTap = onCityClick,
+            modifier = Modifier.fillMaxWidth()
         )
 
-        Column(
-            modifier = Modifier
+        Box(
+            Modifier
                 .fillMaxWidth()
-                .padding(
-                    start = cardHorizontalPad,
-                    end = cardHorizontalPad,
-                    top = cardTopPad,
-                    bottom = cardBottomPad
-                ),
-            verticalArrangement = Arrangement.spacedBy(contentSpacing)
+                .shadow(elevation = GlassDefaults.elevation, shape = shape, clip = false)
+                .clip(shape)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
         ) {
-            CityHeader(
-                city = city,
-                now = now,
-                onTap = onCityClick,
-                modifier = Modifier.fillMaxWidth()
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .clip(shape)
+                    .backdropBlur(GlassDefaults.blur)
+                    .background(Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom)))
+                    .border(
+                        width = 1.dp,
+                        brush = Brush.verticalGradient(0f to GlassDefaults.stroke, 1f to GlassDefaults.glow),
+                        shape = shape
+                    )
             )
 
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(min = 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(columnsSpacing)
+                    .padding(
+                        start = cardHorizontalPad,
+                        end = cardHorizontalPad,
+                        top = cardTopPad,
+                        bottom = cardBottomPad
+                    ),
+                verticalArrangement = Arrangement.spacedBy(sectionSpacing)
             ) {
                 PrayerSchedule(
                     times = prayerTimes,
-                    thirds = thirds,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
 
-                HadithPanel(
-                    text = hadith,
-                    modifier = Modifier.weight(1f)
+                ThinDivider()
+
+                NightTimeline(
+                    thirds = thirds,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -202,90 +208,94 @@ internal fun PrayerDashboard(
 }
 
 @Composable
-private fun CityHeader(city: String, now: String, onTap: () -> Unit, modifier: Modifier = Modifier) {
+private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifier: Modifier = Modifier) {
     val sy = Dimens.sy()
     val sx = Dimens.sx()
-    val indicatorWidth = (64f * sx).dp
-    val indicatorHeight = (2f * sy).dp
+    val shape = RoundedCornerShape(Tokens.Radii.pill())
+    val padHorizontal = Dimens.scaledX(R.dimen.abys_pill_pad_h)
+    val padVertical = Dimens.scaledY(R.dimen.abys_pill_pad_v)
+    val underlineThickness = (3f * sy).dp
+    val underlineOffset = (2f * sy).dp
 
-    Column(
+    Box(
         modifier
             .semantics {
                 contentDescription = "Открыть выбор города"
                 role = Role.Button
             }
+            .clip(shape)
+            .backdropBlur(GlassDefaults.blur)
+            .background(Brush.verticalGradient(listOf(GlassDefaults.top, GlassDefaults.bottom)))
+            .border(
+                width = 1.dp,
+                brush = Brush.verticalGradient(0f to GlassDefaults.stroke, 1f to GlassDefaults.glow),
+                shape = shape
+            )
             .clickable(onClick = onTap)
-            .padding(horizontal = (12f * sx).dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy((12f * sy).dp)
+            .padding(horizontal = padHorizontal, vertical = padVertical)
     ) {
-        Text(
-            text = city.ifBlank { "—" },
-            fontSize = TypeScale.city,
-            fontWeight = FontWeight.Bold,
-            fontStyle = FontStyle.Italic,
-            color = TypeTone.primary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            val cityText = city.ifBlank { "—" }
+            Text(
+                text = cityText,
+                fontSize = TypeScale.city,
+                fontWeight = FontWeight.SemiBold,
+                fontStyle = FontStyle.Italic,
+                color = TypeTone.primary,
+                fontFamily = AbysFonts.inter,
+                modifier = Modifier
+                    .weight(1f)
+                    .drawBehind {
+                        if (cityText.isNotBlank()) {
+                            val thickness = underlineThickness.toPx()
+                            val offset = underlineOffset.toPx()
+                            drawRect(
+                                color = TypeTone.primary,
+                                topLeft = Offset(0f, size.height + offset - thickness),
+                                size = Size(size.width, thickness)
+                            )
+                        }
+                    },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-        TabularText(
-            text = now.ifBlank { "--:--" },
-            fontSize = TypeScale.timeNow,
-            fontWeight = FontWeight.SemiBold,
-            color = TypeTone.secondary,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            modifier = Modifier.fillMaxWidth()
-        )
+            Spacer(Modifier.width((20f * sx).dp))
 
-        Box(
-            modifier = Modifier
-                .width(indicatorWidth)
-                .height(indicatorHeight)
-                .background(TypeTone.divider)
-        )
+            TabularText(
+                text = now.ifBlank { "--:--" },
+                fontSize = TypeScale.timeNow,
+                fontWeight = FontWeight.Bold,
+                color = TypeTone.primary,
+                textAlign = TextAlign.Right,
+                fontFamily = AbysFonts.inter,
+                modifier = Modifier.widthIn(min = 0.dp)
+            )
+        }
     }
 }
 
 @Composable
-private fun PrayerSchedule(times: Map<String, String>, thirds: NightIntervals, modifier: Modifier = Modifier) {
-    val sy = Dimens.sy()
-    val rowSpacing = (12f * sy).dp
-    val sectionSpacing = (24f * sy).dp
-    val nightHeadingSpacing = (10f * sy).dp
+private fun PrayerSchedule(times: Map<String, String>, modifier: Modifier = Modifier) {
+    val rowSpacing = Dimens.scaledY(R.dimen.abys_row_step)
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(sectionSpacing)
+        verticalArrangement = Arrangement.spacedBy(rowSpacing)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(rowSpacing)) {
-            val schedule = listOf(
-                "Фаджр" to (times["Fajr"] ?: "--:--"),
-                "Восход" to (times["Sunrise"] ?: "--:--"),
-                "Зухр" to (times["Dhuhr"] ?: "--:--"),
-                "Аср (Стандарт)" to (times["AsrStd"] ?: "--:--"),
-                "Аср (Ханафитский)" to (times["AsrHana"] ?: "--:--"),
-                "Магриб" to (times["Maghrib"] ?: "--:--"),
-                "Иша" to (times["Isha"] ?: "--:--")
-            )
-
-            schedule.forEachIndexed { index, (label, value) ->
-                PrayerRow(label, value)
-                if (index != schedule.lastIndex) {
-                    Spacer(Modifier.height(rowSpacing))
-                    ThinDivider()
-                    Spacer(Modifier.height(rowSpacing))
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(nightHeadingSpacing)) {
-            NightSectionHeading()
-            NightThirdsRow(thirds)
-        }
+        PrayerRow(label = "Фаджр", value = times["Fajr"] ?: "--:--")
+        PrayerRow(label = "Восход", value = times["Sunrise"] ?: "--:--")
+        PrayerRow(label = "Зухр", value = times["Dhuhr"] ?: "--:--")
+        AsrSection(
+            standard = times["AsrStd"] ?: "--:--",
+            hanafi = times["AsrHana"] ?: "--:--"
+        )
+        PrayerRow(label = "Магриб", value = times["Maghrib"] ?: "--:--")
+        PrayerRow(label = "Иша", value = times["Isha"] ?: "--:--")
     }
 }
 
@@ -298,19 +308,21 @@ private fun PrayerRow(label: String, value: String) {
         Text(
             text = label,
             fontSize = TypeScale.label,
-            fontWeight = FontWeight.Medium,
-            color = TypeTone.secondary,
-            lineHeight = TypeScale.label,
+            fontWeight = FontWeight.Bold,
+            color = TypeTone.primary,
+            fontFamily = AbysFonts.inter,
             modifier = Modifier.weight(1f),
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
+
         TabularText(
             text = value,
             fontSize = TypeScale.label,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
-            lineHeight = TypeScale.label,
+            fontFamily = AbysFonts.inter,
             modifier = Modifier.widthIn(min = 0.dp),
             maxLines = 1
         )
@@ -318,130 +330,169 @@ private fun PrayerRow(label: String, value: String) {
 }
 
 @Composable
-private fun NightSectionHeading() {
-    Text(
-        text = "Ночь (3 части)",
-        fontSize = TypeScale.label,
-        fontWeight = FontWeight.SemiBold,
-        color = TypeTone.primary
-    )
-}
-
-@Composable
-private fun NightThirdsRow(thirds: NightIntervals) {
+private fun AsrSection(standard: String, hanafi: String) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val spacing = (10f * sx).dp
-    val cardHeight = (72f * sy).dp
-    val shape = RoundedCornerShape((16f * sy).dp)
-    val borderColor = Color.White.copy(alpha = 0.26f)
-    val background = Brush.verticalGradient(
-        0f to Color.White.copy(alpha = 0.22f),
-        1f to Color.White.copy(alpha = 0.08f)
-    )
-    val romans = listOf("I", "II", "III")
+    val subSpacing = (18f * sy).dp
+    val indicatorWidth = (64f * sx).dp
+    val indicatorHeight = (4f * sy).dp
+    val indicatorShape = RoundedCornerShape((2f * Dimens.s()).dp)
+    val indicatorSpacing = (16f * sx).dp
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing)
-    ) {
-        thirds.asList().forEachIndexed { index, (start, end) ->
-            NightThirdCard(
-                title = romans.getOrElse(index) { "" },
-                start = start.ifBlank { "--:--" },
-                end = end.ifBlank { "--:--" },
-                modifier = Modifier.weight(1f),
-                height = cardHeight,
-                shape = shape,
-                borderColor = borderColor,
-                background = background
-            )
-        }
-    }
-}
-
-@Composable
-private fun NightThirdCard(
-    title: String,
-    start: String,
-    end: String,
-    modifier: Modifier,
-    height: androidx.compose.ui.unit.Dp,
-    shape: RoundedCornerShape,
-    borderColor: Color,
-    background: Brush
-) {
-    val sx = Dimens.sx()
-    val sy = Dimens.sy()
-    val spacing = (6f * sy).dp
-    val timeSize = TypeScale.timeline
-
-    Box(
-        modifier
-            .height(height)
-            .clip(shape)
-            .background(background)
-            .border(width = 1.dp, color = borderColor, shape = shape)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = (10f * sx).dp, vertical = (12f * sy).dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+    Column(verticalArrangement = Arrangement.spacedBy(subSpacing)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = title,
-                fontSize = TypeScale.subLabel,
+                text = "Аср",
+                fontSize = TypeScale.label,
                 fontWeight = FontWeight.Bold,
-                color = TypeTone.secondary
-            )
-            Spacer(Modifier.height(spacing))
-            TabularText(
-                text = start,
-                fontSize = timeSize,
-                fontWeight = FontWeight.SemiBold,
                 color = TypeTone.primary,
-                textAlign = TextAlign.Center,
-                maxLines = 1
+                fontFamily = AbysFonts.inter,
+                modifier = Modifier.weight(1f)
             )
-            ThinDivider(Modifier.padding(vertical = (4f * sy).dp))
-            TabularText(
-                text = end,
-                fontSize = timeSize,
-                fontWeight = FontWeight.SemiBold,
-                color = TypeTone.primary,
-                textAlign = TextAlign.Center,
-                maxLines = 1
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy((12f * sy).dp)) {
+            AsrSubRow(
+                label = "стандарт",
+                value = standard,
+                indicatorWidth = indicatorWidth,
+                indicatorHeight = indicatorHeight,
+                indicatorShape = indicatorShape,
+                indicatorSpacing = indicatorSpacing
+            )
+            AsrSubRow(
+                label = "ханафитский",
+                value = hanafi,
+                indicatorWidth = indicatorWidth,
+                indicatorHeight = indicatorHeight,
+                indicatorShape = indicatorShape,
+                indicatorSpacing = indicatorSpacing
             )
         }
     }
 }
 
 @Composable
-private fun HadithPanel(text: String, modifier: Modifier = Modifier) {
-    val sy = Dimens.sy()
-    val sx = Dimens.sx()
-    val shape = RoundedCornerShape((22f * sy).dp)
-
-    Box(
-        modifier
-            .clip(shape)
-            .background(Color.White.copy(alpha = 0.08f))
-            .border(width = 1.dp, color = Color.White.copy(alpha = 0.18f), shape = shape)
-            .padding(horizontal = (18f * sx).dp, vertical = (22f * sy).dp),
-        contentAlignment = Alignment.TopCenter
+private fun AsrSubRow(
+    label: String,
+    value: String,
+    indicatorWidth: androidx.compose.ui.unit.Dp,
+    indicatorHeight: androidx.compose.ui.unit.Dp,
+    indicatorShape: RoundedCornerShape,
+    indicatorSpacing: androidx.compose.ui.unit.Dp
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = text.ifBlank { "—" },
-            fontSize = TypeScale.hadith,
-            fontWeight = FontWeight.Medium,
-            color = TypeTone.primary,
-            lineHeight = TypeScale.hadith * 1.3f,
-            textAlign = TextAlign.Center,
+            text = label,
+            fontSize = TypeScale.subLabel,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.secondary,
             fontFamily = AbysFonts.inter,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.weight(1f)
+        )
+
+        Box(
+            modifier = Modifier
+                .width(indicatorWidth)
+                .height(indicatorHeight)
+                .clip(indicatorShape)
+                .background(TypeTone.primary)
+        )
+
+        Spacer(Modifier.width(indicatorSpacing))
+
+        TabularText(
+            text = value,
+            fontSize = TypeScale.subLabel,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.primary,
+            textAlign = TextAlign.Right,
+            fontFamily = AbysFonts.inter,
+            modifier = Modifier.widthIn(min = 0.dp)
         )
     }
 }
 
+@Composable
+private fun NightTimeline(thirds: NightIntervals, modifier: Modifier = Modifier) {
+    val sx = Dimens.sx()
+    val sy = Dimens.sy()
+    val tickWidth = (3f * sx).dp
+    val sideHeight = (49f * sy).dp
+    val centreHeight = (57f * sy).dp
+    val tickSpacing = (6f * sx).dp
+    val labelSpacing = (16f * sy).dp
+
+    val labels = listOf(
+        thirds.first.first.ifBlank { "--:--" },
+        thirds.second.first.ifBlank { "--:--" },
+        thirds.third.first.ifBlank { "--:--" }
+    )
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.Bottom
+    ) {
+        labels.forEach { label ->
+            NightTimelineGroup(
+                label = label,
+                tickWidth = tickWidth,
+                sideHeight = sideHeight,
+                centreHeight = centreHeight,
+                tickSpacing = tickSpacing,
+                labelSpacing = labelSpacing
+            )
+        }
+    }
+}
+
+@Composable
+private fun NightTimelineGroup(
+    label: String,
+    tickWidth: androidx.compose.ui.unit.Dp,
+    sideHeight: androidx.compose.ui.unit.Dp,
+    centreHeight: androidx.compose.ui.unit.Dp,
+    tickSpacing: androidx.compose.ui.unit.Dp,
+    labelSpacing: androidx.compose.ui.unit.Dp
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(tickSpacing)
+        ) {
+            TimelineTick(width = tickWidth, height = sideHeight)
+            TimelineTick(width = tickWidth, height = centreHeight)
+            TimelineTick(width = tickWidth, height = sideHeight)
+        }
+
+        Spacer(Modifier.height(labelSpacing))
+
+        TabularText(
+            text = label,
+            fontSize = TypeScale.timeline,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.primary,
+            textAlign = TextAlign.Center,
+            fontFamily = AbysFonts.inter
+        )
+    }
+}
+
+@Composable
+private fun TimelineTick(width: androidx.compose.ui.unit.Dp, height: androidx.compose.ui.unit.Dp) {
+    val shape = RoundedCornerShape((Dimens.s() * 1.5f).dp)
+    Box(
+        modifier = Modifier
+            .width(width)
+            .height(height)
+            .clip(shape)
+            .background(TypeTone.tick)
+    )
+}
