@@ -17,6 +17,12 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = false
         }
 
-        setContent { MainApp() }
+        val startFaded = intent?.getBooleanExtra(EXTRA_START_FADED, false) == true && savedInstanceState == null
+
+        setContent { MainApp(startFaded = startFaded) }
+    }
+
+    companion object {
+        const val EXTRA_START_FADED = "extra_start_faded"
     }
 }
