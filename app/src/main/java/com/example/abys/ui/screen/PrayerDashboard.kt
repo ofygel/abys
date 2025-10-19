@@ -53,9 +53,9 @@ import com.example.abys.ui.util.backdropBlur
 
 internal object GlassDefaults {
     val top: Color
-        @Composable get() = Tokens.Colors.overlayTop.copy(alpha = 0.9f)
+        @Composable get() = Tokens.Colors.overlayTop.copy(alpha = 0.84f)
     val bottom: Color
-        @Composable get() = Tokens.Colors.overlayCard.copy(alpha = 0.86f)
+        @Composable get() = Tokens.Colors.overlayCard.copy(alpha = 0.78f)
     val stroke: Color
         @Composable get() = Color.White.copy(alpha = 0.32f)
     val glow: Color
@@ -69,13 +69,15 @@ internal object GlassDefaults {
 
 internal object TypeTone {
     val primary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.96f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.9f)
     val secondary: Color
-        @Composable get() = Tokens.Colors.text.copy(alpha = 0.88f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.64f)
     val divider: Color
-        @Composable get() = Color.White.copy(alpha = 0.16f)
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.18f)
     val tick: Color
         @Composable get() = Tokens.Colors.tickFull
+    val indicator: Color
+        @Composable get() = Tokens.Colors.text.copy(alpha = 0.38f)
 }
 
 private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).sp
@@ -83,9 +85,30 @@ private fun scaledSp(basePx: Int, scale: Float) = (basePx * scale).sp
 internal object TypeScale {
     val city = scaledSp(Tokens.TypographyPx.city, 0.68f)
     val timeNow = scaledSp(Tokens.TypographyPx.timeNow, 0.68f)
-    val label = scaledSp(Tokens.TypographyPx.label, 0.56f)
-    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.54f)
-    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.54f)
+    val prayerTime = scaledSp(Tokens.TypographyPx.label, 0.68f)
+    val prayerName = scaledSp(Tokens.TypographyPx.label, 0.56f)
+    val subLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.44f)
+    val sectionLabel = scaledSp(Tokens.TypographyPx.subLabel, 0.5f)
+    val timeline = scaledSp(Tokens.TypographyPx.timeline, 0.5f)
+}
+
+private fun TextUnit.lineHeight(multiplier: Float) = (value * multiplier).sp
+
+internal object TypeLeading {
+    val city = TypeScale.city.lineHeight(1.18f)
+    val timeNow = TypeScale.timeNow.lineHeight(1.18f)
+    val prayerTime = TypeScale.prayerTime.lineHeight(1.26f)
+    val prayerName = TypeScale.prayerName.lineHeight(1.26f)
+    val subLabel = TypeScale.subLabel.lineHeight(1.24f)
+    val sectionLabel = TypeScale.sectionLabel.lineHeight(1.24f)
+    val timeline = TypeScale.timeline.lineHeight(1.22f)
+}
+
+private const val EMPTY_TIME_PLACEHOLDER = "—:—"
+
+private fun sanitizeTime(value: String): String {
+    val trimmed = value.trim()
+    return trimmed.takeIf { it.any(Char::isDigit) } ?: EMPTY_TIME_PLACEHOLDER
 }
 
 private const val TABULAR_FEATURE = "'tnum'"
@@ -163,7 +186,13 @@ internal fun PrayerDashboard(
         Box(
             Modifier
                 .fillMaxWidth()
-                .shadow(elevation = GlassDefaults.elevation, shape = shape, clip = false)
+                .shadow(
+                    elevation = GlassDefaults.elevation,
+                    shape = shape,
+                    ambientColor = Color.Black.copy(alpha = 0.22f),
+                    spotColor = Color.Black.copy(alpha = 0.32f),
+                    clip = false
+                )
                 .clip(shape)
                 .graphicsLayer { compositingStrategy = CompositingStrategy.ModulateAlpha }
         ) {
@@ -214,8 +243,9 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
     val shape = RoundedCornerShape(Tokens.Radii.pill())
     val padHorizontal = Dimens.scaledX(R.dimen.abys_pill_pad_h)
     val padVertical = Dimens.scaledY(R.dimen.abys_pill_pad_v)
-    val underlineThickness = (3f * sy).dp
-    val underlineOffset = (2f * sy).dp
+    val underlineThickness = (2f * sy).dp
+    val underlineOffset = (4f * sy).dp
+    val nowMinWidth = Dimens.scaledX(R.dimen.abys_time_column_width)
 
     Box(
         modifier
@@ -245,6 +275,7 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
             Text(
                 text = cityText,
                 fontSize = TypeScale.city,
+                lineHeight = TypeLeading.city,
                 fontWeight = FontWeight.SemiBold,
                 fontStyle = FontStyle.Italic,
                 color = primaryColor,
@@ -269,13 +300,14 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
             Spacer(Modifier.width((20f * sx).dp))
 
             TabularText(
-                text = now.ifBlank { "--:--" },
+                text = sanitizeTime(now),
                 fontSize = TypeScale.timeNow,
+                lineHeight = TypeLeading.timeNow,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor,
                 textAlign = TextAlign.Right,
                 fontFamily = AbysFonts.inter,
-                modifier = Modifier.widthIn(min = 0.dp)
+                modifier = Modifier.widthIn(min = nowMinWidth)
             )
         }
     }
@@ -284,33 +316,73 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
 @Composable
 private fun PrayerSchedule(times: Map<String, String>, modifier: Modifier = Modifier) {
     val rowSpacing = Dimens.scaledY(R.dimen.abys_row_step)
+    val timeColumnWidth = Dimens.scaledX(R.dimen.abys_time_column_width)
+    val rowHorizontalInset = (4f * Dimens.sx()).dp
 
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(rowSpacing)
     ) {
-        PrayerRow(label = "Фаджр", value = times["Fajr"] ?: "--:--")
-        PrayerRow(label = "Восход", value = times["Sunrise"] ?: "--:--")
-        PrayerRow(label = "Зухр", value = times["Dhuhr"] ?: "--:--")
-        AsrSection(
-            standard = times["AsrStd"] ?: "--:--",
-            hanafi = times["AsrHana"] ?: "--:--"
+        PrayerRow(
+            label = "Фаджр",
+            value = times["Fajr"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
         )
-        PrayerRow(label = "Магриб", value = times["Maghrib"] ?: "--:--")
-        PrayerRow(label = "Иша", value = times["Isha"] ?: "--:--")
+        PrayerRow(
+            label = "Восход",
+            value = times["Sunrise"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
+        )
+        PrayerRow(
+            label = "Зухр",
+            value = times["Dhuhr"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
+        )
+        AsrSection(
+            standard = times["AsrStd"].orEmpty(),
+            hanafi = times["AsrHana"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
+        )
+        PrayerRow(
+            label = "Магриб",
+            value = times["Maghrib"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
+        )
+        PrayerRow(
+            label = "Иша",
+            value = times["Isha"].orEmpty(),
+            timeWidth = timeColumnWidth,
+            horizontalInset = rowHorizontalInset
+        )
     }
 }
 
 @Composable
-private fun PrayerRow(label: String, value: String) {
+private fun PrayerRow(
+    label: String,
+    value: String,
+    timeWidth: androidx.compose.ui.unit.Dp,
+    horizontalInset: androidx.compose.ui.unit.Dp
+) {
+    val spacing = (12f * Dimens.sx()).dp
+
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalInset),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
         Text(
             text = label,
-            fontSize = TypeScale.label,
-            fontWeight = FontWeight.Bold,
+            fontSize = TypeScale.prayerName,
+            lineHeight = TypeLeading.prayerName,
+            fontWeight = FontWeight.Medium,
             color = TypeTone.primary,
             fontFamily = AbysFonts.inter,
             modifier = Modifier.weight(1f),
@@ -319,20 +391,26 @@ private fun PrayerRow(label: String, value: String) {
         )
 
         TabularText(
-            text = value,
-            fontSize = TypeScale.label,
-            fontWeight = FontWeight.SemiBold,
+            text = sanitizeTime(value),
+            fontSize = TypeScale.prayerTime,
+            lineHeight = TypeLeading.prayerTime,
+            fontWeight = FontWeight.Bold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             fontFamily = AbysFonts.inter,
-            modifier = Modifier.widthIn(min = 0.dp),
+            modifier = Modifier.width(timeWidth),
             maxLines = 1
         )
     }
 }
 
 @Composable
-private fun AsrSection(standard: String, hanafi: String) {
+private fun AsrSection(
+    standard: String,
+    hanafi: String,
+    timeWidth: androidx.compose.ui.unit.Dp,
+    horizontalInset: androidx.compose.ui.unit.Dp
+) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
     val subSpacing = (18f * sy).dp
@@ -341,29 +419,34 @@ private fun AsrSection(standard: String, hanafi: String) {
     val indicatorShape = RoundedCornerShape((2f * Dimens.s()).dp)
     val indicatorSpacing = (16f * sx).dp
 
-    Column(verticalArrangement = Arrangement.spacedBy(subSpacing)) {
+    Column(
+        modifier = Modifier.padding(horizontal = horizontalInset),
+        verticalArrangement = Arrangement.spacedBy(subSpacing)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Аср",
-                fontSize = TypeScale.label,
-                fontWeight = FontWeight.Bold,
+                fontSize = TypeScale.prayerName,
+                lineHeight = TypeLeading.prayerName,
+                fontWeight = FontWeight.Medium,
                 color = TypeTone.primary,
                 fontFamily = AbysFonts.inter,
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy((12f * sy).dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy((14f * sy).dp)) {
             AsrSubRow(
                 label = "стандарт",
                 value = standard,
                 indicatorWidth = indicatorWidth,
                 indicatorHeight = indicatorHeight,
                 indicatorShape = indicatorShape,
-                indicatorSpacing = indicatorSpacing
+                indicatorSpacing = indicatorSpacing,
+                timeWidth = timeWidth
             )
             AsrSubRow(
                 label = "ханафитский",
@@ -371,7 +454,8 @@ private fun AsrSection(standard: String, hanafi: String) {
                 indicatorWidth = indicatorWidth,
                 indicatorHeight = indicatorHeight,
                 indicatorShape = indicatorShape,
-                indicatorSpacing = indicatorSpacing
+                indicatorSpacing = indicatorSpacing,
+                timeWidth = timeWidth
             )
         }
     }
@@ -384,15 +468,18 @@ private fun AsrSubRow(
     indicatorWidth: androidx.compose.ui.unit.Dp,
     indicatorHeight: androidx.compose.ui.unit.Dp,
     indicatorShape: RoundedCornerShape,
-    indicatorSpacing: androidx.compose.ui.unit.Dp
+    indicatorSpacing: androidx.compose.ui.unit.Dp,
+    timeWidth: androidx.compose.ui.unit.Dp
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(indicatorSpacing)
     ) {
         Text(
             text = label,
             fontSize = TypeScale.subLabel,
+            lineHeight = TypeLeading.subLabel,
             fontWeight = FontWeight.SemiBold,
             color = TypeTone.secondary,
             fontFamily = AbysFonts.inter,
@@ -404,19 +491,18 @@ private fun AsrSubRow(
                 .width(indicatorWidth)
                 .height(indicatorHeight)
                 .clip(indicatorShape)
-                .background(TypeTone.primary)
+                .background(TypeTone.indicator)
         )
 
-        Spacer(Modifier.width(indicatorSpacing))
-
         TabularText(
-            text = value,
-            fontSize = TypeScale.subLabel,
-            fontWeight = FontWeight.SemiBold,
+            text = sanitizeTime(value),
+            fontSize = TypeScale.prayerTime,
+            lineHeight = TypeLeading.prayerTime,
+            fontWeight = FontWeight.Bold,
             color = TypeTone.primary,
             textAlign = TextAlign.Right,
             fontFamily = AbysFonts.inter,
-            modifier = Modifier.widthIn(min = 0.dp)
+            modifier = Modifier.width(timeWidth)
         )
     }
 }
@@ -430,27 +516,47 @@ private fun NightTimeline(thirds: NightIntervals, modifier: Modifier = Modifier)
     val centreHeight = (57f * sy).dp
     val tickSpacing = (6f * sx).dp
     val labelSpacing = (16f * sy).dp
+    val titleSpacing = (18f * sy).dp
 
     val labels = listOf(
-        thirds.first.first.ifBlank { "--:--" },
-        thirds.second.first.ifBlank { "--:--" },
-        thirds.third.first.ifBlank { "--:--" }
+        sanitizeTime(thirds.first.first),
+        sanitizeTime(thirds.second.first),
+        sanitizeTime(thirds.third.first)
     )
 
-    Row(
+    Column(
         modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.Bottom
+        verticalArrangement = Arrangement.spacedBy(titleSpacing)
     ) {
-        labels.forEach { label ->
-            NightTimelineGroup(
-                label = label,
-                tickWidth = tickWidth,
-                sideHeight = sideHeight,
-                centreHeight = centreHeight,
-                tickSpacing = tickSpacing,
-                labelSpacing = labelSpacing
-            )
+        Text(
+            text = "Ночь (3 части)",
+            fontSize = TypeScale.sectionLabel,
+            lineHeight = TypeLeading.sectionLabel,
+            fontWeight = FontWeight.SemiBold,
+            color = TypeTone.secondary,
+            fontFamily = AbysFonts.inter
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            labels.forEach { label ->
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    NightTimelineGroup(
+                        label = label,
+                        tickWidth = tickWidth,
+                        sideHeight = sideHeight,
+                        centreHeight = centreHeight,
+                        tickSpacing = tickSpacing,
+                        labelSpacing = labelSpacing
+                    )
+                }
+            }
         }
     }
 }
@@ -479,7 +585,8 @@ private fun NightTimelineGroup(
         TabularText(
             text = label,
             fontSize = TypeScale.timeline,
-            fontWeight = FontWeight.SemiBold,
+            lineHeight = TypeLeading.timeline,
+            fontWeight = FontWeight.Medium,
             color = TypeTone.primary,
             textAlign = TextAlign.Center,
             fontFamily = AbysFonts.inter

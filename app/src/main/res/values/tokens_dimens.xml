@@ -8,12 +8,15 @@
     <!-- Паддинги/сетка из спека -->
     <dimen name="abys_pill_pad_h">24dp</dimen>
     <dimen name="abys_pill_pad_v">14dp</dimen>
-    <dimen name="abys_card_pad_h">44dp</dimen>
-    <dimen name="abys_card_pad_top">45dp</dimen>
-    <dimen name="abys_card_pad_bottom">40dp</dimen>
+    <dimen name="abys_card_pad_h">28dp</dimen>
+    <dimen name="abys_card_pad_top">36dp</dimen>
+    <dimen name="abys_card_pad_bottom">32dp</dimen>
+
+    <!-- Ширина колонок со временем -->
+    <dimen name="abys_time_column_width">96dp</dimen>
 
     <!-- Шаг строк -->
-    <dimen name="abys_row_step">73dp</dimen>
+    <dimen name="abys_row_step">24dp</dimen>
 
     <!-- Размеры нижних превью -->
     <dimen name="abys_thumb_w">121dp</dimen>

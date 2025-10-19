@@ -17,11 +17,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.matchParentSize
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.LocalTextStyle
@@ -47,12 +44,9 @@ import com.example.abys.data.FallbackContent
 import com.example.abys.logic.CitySheetTab
 import com.example.abys.logic.MainViewModel
 import com.example.abys.logic.NightIntervals
-import com.example.abys.ui.EffectCarousel
-import com.example.abys.ui.EffectThumb
 import com.example.abys.ui.EffectViewModel
 import com.example.abys.ui.background.BackgroundHost
 import com.example.abys.ui.rememberCityDirectory
-import com.example.abys.ui.rememberEffectCatalogFromRes
 import com.example.abys.ui.theme.AbysFonts
 import com.example.abys.ui.theme.Dimens
 import com.example.abys.ui.theme.Tokens
@@ -120,7 +114,6 @@ fun MainApp(
     val sheetTab by vm.sheetTab.observeAsState(CitySheetTab.Wheel)
     val hadith by vm.hadithToday.observeAsState("")
     val selectedEffect by effectViewModel.effect.collectAsState()
-    val effectThumbs = rememberEffectCatalogFromRes()
     val cityOptions = rememberCityDirectory()
     val context = LocalContext.current
 
@@ -155,8 +148,6 @@ fun MainApp(
                 now = now,
                 prayerTimes = times,
                 thirds = thirds,
-                selectedEffect = selectedEffect,
-                effectThumbs = effectThumbs,
                 showSheet = showSheet,
                 sheetTab = sheetTab,
                 hadith = hadith,
@@ -165,8 +156,7 @@ fun MainApp(
                 onShowWheel = { vm.setSheetTab(CitySheetTab.Wheel) },
                 onTabSelected = vm::setSheetTab,
                 onSheetDismiss = vm::hideSheet,
-                onCityChosen = { vm.setCity(it, context.applicationContext) },
-                onEffectSelected = effectViewModel::onEffectSelected
+                onCityChosen = { vm.setCity(it, context.applicationContext) }
             )
 
             if (overlayAlpha.value > 0.01f) {
@@ -186,8 +176,6 @@ fun MainScreen(
     now: String,
     prayerTimes: Map<String, String>,
     thirds: NightIntervals,
-    selectedEffect: EffectId,
-    effectThumbs: List<EffectThumb>,
     showSheet: Boolean,
     sheetTab: CitySheetTab,
     hadith: String,
@@ -196,12 +184,10 @@ fun MainScreen(
     onShowWheel: () -> Unit,
     onTabSelected: (CitySheetTab) -> Unit,
     onSheetDismiss: () -> Unit,
-    onCityChosen: (String) -> Unit,
-    onEffectSelected: (EffectId) -> Unit
+    onCityChosen: (String) -> Unit
 ) {
     val sx = Dimens.sx()
     val sy = Dimens.sy()
-    val navPadding = WindowInsets.navigationBars.asPaddingValues()
 
     BackHandler(enabled = showSheet) {
         if (sheetTab != CitySheetTab.Wheel) {
@@ -224,16 +210,6 @@ fun MainScreen(
                 .align(Alignment.TopCenter)
                 .padding(top = (162f * sy).dp, start = (48f * sx).dp, end = (48f * sx).dp)
                 .widthIn(max = (640f * sx).dp)
-        )
-
-        EffectCarousel(
-            items = effectThumbs,
-            selected = selectedEffect,
-            onSelected = onEffectSelected,
-            enabled = !showSheet,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = navPadding.calculateBottomPadding() + (48f * sy).dp)
         )
 
         if (showSheet) {
