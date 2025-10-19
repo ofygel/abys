@@ -220,10 +220,10 @@ private fun MutedBackgroundCrossfade(effect: EffectId) {
                             ).asComposeRenderEffect()
                         }
                 ) {
-                    BackgroundHost(effect = target)
+                    BackgroundHost()
                 }
             } else {
-                BackgroundHost(effect = target)
+                BackgroundHost()
                 Box(
                     Modifier
                         .matchParentSize()
