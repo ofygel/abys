@@ -268,43 +268,11 @@ private fun CityHeaderPill(city: String, now: String, onTap: () -> Unit, modifie
 
             Spacer(Modifier.width((20f * sx).dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val cityText = city.ifBlank { "—" }
-            Text(
-                text = cityText,
-                fontSize = TypeScale.city,
-                fontWeight = FontWeight.SemiBold,
-                fontStyle = FontStyle.Italic,
-                color = TypeTone.primary,
-                fontFamily = AbysFonts.inter,
-                modifier = Modifier
-                    .weight(1f)
-                    .drawBehind {
-                        if (cityText.isNotBlank()) {
-                            val thickness = underlineThickness.toPx()
-                            val offset = underlineOffset.toPx()
-                            drawRect(
-                                color = TypeTone.primary,
-                                topLeft = Offset(0f, size.height + offset - thickness),
-                                size = Size(size.width, thickness)
-                            )
-                        }
-                    },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.width((20f * sx).dp))
-
             TabularText(
                 text = now.ifBlank { "--:--" },
                 fontSize = TypeScale.timeNow,
                 fontWeight = FontWeight.Bold,
-                color = TypeTone.primary,
+                color = primaryColor,
                 textAlign = TextAlign.Right,
                 fontFamily = AbysFonts.inter,
                 modifier = Modifier.widthIn(min = 0.dp)
